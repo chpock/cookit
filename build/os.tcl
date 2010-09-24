@@ -56,14 +56,13 @@ proc cookit::initWin32Msys {directory} {
 	    catch {file delete -force $dir}
 	    catch {file delete -force $dir.tmp}
 	    file mkdir $dir.tmp
-	    foreach g [glob -directory $zip *] {
+	    foreach g [glob -directory $zip msys/*] {
 		set d [file join $dir.tmp [file tail $g]]
 		log 5 "Copying '$g' as '$d'"
 		file copy -force $g $d
 	    }
 	    vfs::unmount $zip
 	    file rename $dir.tmp $dir
-	    exit 12
 	} error]} {
 	    # TODO: better description
 	    puts stderr "Unable to download and unpack msys.zip file: $error"
