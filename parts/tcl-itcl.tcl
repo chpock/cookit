@@ -7,6 +7,9 @@ proc cookit::tcl-itcl::getSourceDirectory {version} {
 
 proc cookit::tcl-itcl:::getVersions {} {
     set dir [getSourceDirectory ""]
+    if {![file exists $dir]} {
+	return [list]
+    }
     set fh [open [file join $dir configure.in] r]
     set fc [read $fh]
     close $fh
