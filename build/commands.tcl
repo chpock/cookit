@@ -346,7 +346,6 @@ proc cookit::cmdRetrievesource {args} {
 set cookit::commandInfo(build-cookit) {{} {Builds a CooKit with predefined criteria}}
 proc cookit::cmdBuild-cookit {} {
     set plan [createSolution static TARGET]
-    puts "PLAN: $plan"
 
     setPartVersions $plan
     initPartVersions static $plan
