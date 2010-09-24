@@ -39,7 +39,6 @@ proc cookit::thread::vfsfilelist-static {} {
     set filelist [list]
     set dir [file join [cookit::getInstallStaticDirectory] lib thread[cookit::getPartVersion thread]]
     set libdir "lib/thread[cookit::getPartVersion thread]"
-    puts "$dir / $libdir"
     set rc [cookit::filterFilelist \
         [cookit::listAllFiles $libdir $dir] \
 	include match *.tcl \
