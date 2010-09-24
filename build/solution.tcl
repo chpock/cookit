@@ -11,11 +11,13 @@ proc cookit::createSolutionsInt {buildmode targets known} {
     if {[llength $targets] == 0} {
         foreach {pname pversion} $known {
             if {[info exists provided($pname)] && ($provided($pname) != $pversion)} {
+		log 2 "Package $pname provided as $provided($pname) != $pversion"
                 return [list]
             }
             set provided($pname) $pversion
             foreach {providedname providedversion} [partGetParameter $pname $pversion provides] {
                 if {[info exists provided($providedname)] && ($provided($providedname) != $providedversion)} {
+		    log 2 "Package $providedname from $pname provided as $provided($providedname) != $providedversion)"
                     return [list]
                 }
                 set provided($providedname) $providedversion
@@ -30,6 +32,7 @@ proc cookit::createSolutionsInt {buildmode targets known} {
             if {(![info exists provided($a)])} {
                 lappend reqtargets $a
             }  elseif  {[compareVersions $provided($a) $depends($a)] < 0} {
+		log 2 "Package provide-depends fail for $a - $provided($a) < $depends($a)"
                 return [list]
             }
         }
@@ -50,6 +53,7 @@ proc cookit::createSolutionsInt {buildmode targets known} {
     set currenttargets [lrange $targets 1 end]
 
     if {![info exists partProviders($target)]} {
+	log 2 "Package $target is not provided by anyone"
         return [list]
     }
 
