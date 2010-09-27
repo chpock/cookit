@@ -5,13 +5,22 @@ cookit::partRegister cookfs "CooKit VFS"
 set cookit::allOptions(cookfs-bz2) {{Enables bzip2 support}}
 
 proc cookit::cookfs::retrievesource {} {
-    set tempdir [cookit::svnExport https://cookit.svn.sourceforge.net/svnroot/cookit/cookfs]
-    
-    # get base version from configure.in
-    foreach {pkgname version} [cookit::getConfigureVersion $tempdir] break
-    
-    # copy source to actual location
-    cookit::copySourceRepository $tempdir cookfs $version
+    if {![catch {
+	set tempdir [cookit::svnExport https://cookit.svn.sourceforge.net/svnroot/cookit/cookfs]
+    }]} {
+	# get base version from configure.in
+	foreach {pkgname version} [cookit::getConfigureVersion $tempdir] break
+	
+	# copy source to actual location
+	cookit::copySourceRepository $tempdir cookfs $version
+    }  else  {
+	# download over http
+	# TODO: remove hardcoded URL
+	set url "http://sourceforge.net/projects/cookit/files/cookfs/cookfs-1.0-snapshot-20100924.tar.gz/download"
+	set filename "cookfs-1.0.tar.gz"
+	set destfile [file join [cookit::getDownloadsDirectory] $filename]
+	cookit::downloadURL $url $destfile
+    }
 }
 
 proc cookit::cookfs::parameters {version} {
