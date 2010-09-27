@@ -296,6 +296,7 @@ proc cookit::cmdCleanall {args} {
     cmdPartClean 1
 }
 
+set cookit::commandInfo(retrievesource) {{<parts>} {Retrieve source code for one or more parts of cookit}}
 proc cookit::cmdRetrievesource {args} {
     variable versions
 

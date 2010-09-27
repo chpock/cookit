@@ -131,6 +131,7 @@ proc cookit::initPartBuild {buildmode name version} {
     set buildstaticdirectory [file join $rootdirectory _build_static $hostbuilddirectory $name]
     set builddynamicdirectory [file join $rootdirectory _build_dynamic $hostbuilddirectory $name]
 
+    log 5 "Initializing $buildmode build for $name ($version)"
     if {![file exists $buildstaticdirectory]} {
         log 5 "Creating directory $buildstaticdirectory"
         file mkdir $buildstaticdirectory
@@ -151,7 +152,7 @@ proc cookit::initPartBuild {buildmode name version} {
         file mkdir $installstaticdirectory
     }
 
-    if {![file exists $sourcedirectory]} {
+    if {(![file exists $sourcedirectory]) || ([llength [glob -directory $sourcedirectory -nocomplain *]] == 0)} {
         log 3 "Extracting package $name from source tarball"
         set ok 0
         file mkdir $sourcedirectory
@@ -160,8 +161,11 @@ proc cookit::initPartBuild {buildmode name version} {
                 log 4 "Extracting package $name from [file tail $g]"
                 set pwd [pwd]
                 cd $sourcedirectory
-                catch {exec tar -xzf $g}
-                set ok 1
+                if {[catch {exec tar -xzf [mkrelative [pwd] $g]} err]} {
+		    log 2 "Extracting package failed: $err"
+		}  else  {
+		    set ok 1
+		}
                 break
             }
         }

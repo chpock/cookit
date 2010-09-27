@@ -38,6 +38,7 @@ proc cookit::initWin32Msys {directory} {
     set dir [mkrelative $rootdirectory $directory]
 
     if {![file exists $dir]} {
+	puts "Downloading win32 build tools; this will take a few minutes"
 	set zip [mkrelative $rootdirectory $directory.zip]
 	file mkdir [file dirname $zip]
 	# try to unzip msys.zip
