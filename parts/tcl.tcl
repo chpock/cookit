@@ -96,6 +96,8 @@ proc cookit::tcl::vfsfilelist-static {} {
         exclude match lib/tcl$ver/encoding/ksc5601.enc \
         exclude match lib/tcl$ver/encoding/macJapan.enc \
         exclude match lib/tcl$ver/encoding/shiftjis.enc \
+        exclude match lib/tcl$ver/tzdata \
+        exclude match lib/tcl$ver/tzdata/* \
         exclude match lib/tcl$ver/init.tcl \
         exclude match *.c \
         exclude match *.sh \

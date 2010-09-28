@@ -100,6 +100,8 @@ proc cookit::tk::vfsfilelist-static {} {
         exclude match lib/tk$ver/tkAppInit.c \
         exclude match lib/tk$ver/demos \
         exclude match lib/tk$ver/demos/* \
+        exclude match lib/tk$ver/images \
+        exclude match lib/tk$ver/images/* \
         exclude match lib/tk$ver/*.a \
         exclude match lib/tk$ver/*.o \
         exclude match lib/tk$ver/*.obj \
