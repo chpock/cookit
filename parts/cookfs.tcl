@@ -16,7 +16,7 @@ proc cookit::cookfs::retrievesource {} {
     }  else  {
 	# download over http
 	# TODO: remove hardcoded URL
-	set url "http://sourceforge.net/projects/cookit/files/cookfs/cookfs-1.0-snapshot-20100924.tar.gz/download"
+	set url "http://sourceforge.net/projects/cookit/files/cookfs/cookfs-1.0.tar.gz/download"
 	set filename "cookfs-1.0.tar.gz"
 	set destfile [file join [cookit::getDownloadsDirectory] $filename]
 	cookit::downloadURL $url $destfile
