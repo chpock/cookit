@@ -14,10 +14,21 @@ proc cookit::downloadURL {url {destinationfile ""}} {
 
     while {[incr retries -1] >= 0} {
         log 3 "Downloading $url (retries=$retries)"
+	set headers {}
+
+	# prepare cookies
+	set cookies {}
+	foreach {n v} [array get httpCookies] {
+	    lappend cookies "$n=$v"
+	}
+	if {[llength $cookies] > 0} {
+	    lappend headers Cookie [join $cookies "; "]
+	}
+
         if {[catch {
-            set h [http::geturl $url -binary 1 -progress cookit::downloadURLProgress]
+            set h [http::geturl $url -binary 1 -progress cookit::downloadURLProgress -headers $headers]
         }]} {
-            set h [http::geturl $url -progress cookit::downloadURLProgress]
+            set h [http::geturl $url -progress cookit::downloadURLProgress -headers $headers]
         }
 
         upvar #0 $h t
@@ -28,12 +39,23 @@ proc cookit::downloadURL {url {destinationfile ""}} {
             set url $startURL
             continue
         }
+
+	# handle HTTP metadata
+        catch {unset meta}
         if {[info exists t(meta)]} {
-            catch {unset meta}
             array set meta $t(meta)
+	    # keep all cookies (we do not do domain checks for now, though)
+	    foreach {name value} $t(meta) {
+		if {[string equal -nocase $name "Set-Cookie"]} {
+		    set value [lindex [split $value ";"] 0]
+		    if {[regexp "^(.*?)=(.*)\$" $value \
+			- cname cvalue]} {
+			set httpCookies($cname) $cvalue
+		    }
+		}
+	    }
         }
         set code [lindex [split $t(http)] 1]
-
         if {($code == 302) || ($code == 303)} {
             if {[info exists meta(Location)]} {
                 set url $meta(Location)

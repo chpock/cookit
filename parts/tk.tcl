@@ -211,6 +211,7 @@ proc cookit::tk::packageslist-dynamic {} {
 
     set version [cookit::getPartVersion tk]
     set version2 [cookit::buildVersionString $version 2]
+    set dversion2 [string map [list "." ""] $version2]
     set dirname "tk$version2"
 
     set tkpath [file join $basedir lib $dirname]
@@ -218,7 +219,12 @@ proc cookit::tk::packageslist-dynamic {} {
     if {[file exists $tkpath]} {
 	set tkparentdir [file dirname $tkpath]
 	set libfiles {}
-	foreach libfile [glob [file join $tkparentdir libtk$version2*[info sharedlibextension]] [file join $tkparentdir tk$version2*[info sharedlibextension]]] {
+	foreach libfile [glob \
+	    [file join $tkparentdir libtk$version2*[info sharedlibextension]] \
+	    [file join $tkparentdir tk$version2*[info sharedlibextension]] \
+	    [file join $tkparentdir libtk$dversion2*[info sharedlibextension]] \
+	    [file join $tkparentdir tk$dversion2*[info sharedlibextension]] \
+	] {
 	    lappend libfiles lib/[file tail $libfile] file $libfile ""
 	}
 

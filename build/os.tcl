@@ -32,11 +32,55 @@ proc cookit::osSpecific {value} {
     return $value
 }
 
+proc cookit::initWin32Svn {directory} {
+    variable rootdirectory
+    variable msysdirectory
+
+    set dir [mkrelative $rootdirectory $directory]
+    if {![file exists $dir]} {
+	puts "Downloading win32 subversion client; this will take a few minutes"
+	set zip [mkrelative $rootdirectory $directory.zip]
+	file mkdir [file dirname $zip]
+
+	if {[catch {
+	    package require vfs::zip
+
+	    if {![file exists $zip]} {
+		set url "http://subversion.tigris.org/files/documents/15/47914/svn-win32-1.6.6.zip"
+		log 5 "[file tail $zip] not found - downloading from '$url'"
+		if {![downloadURL $url $zip]} {
+		    error "download of $url failed"
+		}
+	    }
+
+	    vfs::zip::Mount $zip $zip
+	    catch {file delete -force $dir}
+	    catch {file delete -force $dir.tmp}
+	    file mkdir $dir.tmp
+	    foreach g [glob -directory $zip svn-*/bin svn-*/iconv] {
+		set d [file join $dir.tmp [file tail $g]]
+		log 5 "Copying '$g' as '$d'"
+		file copy -force $g $d
+	    }
+	    vfs::unmount $zip
+	    file rename $dir.tmp $dir
+	} error]} {
+	    # TODO: better description
+	    puts stderr "Unable to download and unpack subversion client: $error"
+	    puts stderr ""
+	    puts stderr "This file is needed on win32 in order to properly build cookit"
+	    exit 1
+	}
+    }
+
+    set ::env(PATH) "[file nativename [file join $directory bin]];$::env(PATH)"
+}
+
 proc cookit::initWin32Msys {directory} {
     variable rootdirectory
     variable msysdirectory
-    set dir [mkrelative $rootdirectory $directory]
 
+    set dir [mkrelative $rootdirectory $directory]
     if {![file exists $dir]} {
 	puts "Downloading win32 build tools; this will take a few minutes"
 	set zip [mkrelative $rootdirectory $directory.zip]
@@ -134,5 +178,6 @@ proc cookit::initOS {} {
 
     if {$platform == "win32-x86"} {
         initWin32Msys [file join $rootdirectory win32 msys]
+        initWin32Svn [file join $rootdirectory win32 svn]
     }
 }

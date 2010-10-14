@@ -14,7 +14,14 @@ proc cookit::cmdPartClean {all} {
 
     logInit _clean
 
-    set steps [list "Clean up binaries" "Clean up installed files" "Clean up build directory" "Clean up temporary directory" "Clean up logs"]
+    set steps [list \
+	"Clean up installed static files" \
+	"Clean up installed dynamic files" \
+	"Clean up build static directory" \
+	"Clean up build dynamic directory" \
+	"Clean up temporary directory" \
+	"Clean up logs" \
+	]
     
     uiInitializeProgress $steps
 
@@ -24,7 +31,7 @@ proc cookit::cmdPartClean {all} {
         set pattern $hostbuilddirectory
     }
 
-    foreach dir [list _output _install_static _install_dynamic _build_static _build_dynamic _temp] {
+    foreach dir [list _install_static _install_dynamic _build_static _build_dynamic _temp] {
         uiNextStep
 
         foreach dir [glob -nocomplain -directory [file join $rootdirectory $dir] $pattern] {
@@ -39,6 +46,14 @@ proc cookit::cmdPartClean {all} {
                     log 2 "cmdPartClean: Unable to delete \"$g\": $error"
                 }
             }
+	    if {[llength [glob -nocomplain -directory $dir *]] == 0} {
+		log 5 "cmdPartClean: Removing empty directory \"$dir\""
+                if {[catch {
+                    file delete -force $dir
+                } error]} {
+                    log 2 "cmdPartClean: Unable to delete \"$g\": $error"
+                }
+	    }
         }
     }
     
