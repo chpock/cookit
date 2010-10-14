@@ -74,6 +74,14 @@ proc cookit::cmdPartClean {all} {
                 }
             }
         }
+	if {[llength [glob -nocomplain -directory $dir *]] == 0} {
+	    log 5 "cmdPartClean: Removing empty directory \"$dir\""
+	    if {[catch {
+		file delete -force $dir
+	    } error]} {
+		log 2 "cmdPartClean: Unable to delete \"$g\": $error"
+	    }
+	}
     }
 
     uiComplete
