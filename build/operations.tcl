@@ -1,6 +1,7 @@
 namespace eval cookit {}
 
 set cookit::allOptions(threaded) {Enable threads}
+set cookit::allOptions(alwaysconfigure) {Always run configure}
 
 proc cookit::buildConfigure {args} {
     variable opt
@@ -36,7 +37,7 @@ proc cookit::buildConfigure {args} {
         }
     }
 
-    if {[file exists Makefile] && (!$o(always))} {
+    if {[file exists Makefile] && (!$o(always)) && (!$opt(alwaysconfigure))} {
         log 3 "Makefile already exists - skipping configure script"
         return
     }

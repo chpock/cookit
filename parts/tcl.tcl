@@ -38,7 +38,7 @@ proc cookit::tcl::initialize-static {version} {
 }
 
 proc cookit::tcl::configure-static {} {
-    cookit::buildConfigure -platform
+    cookit::buildConfigure -platform -sourcepath relative
 }
 
 proc cookit::tcl::build-static {} {
@@ -164,7 +164,7 @@ proc cookit::tcl::initialize-dynamic {version} {
 }
 
 proc cookit::tcl::configure-dynamic {} {
-    cookit::buildConfigure -platform -mode dynamic
+    cookit::buildConfigure -platform -mode dynamic -sourcepath relative
 }
 
 proc cookit::tcl::build-dynamic {} {
