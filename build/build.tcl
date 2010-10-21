@@ -13,6 +13,7 @@ source [file join $cookit::rootdirectory build libs md5.tcl]
 
 source [file join $cookit::rootdirectory build init.tcl]
 source [file join $cookit::rootdirectory build os.tcl]
+source [file join $cookit::rootdirectory build platform.tcl]
 source [file join $cookit::rootdirectory build log.tcl]
 source [file join $cookit::rootdirectory build versioncontrol.tcl]
 source [file join $cookit::rootdirectory build download.tcl]
@@ -24,9 +25,10 @@ source [file join $cookit::rootdirectory build commands.tcl]
 source [file join $cookit::rootdirectory build solution.tcl]
 source [file join $cookit::rootdirectory build operations.tcl]
 
-cookit::initOS
+cookit::preInitOS
 cookit::initParts
 cookit::parseArguments
+cookit::initOS
 cookit::initAvailablePartVersions
 
 cookit::fixPartVersions

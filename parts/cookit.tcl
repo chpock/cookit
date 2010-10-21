@@ -100,20 +100,30 @@ proc cookit::cookit::vfsbootstrap {} {
     set src [cookit::getSourceDirectory cookit]
     set cfssrc [cookit::getSourceDirectory cookfs]
 
-    foreach g [concat \
-        [list [file join $src lib cmdline.tcl]] \
-        [list [file join $cfssrc scripts cookvfs.tcl]] \
-        [list [file join $cfssrc scripts memchan.tcl]] \
-        [list [file join $cfssrc scripts readerchannel.tcl]] \
-        [list [file join $cfssrc scripts vfs.tcl]] \
-        [list [file join $cfssrc scripts writer.tcl]] \
-        ] {
+    set cookfsVersion [cookit::getPartVersion cookfs] 
+
+    set filelist [list]
+
+    if {[string equal $cookfsVersion "1.0"]} {
+	lappend filelist [file join $src lib cmdline.tcl]
+    }  else  {
+	lappend filelist [file join [cookit::getBuildDirectory cookfs] pkgconfig.tcl]
+    }
+
+    lappend filelist \
+        [file join $cfssrc scripts memchan.tcl] \
+        [file join $cfssrc scripts readerchannel.tcl] \
+        [file join $cfssrc scripts vfs.tcl] \
+        [file join $cfssrc scripts writer.tcl] \
+        [file join $cfssrc scripts cookvfs.tcl]
+
+    foreach g $filelist {
         set fh [open $g r]
         fconfigure $fh -translation binary
         set data [read $fh]
         close $fh
 
-        regsub -all -line -- "package require vfs" $data "" data
+        regsub -all -line -- "package require vfs\\s*\$" $data "" data
         regsub -all -line -- "^#.*\$" $data "" data
         regsub -all -line -- "^ +" $data "" data
         regsub -all -line -- "\r+" $data "" data

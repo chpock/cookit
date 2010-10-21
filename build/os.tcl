@@ -2,6 +2,9 @@ namespace eval cookit {}
 
 # OS specific workarounds and resolutions
 
+set cookit::allOptions(usemingw) {Use MinGW and SVN provided on SourceForge.net/projects/cookit}
+set cookit::allOptions(hostname.arg) [list [lindex [split [info hostname] .:] 0] [list Force specific hostname]]
+
 proc cookit::shellScriptCommand {cmd} {
     variable platform
     
@@ -34,7 +37,6 @@ proc cookit::osSpecific {value} {
 
 proc cookit::initWin32Svn {directory} {
     variable rootdirectory
-    variable msysdirectory
 
     set dir [mkrelative $rootdirectory $directory]
     if {![file exists $dir]} {
@@ -120,8 +122,8 @@ proc cookit::initWin32Msys {directory} {
     set msysdirectory $directory
 
     set paths [list]
-    lappend paths [file nativename [file join $directory bin]]
     lappend paths [file nativename [file join $directory mingw bin]]
+    lappend paths [file nativename [file join $directory bin]]
     
     foreach path [split $::env(PATH) ";"] {
         if {[file exists [file join $path cygpath.exe]]
@@ -137,32 +139,14 @@ proc cookit::initWin32Msys {directory} {
     set ::env(MSYSTEM) "MINGW32"
 }
 
-proc cookit::initOS {} {
-    variable rootdirectory
-    variable hostname
-    variable hostbuilddirectory
+proc cookit::preInitOS {} {
     variable platform
     variable unixwinplatform
     variable unixwinmacosxplatform
     variable opt
 
-    if {(![info exists hostname]) || ($hostname == "")} {
-        set hostname [lindex [split [info hostname] .:] 0]
-    }
-
     if {![info exists platform]} {
-        set p "$::tcl_platform(machine)-$::tcl_platform(os)-$::tcl_platform(osVersion)"
-        if {[string match "i*86*-Linux-*" $p] || [string match "intel-Linux-*" $p]} {
-            set platform linux-x86
-        }  elseif {[string match "i*86*-Windows*-*" $p] || [string match "intel-Windows*-*" $p]} {
-            set platform win32-x86
-        }  elseif {[string match "i*86*-SunOS-*" $p] || [string match "intel-SunOS-*" $p]} {
-            set platform solaris-x86
-        }  elseif {[string match "i*86*-Darwin-*" $p] || [string match "intel-Darwin-*" $p]} {
-            set platform macosx-x86
-        }  else  {
-            error "Unknown platform $p"
-        }
+	setPlatform
     }
 
     if {[string match macosx-* $platform]} {
@@ -175,9 +159,23 @@ proc cookit::initOS {} {
         set unixwinplatform "unix"
         set unixwinmacosxplatform "unix"
     }
+}
+
+proc cookit::initOS {} {
+    variable hostname
+    variable platform
+    variable rootdirectory
+    variable opt
+
+    if {(![info exists hostname]) || ($hostname == "")} {
+        set hostname $opt(hostname)
+    }
 
     if {$platform == "win32-x86"} {
-        initWin32Msys [file join $rootdirectory win32 msys]
-        initWin32Svn [file join $rootdirectory win32 svn]
+	if {$opt(usemingw)} {
+	    initWin32Msys [file join $rootdirectory win32 msys]
+	    initWin32Svn [file join $rootdirectory win32 svn]
+	}
     }
 }
+

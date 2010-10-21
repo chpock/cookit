@@ -92,8 +92,7 @@ proc cookit::cookfs::build-dynamic {} {
 }
 
 proc cookit::cookfs::install-dynamic {} {
-    # this is not needed
-    #cookit::buildMake install
+    cookit::buildMake install
 }
 
 proc cookit::cookfs::packageslist-dynamic {} {

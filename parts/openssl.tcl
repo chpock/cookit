@@ -44,6 +44,7 @@ proc cookit::openssl::configure-static {} {
 
     cookit::log 3 "cookit::openssl::configure-static: Configuring OpenSSL"
     if {$::cookit::platform == "win32-x86"} {
+if {0} {
         set fh [open Configure r]
         fconfigure $fh -translation binary
         set configurefc [read $fh]
@@ -57,6 +58,7 @@ proc cookit::openssl::configure-static {} {
         fconfigure $fh -translation binary
         puts -nonewline $fh $configurefc
         close $fh
+}
 
         # on Windows, run perl script directly
         set cmd [list perl ./Configure]
@@ -75,7 +77,7 @@ proc cookit::openssl::configure-static {} {
 
     lappend cmd --prefix=[file join [cookit::getInstallStaticDirectory] openssl]
     lappend cmd no-shared
-    lappend cmd no-zlib
+    #lappend cmd no-zlib
 
     set eid [cookit::startExtCommand $cmd]
     cookit::waitForExtCommand $eid 0
