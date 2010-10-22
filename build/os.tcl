@@ -3,6 +3,7 @@ namespace eval cookit {}
 # OS specific workarounds and resolutions
 
 set cookit::allOptions(usemingw) {Use MinGW and SVN provided on SourceForge.net/projects/cookit}
+set cookit::allOptions(mingw.arg) {{} Use specific version of mingw}
 set cookit::allOptions(hostname.arg) [list [lindex [split [info hostname] .:] 0] [list Force specific hostname]]
 
 proc cookit::shellScriptCommand {cmd} {
@@ -78,7 +79,7 @@ proc cookit::initWin32Svn {directory} {
     set ::env(PATH) "[file nativename [file join $directory bin]];$::env(PATH)"
 }
 
-proc cookit::initWin32Msys {directory} {
+proc cookit::initWin32Msys {directory mingwsuffix} {
     variable rootdirectory
     variable msysdirectory
 
@@ -92,7 +93,7 @@ proc cookit::initWin32Msys {directory} {
 	    package require vfs::zip
 
 	    if {![file exists $zip]} {
-		set url "http://sourceforge.net/projects/cookit/files/win32-tools-msys.zip/download"
+		set url "http://sourceforge.net/projects/cookit/files/win32-tools-msys$mingwsuffix.zip/download"
 		log 5 "msys.zip not found - downloading from '$url'"
 		if {![downloadURL $url $zip]} {
 		    error "download of $url failed"
@@ -173,7 +174,15 @@ proc cookit::initOS {} {
 
     if {$platform == "win32-x86"} {
 	if {$opt(usemingw)} {
-	    initWin32Msys [file join $rootdirectory win32 msys]
+	    if {$opt(mingw) != ""} {
+		set mingwsuffix "-$opt(mingw)"
+	    }  else  {
+		set mingwsuffix ""
+	    }
+
+	    set msysdir "msys$mingwsuffix"
+	
+	    initWin32Msys [file join $rootdirectory win32 $msysdir] $mingwsuffix
 	    initWin32Svn [file join $rootdirectory win32 svn]
 	}
     }
