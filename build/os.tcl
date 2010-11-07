@@ -30,6 +30,9 @@ proc cookit::osSpecific {value} {
         .,win32-x86 - .,solaris-* {
             set value ""
         }
+	make,solaris-* {
+	    set value "gmake"
+	}
         
     }
 

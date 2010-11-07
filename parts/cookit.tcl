@@ -114,7 +114,14 @@ proc cookit::cookit::vfsbootstrap {} {
         [file join $cfssrc scripts memchan.tcl] \
         [file join $cfssrc scripts readerchannel.tcl] \
         [file join $cfssrc scripts vfs.tcl] \
-        [file join $cfssrc scripts writer.tcl] \
+        [file join $cfssrc scripts writer.tcl]
+
+    if {[file exists [file join $cfssrc scripts optimize.tcl]]} {
+	lappend filelist \
+	    [file join $cfssrc scripts optimize.tcl]
+    }
+
+    lappend filelist \
         [file join $cfssrc scripts cookvfs.tcl]
 
     foreach g $filelist {
