@@ -36,7 +36,7 @@ if {$a(bootstrap)} {
 }
 
 if {[catch {
-    puts "Mounting $a(destination)"
+    puts "Mounting $a(destination) - -compression $a(compression) $a(destination) $a(destination)"
     set dfsid [vfs::cookfs::Mount -bootstrap $bootstrap -compression $a(compression) $a(destination) $a(destination)]
     
     foreach g [glob -nocomplain -directory $a(source) *] {

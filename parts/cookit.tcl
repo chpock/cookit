@@ -3,12 +3,13 @@ namespace eval cookit::cookit {}
 cookit::partRegister -versions 1.0 cookit "CooKit Core"
 
 proc cookit::cookit::parameters {version} {
-    set dep [list tcl {} zlib {} vfs {} cookfs {}]
+    # Removed zlib as we can build 8.5 using bzip2
+    set dep [list tcl {} vfs {} cookfs {} virtual:memchan {}]
     if {$::cookit::platform == "win32-x86"} {
         lappend dep resources ""
     }
     return [list \
-        provides {TARGET 1.0} depends $dep \
+        provides {virtual:cookit 1.0} depends $dep \
         buildmodes {static} \
         ]
 }

@@ -323,7 +323,7 @@ set cookit::commandInfo(retrievesource) {{<parts>} {Retrieve source code for one
 proc cookit::cmdRetrievesource {args} {
     variable versions
 
-    set plan [createSolution "" TARGET]
+    set plan [createSolution "" virtual:cookit]
 
     setPartVersions $plan
     initPartVersions static $plan
@@ -369,7 +369,7 @@ proc cookit::cmdRetrievesource {args} {
 # parts - cookit building
 set cookit::commandInfo(build-cookit) {{} {Builds a CooKit with predefined criteria}}
 proc cookit::cmdBuild-cookit {} {
-    set plan [createSolution static TARGET]
+    set plan [createSolution static virtual:cookit]
 
     setPartVersions $plan
     initPartVersions static $plan
@@ -403,7 +403,7 @@ proc cookit::cmdBuild-cookit {} {
 
 set cookit::commandInfo(binary-cookit) {{} {Link and finalize CooKit binary}}
 proc cookit::cmdBinary-cookit {} {
-    set plan [createSolution static TARGET]
+    set plan [createSolution static virtual:cookit]
 
     setPartVersions $plan
     initPartVersions static $plan
@@ -432,7 +432,7 @@ proc cookit::cmdBinary-cookit {} {
 
 set cookit::commandInfo(binary-link-cookit) {{} {Link and finalize CooKit binary}}
 proc cookit::cmdBinary-link-cookit {} {
-    set plan [createSolution static TARGET]
+    set plan [createSolution static virtual:cookit]
 
     setPartVersions $plan
     initPartVersions static $plan
@@ -451,7 +451,7 @@ proc cookit::cmdBinary-link-cookit {} {
 
 set cookit::commandInfo(binary-vfs-cookit) {{} {Link and finalize CooKit binary}}
 proc cookit::cmdBinary-vfs-cookit {} {
-    set plan [createSolution static TARGET]
+    set plan [createSolution static virtual:cookit]
 
     setPartVersions $plan
     initPartVersions static $plan
@@ -478,7 +478,7 @@ proc cookit::cmdCompile-cookit {args} {
     variable opt
     variable versions
 
-    set plan [createSolution static TARGET]
+    set plan [createSolution static virtual:cookit]
 
     setPartVersions $plan
     initPartVersions static $plan

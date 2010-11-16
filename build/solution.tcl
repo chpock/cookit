@@ -145,6 +145,10 @@ proc cookit::createSolution {buildmode targets} {
     }
 
     set list [createSolutionsInt $buildmode $targets $known]
+    if {[llength $list] == 0} {
+	log 2 "createSolution: known=$known targets=$targets"
+	error "Unable to find solution for specified target and criteria"
+    }
     set slist [lsort -command cookit::compareSolutions $list]
 
     set solution [lindex $slist end]

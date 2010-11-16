@@ -19,7 +19,7 @@ proc cookit::tcl::retrievesource {} {
 proc cookit::tcl::parameters {version} {
     set provides {}
     if {[string match 8.6* $version]} {
-        lappend provides zlib 1.3
+        lappend provides zlib 1.3 virtual:memchan 1.1
     }
 
     return [list \
@@ -54,7 +54,9 @@ proc cookit::tcl::vfsfilelist-static {} {
     set filelist [list]
 
     set dir1 [cookit::getInstallStaticDirectory]
-    set ver 8.6
+    # this might fail for Tcl 8.10 :-)
+    set ver [string range [cookit::getPartVersion tcl] 0 2]
+    puts "VER: [cookit::getPartVersion tcl] -> $ver"
     set filelistcustom [list]
 
     set filelist1 [cookit::filterFilelist \

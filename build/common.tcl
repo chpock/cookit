@@ -2,6 +2,8 @@ namespace eval cookit {}
 
 set cookit::allOptions(vfsrepack-interp.arg) {{} {Tcl interpreter command to use for repacking dynamically created packages; defaults to cookit built for this build variant}}
 
+set cookit::allOptions(vfsrepack-compression.arg) {{zlib} {Compression to use for VFS repack}}
+
 proc cookit::buildVersionString {version count} {
     set version [split $version ".ab"]
     return [join [lrange $version 0 [expr {$count - 1}]] .]
@@ -283,6 +285,7 @@ proc cookit::cfsRepack {args} {
     }
 
     lappend cmd [wdrelative [file join $rootdirectory build scripts cfsrepack.tcl]]
+    lappend cmd compression $opt(vfsrepack-compression)
     set cmd [concat $cmd $args]
 
     set eid [startExtCommand $cmd]

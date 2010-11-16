@@ -54,7 +54,11 @@ proc cookit::runCommand {} {
     set argv [lrange $argv 1 end]
 
     if {[catch [linsert $argv 0 cmd[string totitle $command]] error]} {
-        puts stderr $error
+        if {[info exists ::env(COOKITBUILDDEBUG)]} {
+            puts stderr $::errorInfo
+        }  else  {
+            puts stderr $error
+        }
 	exit 1
     }
 }
