@@ -93,8 +93,12 @@ proc cookit::compareSolutions {solutionA solutionB} {
 
 proc cookit::prioritizeSolutionDepends {name version dependname dependversion} {
     # TODO: should we check if dependencies fail here?
+    set provides($dependname) 1
+    foreach {proname proversion} [partGetParameter $name $version provides] {
+	set provides($proname) 1
+    }
     foreach {depname depversion} [partGetParameter $name $version depends] {
-        if {[string equal $depname $dependname]} {
+	if {[info exists provides($depname)]} {
             return 1
         }
     }
@@ -108,6 +112,7 @@ proc cookit::prioritizeSolutionComparer {elementA elementB} {
     set dAB [prioritizeSolutionDepends $nameA $versionA $nameB $versionB]
     set dBA [prioritizeSolutionDepends $nameB $versionB $nameA $versionA]
     
+    puts "$nameA ($dAB) $nameB ($dBA)"
     if {$dAB && $dBA} {
         error "Package $nameA $versionA and $nameB $versionB have cross-references"
     }  elseif  {$dAB} {

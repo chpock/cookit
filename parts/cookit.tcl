@@ -4,7 +4,7 @@ cookit::partRegister -versions 1.0 cookit "CooKit Core"
 
 proc cookit::cookit::parameters {version} {
     # Removed zlib as we can build 8.5 using bzip2
-    set dep [list tcl {} vfs {} cookfs {} virtual:memchan {}]
+    set dep [list tcl {} vfs {} cookfs {} memchan {}]
     if {$::cookit::platform == "win32-x86"} {
         lappend dep resources ""
     }

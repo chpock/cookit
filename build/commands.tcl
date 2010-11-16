@@ -135,6 +135,8 @@ proc cookit::cmdPartLink {plan} {
     set externcode ""
     set appinitcode ""
 
+    puts "PLAN: $plan"
+
     foreach {name version} $plan {
         set filelist [concat \
             [cookit::runPartCommand $name linkerfiles-static] \

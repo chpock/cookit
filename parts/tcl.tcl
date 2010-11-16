@@ -19,7 +19,7 @@ proc cookit::tcl::retrievesource {} {
 proc cookit::tcl::parameters {version} {
     set provides {}
     if {[string match 8.6* $version]} {
-        lappend provides zlib 1.3 virtual:memchan 1.1
+        lappend provides zlib 1.3 memchan 8.6
     }
 
     return [list \
