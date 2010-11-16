@@ -112,7 +112,6 @@ proc cookit::prioritizeSolutionComparer {elementA elementB} {
     set dAB [prioritizeSolutionDepends $nameA $versionA $nameB $versionB]
     set dBA [prioritizeSolutionDepends $nameB $versionB $nameA $versionA]
     
-    puts "$nameA ($dAB) $nameB ($dBA)"
     if {$dAB && $dBA} {
         error "Package $nameA $versionA and $nameB $versionB have cross-references"
     }  elseif  {$dAB} {

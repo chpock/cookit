@@ -56,7 +56,6 @@ proc cookit::tcl::vfsfilelist-static {} {
     set dir1 [cookit::getInstallStaticDirectory]
     # this might fail for Tcl 8.10 :-)
     set ver [string range [cookit::getPartVersion tcl] 0 2]
-    puts "VER: [cookit::getPartVersion tcl] -> $ver"
     set filelistcustom [list]
 
     set filelist1 [cookit::filterFilelist \
