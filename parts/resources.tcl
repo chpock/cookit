@@ -21,7 +21,8 @@ proc cookit::resources::build-static {} {
         if {[cookit::isPartIncluded tk]} {set suffix "-tk"} else {set suffix "-notk"}
 
         set tcldir [cookit::getSourceDirectory tcl]
-        set tkdir [cookit::getSourceDirectory tk]
+	# same Tk version has to be used anyway, so we simply map tcl- to tk-
+	set tkdir [file join [file dirname $tcldir] [string map {tcl- tk-} [file tail $tcldir]]]
         set sdir [cookit::getSourceDirectory resources]
 
         set cmd  [list windres -o resource$suffix.o \

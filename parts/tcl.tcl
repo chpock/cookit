@@ -149,11 +149,11 @@ proc cookit::tcl::linkerfiles-static {} {
     set rc [list]
     lappend rc [cookit::wdrelative [file join $dir $conf(TCL_LIB_FILE)]]
     if {$::cookit::platform == "win32-x86"} {
-        set g [glob -nocomplain -directory $dir libtclreg*.a]
+        set g [glob -nocomplain -directory $dir "{libtclreg,tclreg}*.a"]
         if {[llength $g] != 1} {error "Unable to find registry package archive"}
         lappend rc [cookit::wdrelative [lindex $g 0]]
 
-        set g [glob -directory $dir libtcldde*.a]
+        set g [glob -directory $dir "{libtcldde,tcldde}*.a"]
         if {[llength $g] != 1} {error "Unable to find DDE package archive"}
         lappend rc [cookit::wdrelative [lindex $g 0]]
     }

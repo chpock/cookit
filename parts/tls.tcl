@@ -58,7 +58,11 @@ proc cookit::tls::vfsfilelist-static {} {
 
     set dir1 [cookit::getInstallStaticDirectory]
     set version [cookit::getPartVersion tls]
-    set ver [string range $version 0 2]
+    if {$version == "1.6.0"} {
+	set ver "1.6"
+    }  else  {
+	set ver $version
+    }
 
     set pkgindex "package ifneeded tls $ver \"\[list source \[file join \$dir tls.tcl\]\] ; load {} Tls ; rename tls::initlib \{\}\"\n"
     lappend filelist lib/tls$ver/pkgIndex.tcl data $pkgindex ""

@@ -210,9 +210,9 @@ proc cookit::tk::packageslist-dynamic {} {
     set basedir [cookit::getInstallDynamicDirectory]
 
     set version [cookit::getPartVersion tk]
-    set version2 [cookit::buildVersionString $version 2]
-    set dversion2 [string map [list "." ""] $version2]
-    set dirname "tk$version2"
+    set ver [cookit::buildVersionString $version 2]
+    set dver [string map [list "." ""] $ver]
+    set dirname "tk$ver"
 
     set tkpath [file join $basedir lib $dirname]
 
@@ -220,16 +220,25 @@ proc cookit::tk::packageslist-dynamic {} {
 	set tkparentdir [file dirname $tkpath]
 	set libfiles {}
 	foreach libfile [glob \
-	    [file join $tkparentdir libtk$version2*[info sharedlibextension]] \
-	    [file join $tkparentdir tk$version2*[info sharedlibextension]] \
-	    [file join $tkparentdir libtk$dversion2*[info sharedlibextension]] \
-	    [file join $tkparentdir tk$dversion2*[info sharedlibextension]] \
+	    [file join $tkparentdir libtk$ver*[info sharedlibextension]] \
+	    [file join $tkparentdir tk$ver*[info sharedlibextension]] \
+	    [file join $tkparentdir libtk$dver*[info sharedlibextension]] \
+	    [file join $tkparentdir tk$dver*[info sharedlibextension]] \
 	] {
 	    lappend libfiles lib/[file tail $libfile] file $libfile ""
 	}
 
         lappend packages "tk-$version" [concat \
-            [cookit::listAllFiles "lib/tk$version" $tkpath] \
+            [cookit::filterFilelist \
+		[cookit::listAllFiles "lib/tk$ver" $tkpath] \
+		exclude match lib/tk$ver/tkAppInit.c \
+		exclude match lib/tk$ver/demos \
+		exclude match lib/tk$ver/demos/* \
+		exclude match lib/tk$ver/*.a \
+		exclude match lib/tk$ver/*.o \
+		exclude match lib/tk$ver/*.obj \
+		exclude match lib/tk$ver/*.lib \
+		] \
             $libfiles \
 	    ]
     }
