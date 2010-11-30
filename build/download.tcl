@@ -5,7 +5,14 @@ proc cookit::downloadURLProgress {token total current} {
 }
 proc cookit::downloadURL {url {destinationfile ""}} {
     package require http
+    if {[catch {
+	package require tls
+	http::register https 443 tls::socket
+    }]} {
+	log 2 "Unable to initialize HTTPS connection type"
+    }
 
+    log 4 "Downloading $url"
     set startURL $url
     set retries 10
     if {$destinationfile != ""} {

@@ -15,13 +15,13 @@ proc cookit::cmdPartClean {all} {
     logInit _clean
 
     set steps [list \
-	"Clean up installed static files" \
-	"Clean up installed dynamic files" \
-	"Clean up build static directory" \
-	"Clean up build dynamic directory" \
-	"Clean up temporary directory" \
-	"Clean up logs" \
-	]
+        "Clean up installed static files" \
+        "Clean up installed dynamic files" \
+        "Clean up build static directory" \
+        "Clean up build dynamic directory" \
+        "Clean up temporary directory" \
+        "Clean up logs" \
+        ]
     
     uiInitializeProgress $steps
 
@@ -46,14 +46,14 @@ proc cookit::cmdPartClean {all} {
                     log 2 "cmdPartClean: Unable to delete \"$g\": $error"
                 }
             }
-	    if {[llength [glob -nocomplain -directory $dir *]] == 0} {
-		log 5 "cmdPartClean: Removing empty directory \"$dir\""
+            if {[llength [glob -nocomplain -directory $dir *]] == 0} {
+                log 5 "cmdPartClean: Removing empty directory \"$dir\""
                 if {[catch {
                     file delete -force $dir
                 } error]} {
                     log 2 "cmdPartClean: Unable to delete \"$g\": $error"
                 }
-	    }
+            }
         }
     }
     
@@ -74,14 +74,14 @@ proc cookit::cmdPartClean {all} {
                 }
             }
         }
-	if {[llength [glob -nocomplain -directory $dir *]] == 0} {
-	    log 5 "cmdPartClean: Removing empty directory \"$dir\""
-	    if {[catch {
-		file delete -force $dir
-	    } error]} {
-		log 2 "cmdPartClean: Unable to delete \"$g\": $error"
-	    }
-	}
+        if {[llength [glob -nocomplain -directory $dir *]] == 0} {
+            log 5 "cmdPartClean: Removing empty directory \"$dir\""
+            if {[catch {
+                file delete -force $dir
+            } error]} {
+                log 2 "cmdPartClean: Unable to delete \"$g\": $error"
+            }
+        }
     }
 
     uiComplete
@@ -324,6 +324,7 @@ proc cookit::cmdRetrievesource {args} {
     variable versions
 
     set plan [createSolution "" virtual:cookit]
+    array set planArray $plan
 
     setPartVersions $plan
     initPartVersions static $plan
@@ -334,7 +335,9 @@ proc cookit::cmdRetrievesource {args} {
             continue
         }
         if {[llength $args] == 0} {
-            lappend parts $part
+            if {[info exists planArray($part)]} {
+                    lappend parts $part
+            }
         }  elseif  {[lsearch -exact $args $part] >= 0} {
             lappend parts $part
         }
@@ -352,15 +355,15 @@ proc cookit::cmdRetrievesource {args} {
 
         uiNextStep
 
-	uiAddItem "Retrieving"
-	if {[catch {
+        uiAddItem "Retrieving"
+        if {[catch {
             cookit::${part}::retrievesource
-	} error]} {
-	    uiAddItem "Failed: $error"
-	    # TODO: log
-	}  else  {
-	    uiAddItem "Success"
-	}
+        } error]} {
+            uiAddItem "Failed: $error"
+            # TODO: log
+        }  else  {
+            uiAddItem "Success"
+        }
     }
 
     uiComplete
