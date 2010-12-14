@@ -1,0 +1,84 @@
+This is Cookit binary build system. For additional information see
+
+	http://www.endorser.org/cookit
+
+UNIX BUILD
+==========
+
+Building under UNIX systems requires having tclsh command in PATH. Cookit
+build system uses Tcl to build in the first place, so you can either build
+any Tcl version (8.4 and up) or choose existing cookit/tclkit binaries
+to build.
+
+All that is needed then is running the following steps:
+
+	$ ./build.sh retrieve-source
+	$ ./build.sh build-cookit
+
+If you are building off a network drive, retrieve-source command can be invoked
+on any machine. This step downloads sources over CVS and HTTP and requires cvs
+command as well as tclsh.
+
+Command build-cookit needs to be invoked on target system as it creates cookit.
+In case UPX is installed and should be used, it should be run as follows:
+
+	$ ./build.sh -upx best build-cookit
+
+Upon successful build directory _output/<platform> should contain a cookit binary.
+
+If you run into "Unknown platform ..." error or encounter a problem with build on
+a platform, please refer to UNKNOWN PLATFORM section.
+
+Building Tk as dynamic library can be achieved by doing:
+
+	$ ./build.sh retrieve-source tk
+	$ ./build.sh build-dynamic tk
+
+The first command can be invoked on any host in case of network drives.
+Second command has to be run on target machine.
+
+This will create _install_dynamic/<hostname>/lib/tk* to be created. It will also
+create _output/<platform>/packages/tk*.cfspkg package file. Such package can be
+used with TABS system (http://sourceforge.net/projects/tabs/).
+
+Libraries in _install_dynamic/<hostname>/lib can be embedded as part of your
+application as well - which might seem an easier option for less advanced users.
+
+WINDOWS PLATFORM
+================
+
+Building on Windows is relatively easy. All that is needed is tclsh. All required
+tools such as MinGW/MSys and CVS/SVN tools are automatically downloaded from
+sourceforge on first run.
+
+All that is needed then is running the following steps:
+
+	C> tclsh build.tcl retrieve-source
+	C> tclsh build.tcl build-cookit
+
+We can also use upx command (which is also downloaded as part of win32 tools):
+
+	C> tclsh build.tcl -upx best build-cookit
+
+Building a cookit with Tk requires running the following commands:
+
+	C> tclsh build.tcl retrieve-source tk
+	C> tclsh build.tcl -tk latest build-cookit
+
+This will cause Cookit with Tk embeded to be built. It will also run as Windows
+GUI application rather than Windows console application.
+
+UNKNOWN PLATFORM
+================
+
+Cookit is currently regularly built on Solaris x86, Windows x86 and Linux x86. It is
+occassionally built on Mac OS X. Some platforms such as AIX or HP-UX are not tested
+remotely often enough.
+
+If your platform is not currently known, file build/platform.tcl needs to
+have your platform added. It should involve adding a condition line similar to:
+
+    }  elseif {[string match "Power*-Darwin-*" $p]} {
+	set platform macosx-ppc
+
+If you have encountered such a platform, please contact me and I will be sure to add it
