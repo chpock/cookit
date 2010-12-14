@@ -1,6 +1,7 @@
 #include "cookit_base.rc"
 
 VS_VERSION_INFO VERSIONINFO
+FILEVERSION    1,0,0,0
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
