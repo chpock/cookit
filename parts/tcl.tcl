@@ -42,7 +42,8 @@ proc cookit::tcl::configure-static {} {
 }
 
 proc cookit::tcl::build-static {} {
-    cookit::buildMake all
+    cookit::buildMake binaries
+    cookit::buildMake libraries
 }
 
 proc cookit::tcl::install-static {} {

@@ -12,10 +12,10 @@ to build.
 
 All that is needed then is running the following steps:
 
-	$ ./build.sh retrieve-source
+	$ ./build.sh retrievesource tcl vfs cookfs
 	$ ./build.sh build-cookit
 
-If you are building off a network drive, retrieve-source command can be invoked
+If you are building off a network drive, retrievesource command can be invoked
 on any machine. This step downloads sources over CVS and HTTP and requires cvs
 command as well as tclsh.
 
@@ -31,7 +31,7 @@ a platform, please refer to UNKNOWN PLATFORM section.
 
 Building Tk as dynamic library can be achieved by doing:
 
-	$ ./build.sh retrieve-source tk
+	$ ./build.sh retrievesource tk
 	$ ./build.sh build-dynamic tk
 
 The first command can be invoked on any host in case of network drives.
@@ -53,7 +53,7 @@ sourceforge on first run.
 
 All that is needed then is running the following steps:
 
-	C> tclsh build.tcl retrieve-source
+	C> tclsh build.tcl retrievesource tcl vfs cookfs
 	C> tclsh build.tcl build-cookit
 
 We can also use upx command (which is also downloaded as part of win32 tools):
@@ -62,7 +62,7 @@ We can also use upx command (which is also downloaded as part of win32 tools):
 
 Building a cookit with Tk requires running the following commands:
 
-	C> tclsh build.tcl retrieve-source tk
+	C> tclsh build.tcl retrievesource tk
 	C> tclsh build.tcl -tk latest build-cookit
 
 This will cause Cookit with Tk embeded to be built. It will also run as Windows
