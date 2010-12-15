@@ -23,6 +23,7 @@ proc cookit::tcl::parameters {version} {
     }
 
     return [list \
+        retrieveByDefault 1 \
         configfile tclConfig.sh \
         provides $provides depends {} \
 	buildmodes {static dynamic} \

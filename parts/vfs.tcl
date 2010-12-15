@@ -14,6 +14,7 @@ proc cookit::vfs::retrievesource {} {
 
 proc cookit::vfs::parameters {version} {
     return [list \
+        retrieveByDefault 1 \
         provides {} depends {tcl ""} \
 	buildmodes {static} \
         ]

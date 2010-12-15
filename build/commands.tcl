@@ -323,26 +323,42 @@ set cookit::commandInfo(retrievesource) {{<parts>} {Retrieve source code for one
 proc cookit::cmdRetrievesource {args} {
     variable versions
 
-    set plan [createSolution "" virtual:cookit]
-    array set planArray $plan
+    if {([llength $args] == 0) && ([llength $versions(tcl)] == 0) && ([llength $versions(cookfs)] == 0)} {
+        # there are no known versions for basic packages and user did not specify
+        # any parts to download so we need to ask which parts
+        # should be downloaded in such case
+        set parts [list]
 
-    setPartVersions $plan
-    initPartVersions static $plan
-
-    set parts [list]
-    foreach part [lsort [array names versions]] {
-        if {[info commands ::cookit::${part}::retrievesource] == ""} {
-            continue
-        }
-        if {[llength $args] == 0} {
-            if {[info exists planArray($part)]} {
-                    lappend parts $part
+        foreach part [lsort [array names versions]] {
+            set parameters [cookit::${part}::parameters [lindex $versions($part) 0]]
+            catch {unset partparam}
+            array set partparam $parameters
+            if {[info exists partparam(retrieveByDefault)] && $partparam(retrieveByDefault)} {
+                lappend parts $part
             }
-        }  elseif  {[lsearch -exact $args $part] >= 0} {
-            lappend parts $part
         }
-    }
+        catch {unset partparam}
+    }  elseif {[llength $args] == 0} {
+        # there are known versions and user did not specify any parts to download
+        # so we analyze known items and decide which would go to a cookit
+        set plan [createSolution "" virtual:cookit]
+        array set planArray $plan
+        setPartVersions $plan
+        initPartVersions static $plan
 
+        set parts [list]
+        foreach part [lsort [array names versions]] {
+            if {[info commands ::cookit::${part}::retrievesource] == ""} {
+                continue
+            }
+            if {[info exists planArray($part)]} {
+                lappend parts $part
+            }
+        }
+    }  else  {
+        set parts $args
+    }
+    
     set steps [list]
     foreach part $parts {
         lappend steps "Retrieve source code for $part"

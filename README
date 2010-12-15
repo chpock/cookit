@@ -53,20 +53,24 @@ sourceforge on first run.
 
 All that is needed then is running the following steps:
 
-	C> tclsh build.tcl retrievesource tcl vfs cookfs
-	C> tclsh build.tcl build-cookit
+	C> tclsh build.tcl -usemingw retrievesource tcl vfs cookfs
+	C> tclsh build.tcl -usemingw build-cookit
 
 We can also use upx command (which is also downloaded as part of win32 tools):
 
-	C> tclsh build.tcl -upx best build-cookit
+	C> tclsh build.tcl -usemingw -upx best build-cookit
 
 Building a cookit with Tk requires running the following commands:
 
-	C> tclsh build.tcl retrievesource tk
-	C> tclsh build.tcl -tk latest build-cookit
+	C> tclsh build.tcl -usemingw retrievesource tk
+	C> tclsh build.tcl -usemingw -tk latest build-cookit
 
 This will cause Cookit with Tk embeded to be built. It will also run as Windows
 GUI application rather than Windows console application.
+
+Flag -usemingw causes cookit build system to retrieve and use a local copy of MinGW.
+It uses MiNGW/MSys binaries that were specifically tested to work properly for
+building cookit.
 
 UNKNOWN PLATFORM
 ================
