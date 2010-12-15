@@ -18,7 +18,13 @@ proc cookit::resources::configure-static {} {
 
 proc cookit::resources::build-static {} {
     if {$::cookit::platform == "win32-x86"} {
-        if {[cookit::isPartIncluded tk]} {set suffix "-tk"} else {set suffix "-notk"}
+        if {[cookit::isPartIncluded tk]} {
+	    set suffix "-tk"
+	    set tkdefine "COOKIT_USE_TK"
+	} else {
+	    set suffix "-notk"
+	    set tkdefine "COOKIT_DONT_USE_TK"
+	}
 
         set tcldir [cookit::getSourceDirectory tcl]
 	# same Tk version has to be used anyway, so we simply map tcl- to tk-
@@ -27,6 +33,7 @@ proc cookit::resources::build-static {} {
 
         set cmd  [list windres -o resource$suffix.o \
             --define STATIC_BUILD \
+            --define $tkdefine \
             --include $sdir \
             --include [file join $tcldir generic] \
             --include [file join $tkdir generic] \
