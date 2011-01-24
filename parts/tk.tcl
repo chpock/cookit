@@ -2,6 +2,7 @@ namespace eval cookit::tk {}
 
 cookit::partRegister tk "Tk GUI"
 set cookit::allOptions(tk-xft) {{Enables XFT support}}
+set cookit::allOptions(tk-aqua.arg) {{yes} {Value for --enable-aqua parameter}}
 
 proc cookit::tk::retrievesource {} {
     set tempdir [cookit::cvsExport :pserver:anonymous@tktoolkit.cvs.sourceforge.net:/cvsroot/tktoolkit tk]
@@ -48,7 +49,7 @@ proc cookit::tk::configure-static {} {
     }
 
     if {$::cookit::platform == "macosx-x86"} {
-	lappend additional --enable-aqua
+	lappend additional --enable-aqua=$::cookit::opt(tk-aqua)
     }
 
     cookit::buildConfigure -sourcepath relative -with-tcl relative \
@@ -154,7 +155,7 @@ proc cookit::tk::configure-dynamic {} {
     }
 
     if {$::cookit::platform == "macosx-x86"} {
-	lappend additional --enable-aqua
+	lappend additional --enable-aqua=$::cookit::opt(tk-aqua)
     }
 
     cookit::buildConfigure -sourcepath relative -with-tcl relative \

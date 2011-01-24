@@ -25,6 +25,9 @@ proc cookit::cookit::build-static {} {
 
     set compileflags [cookit::getParameters cookitCompileFlags]
     set command $gcc
+    if {[info exists ::env(CFLAGS)]} {
+        set command [concat $gcc $::env(CFLAGS)]
+    }
     lappend command -I.
     lappend command -I[cookit::wdrelative [file join [cookit::getSourceDirectory tcl] generic]]
     lappend command -I[cookit::wdrelative [file join [cookit::getSourceDirectory tcl] $::cookit::unixwinplatform]]

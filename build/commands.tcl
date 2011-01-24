@@ -125,9 +125,13 @@ proc cookit::cmdPartLink {plan} {
 
     log 3 "Output filename: $output"
 
-    set gcc [list gcc]
+    set gcc [cookit::osSpecific gcc]
 
     set command $gcc
+    if {[info exists ::env(CFLAGS)]} {
+        set command [concat $gcc $::env(CFLAGS)]
+    }
+
     lappend command -o $output
 
     set filelist [list]
@@ -188,13 +192,16 @@ proc cookit::cmdPartLink {plan} {
         uiAddItem "Compressing"
         switch -- $opt(upx) {
             brute - ultra-brute {
-                    lappend cmd --best --$opt(upx)
+                lappend cmd --best --$opt(upx)
             }
+            brute {
+                lappend cmd --best --ultra-brute --8mib-ram
+	    }
             best {
-                    lappend cmd --best
+                lappend cmd --best
             }
             1 - 9 {
-                    lappend cmd -$opt(upx)
+                lappend cmd -$opt(upx)
             }
             noopt {
             }

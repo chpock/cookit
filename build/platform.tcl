@@ -6,6 +6,8 @@ proc cookit::setPlatform {} {
     set p "$::tcl_platform(machine)-$::tcl_platform(os)-$::tcl_platform(osVersion)"
     if {[string match "i*86*-Linux-*" $p] || [string match "intel-Linux-*" $p]} {
 	set platform linux-x86
+    }  elseif {[string match "x86_64-Linux-*" $p]} {
+	set platform linux-x64
     }  elseif {[string match "ppc*-Linux-*" $p]} {
 	set platform linux-ppc
     }  elseif {[string match "s390*-Linux-*" $p]} {
