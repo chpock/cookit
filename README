@@ -85,4 +85,5 @@ have your platform added. It should involve adding a condition line similar to:
     }  elseif {[string match "Power*-Darwin-*" $p]} {
 	set platform macosx-ppc
 
-If you have encountered such a platform, please contact me and I will be sure to add it
+If you have encountered such a platform, please contact me and I will be sure to add it.
+
