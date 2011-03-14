@@ -3,7 +3,8 @@ namespace eval cookit::tcl {}
 cookit::partRegister tcl "Tcl language"
 
 proc cookit::tcl::retrievesource {} {
-    set tempdir [cookit::cvsExport :pserver:anonymous@tcl.cvs.sourceforge.net:/cvsroot/tcl tcl]
+    #set tempdir [cookit::cvsExport :pserver:anonymous@tcl.cvs.sourceforge.net:/cvsroot/tcl tcl]
+    set tempdir [cookit::fossilExport http://core.tcl.tk/tcl]
     
     # get base version from configure.in
     foreach {pkgname version} [cookit::getConfigureVersion $tempdir] break

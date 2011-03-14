@@ -103,6 +103,41 @@ proc cookit::gitExport {address} {
     return $tempdir
 }
 
+proc cookit::fossilExport {address {r trunk}} {
+    package require http
+
+    set pwd [pwd]
+    cd [cookit::getTempDirectory]
+    set tempdir [pwd]
+
+    set tempfile [file join $tempdir __temp_[pid]__]
+
+    set url "$address/zip/archive.zip?[http::formatQuery uuid $r]"
+    log 3 "fossilExport: Downloading $url"
+
+    downloadURL $url $tempfile
+
+    log 4 "fossilExport: Unzipping $url"
+    unzip $tempfile $tempdir
+
+    file delete -force $tempfile
+
+    set g [glob -directory $tempdir -nocomplain -tail *]
+ 
+    if {([llength $g] == 1) && [file isdirectory [lindex $g 0]]} {
+        set d [lindex $g 0]
+        log 4 "fossilExport: Renaming contents of $d into main directory"
+        foreach g [glob -directory $d -tail *] {
+            file rename [file join $d $g] $g
+        }
+        file delete -force $d
+    }
+
+    cd $pwd
+
+    return $tempdir
+}
+
 proc cookit::getConfigureVersion {path} {
     set filelist [concat \
 	[list [file join $path configure.in]] \

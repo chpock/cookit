@@ -3,6 +3,8 @@ namespace eval cookit::cookfs {}
 cookit::partRegister cookfs "CooKit VFS"
 
 set cookit::allOptions(cookfs-bz2) {{Enables bzip2 support}}
+set cookit::allOptions(cookfs-tcl-fallback) {{Enables tcl fallback support}}
+
 
 proc cookit::cookfs::retrievesource {} {
     if {![catch {
@@ -38,6 +40,9 @@ proc cookit::cookfs::configure-static {} {
     set additional [list]
     if {$::cookit::opt(cookfs-bz2)} {
 	lappend additional --enable-bz2
+    }
+    if {$::cookit::opt(cookfs-tcl-fallback)} {
+	lappend additional --enable-tcl-fallback
     }
     cookit::buildConfigure -sourcepath relative -with-tcl relative -mode static -additional $additional
 }
@@ -84,6 +89,9 @@ proc cookit::cookfs::configure-dynamic {} {
     set additional [list]
     if {$::cookit::opt(cookfs-bz2)} {
 	lappend additional --enable-bz2
+    }
+    if {$::cookit::opt(cookfs-tcl-fallback)} {
+	lappend additional --enable-tcl-fallback
     }
     cookit::buildConfigure -sourcepath relative -with-tcl relative -mode dynamic -additional $additional
 }

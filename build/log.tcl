@@ -1,7 +1,7 @@
 namespace eval cookit {}
 
 set cookit::allOptions(loglevel.arg) {3 {Level of logging to output; 1-5}}
-set cookit::allOptions(logdebug) {Print all logs to stdout}
+set cookit::allOptions(logdebug) {{Print all logs to stdout}}
 
 proc cookit::logInit {step} {
     variable rootdirectory 
@@ -18,7 +18,7 @@ proc cookit::log {level message {data ""}} {
     variable rootdirectory 
     variable hostbuilddirectory
 
-    if {[info exists ::env(COOKITBUILDDEBUG)]} {
+    if {[info exists ::env(COOKITBUILDDEBUG)] || $opt(logdebug)} {
         puts "\[[clock format [clock seconds] -format %H:%M:%S]\] $level $message"
     }
 

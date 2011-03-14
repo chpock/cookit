@@ -68,8 +68,8 @@ Building a cookit with Tk requires running the following commands:
 This will cause Cookit with Tk embeded to be built. It will also run as Windows
 GUI application rather than Windows console application.
 
-Flag -usemingw causes cookit build system to retrieve and use a local copy of MinGW.
-It uses MiNGW/MSys binaries that were specifically tested to work properly for
+Flag -usemingw causes build system to retrieve and use its own copy of MinGW.
+It uses MinGW/MSys binaries that were specifically tested to work properly for
 building cookit.
 
 UNKNOWN PLATFORM

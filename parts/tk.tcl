@@ -5,7 +5,8 @@ set cookit::allOptions(tk-xft) {{Enables XFT support}}
 set cookit::allOptions(tk-aqua.arg) {{yes} {Value for --enable-aqua parameter}}
 
 proc cookit::tk::retrievesource {} {
-    set tempdir [cookit::cvsExport :pserver:anonymous@tktoolkit.cvs.sourceforge.net:/cvsroot/tktoolkit tk]
+    #set tempdir [cookit::cvsExport :pserver:anonymous@tktoolkit.cvs.sourceforge.net:/cvsroot/tktoolkit tk]
+    set tempdir [cookit::fossilExport http://core.tcl.tk/tk]
     
     # get base version from configure.in
     foreach {pkgname version} [cookit::getConfigureVersion $tempdir] break

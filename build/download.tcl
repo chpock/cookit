@@ -1,5 +1,23 @@
 namespace eval cookit {}
 
+proc cookit::unzip {zip dir} {
+    if {![file exists $dir]} {
+        file mkdir $dir
+    }  elseif  {![file isdirectory $dir]} {
+        error "\"$dir\" is not a directory"
+    }
+    if {[catch {
+        package require vfs::zip
+        vfs::zip::Mount $zip $zip
+        foreach g [glob -nocomplain -directory $zip -tail *] {
+            file copy -force [file join $zip $g] [file join $dir $g]
+        }
+        vfs::unmount $zip
+    }]} {
+        error "vfs::zip unfound"
+    }
+}
+
 proc cookit::downloadURLProgress {token total current} {
     log 5 "Download progress: $current / $total"
 }

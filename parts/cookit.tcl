@@ -35,7 +35,7 @@ proc cookit::cookit::build-static {} {
     lappend command -DTCL_LOCAL_APPINIT=CooKit_AppInit
     lappend command -DSTATIC_BUILD=1
     lappend command -DBUILD_tcl
-    if {[cookit::isPartIncluded tk]} {
+    if {[cookit::isPartIncluded tk] && ($::cookit::platform == "win32-x86")} {
         set appinitdir [file join [cookit::getSourceDirectory tk] unix]
         set appinitfile tkAppInit
         lappend command -DTK_LOCAL_APPINIT=CooKit_AppInit
