@@ -1,17 +1,17 @@
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION    1,0,0,0
+FILEVERSION    1,2,0,0
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "FileDescription",   "FileDesc1234567812345678123456781234567812345678\0"
-            VALUE "OriginalFilename",  "FileName1234567812345678123456781234567812345678\0"
-            VALUE "CompanyName",       "CompName1234567812345678123456781234567812345678\0"
-            VALUE "FileVersion",       "FileVers1234567812345678123456781234567812345678\0"
-            VALUE "LegalCopyright",    "LegStuff1234567812345678123456781234567812345678\0"
-            VALUE "ProductName",       "ProdName1234567812345678123456781234567812345678\0"
-            VALUE "ProductVersion",    "ProdVers1234567812345678123456781234567812345678\0"
+            VALUE "FileDescription",   "CooKit standalone Tcl/Tk binary for Microsoft Windows\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+            VALUE "OriginalFilename",  "cookit.exe\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+            VALUE "CompanyName",       "Wojciech Kocjan\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+            VALUE "FileVersion",       "1.2.0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+            VALUE "LegalCopyright",    "(c) 2010-2011 Wojciech Kocjan\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+            VALUE "ProductName",       "CooKit standalone Tcl/Tk binary for Microsoft Windows\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+            VALUE "ProductVersion",    "1.2.0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
         END
     END
     BLOCK "VarFileInfo"

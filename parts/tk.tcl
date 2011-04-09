@@ -209,40 +209,43 @@ proc cookit::tk::vfsfilelist-dynamic {} {
 proc cookit::tk::packageslist-dynamic {} {
     set packages [list]
     
-    set basedir [cookit::getInstallDynamicDirectory]
+    # we do not create package for Tk on Windows
+    if {$::cookit::platform != "win32-x86"} {
+	set basedir [cookit::getInstallDynamicDirectory]
 
-    set version [cookit::getPartVersion tk]
-    set ver [cookit::buildVersionString $version 2]
-    set dver [string map [list "." ""] $ver]
-    set dirname "tk$ver"
+	set version [cookit::getPartVersion tk]
+	set ver [cookit::buildVersionString $version 2]
+	set dver [string map [list "." ""] $ver]
+	set dirname "tk$ver"
 
-    set tkpath [file join $basedir lib $dirname]
+	set tkpath [file join $basedir lib $dirname]
 
-    if {[file exists $tkpath]} {
-	set tkparentdir [file dirname $tkpath]
-	set libfiles {}
-	foreach libfile [glob \
-	    [file join $tkparentdir libtk$ver*[info sharedlibextension]] \
-	    [file join $tkparentdir tk$ver*[info sharedlibextension]] \
-	    [file join $tkparentdir libtk$dver*[info sharedlibextension]] \
-	    [file join $tkparentdir tk$dver*[info sharedlibextension]] \
-	] {
-	    lappend libfiles lib/[file tail $libfile] file $libfile ""
+	if {[file exists $tkpath]} {
+	    set tkparentdir [file dirname $tkpath]
+	    set libfiles {}
+	    foreach libfile [glob \
+		[file join $tkparentdir libtk$ver*[info sharedlibextension]] \
+		[file join $tkparentdir tk$ver*[info sharedlibextension]] \
+		[file join $tkparentdir libtk$dver*[info sharedlibextension]] \
+		[file join $tkparentdir tk$dver*[info sharedlibextension]] \
+	    ] {
+		lappend libfiles lib/[file tail $libfile] file $libfile ""
+	    }
+
+	    lappend packages "tk-$version" [concat \
+		[cookit::filterFilelist \
+		    [cookit::listAllFiles "lib/tk$ver" $tkpath] \
+		    exclude match lib/tk$ver/tkAppInit.c \
+		    exclude match lib/tk$ver/demos \
+		    exclude match lib/tk$ver/demos/* \
+		    exclude match lib/tk$ver/*.a \
+		    exclude match lib/tk$ver/*.o \
+		    exclude match lib/tk$ver/*.obj \
+		    exclude match lib/tk$ver/*.lib \
+		    ] \
+		$libfiles \
+		]
 	}
-
-        lappend packages "tk-$version" [concat \
-            [cookit::filterFilelist \
-		[cookit::listAllFiles "lib/tk$ver" $tkpath] \
-		exclude match lib/tk$ver/tkAppInit.c \
-		exclude match lib/tk$ver/demos \
-		exclude match lib/tk$ver/demos/* \
-		exclude match lib/tk$ver/*.a \
-		exclude match lib/tk$ver/*.o \
-		exclude match lib/tk$ver/*.obj \
-		exclude match lib/tk$ver/*.lib \
-		] \
-            $libfiles \
-	    ]
     }
 
     return $packages

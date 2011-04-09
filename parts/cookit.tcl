@@ -35,8 +35,21 @@ proc cookit::cookit::build-static {} {
     lappend command -DTCL_LOCAL_APPINIT=CooKit_AppInit
     lappend command -DSTATIC_BUILD=1
     lappend command -DBUILD_tcl
+    lappend command -DMODULE_SCOPE=extern
     if {[cookit::isPartIncluded tk] && ($::cookit::platform == "win32-x86")} {
+        # rewrite tkAppInit removing #undef that causes the build to crash
         set appinitdir [file join [cookit::getSourceDirectory tk] unix]
+        set fh [open [file join $appinitdir tkAppInit.c] r]
+        fconfigure $fh -translation auto -encoding iso8859-1
+        set fc [read $fh]
+        close $fh
+
+        set fc [string map [list "#undef BUILD_tk" "" "#undef STATIC_BUILD" ""] $fc]
+        set fh [open tkAppInit.c w]
+        puts $fh $fc
+        close $fh
+
+        set appinitdir .
         set appinitfile tkAppInit
         lappend command -DTK_LOCAL_APPINIT=CooKit_AppInit
         lappend command -DBUILD_tk
@@ -143,12 +156,26 @@ proc cookit::cookit::vfsbootstrap {} {
         append code $data \n
     }
 
-    append code {set ::cookit::cookitfsid [cookfs::Mount -readonly -pagesobject $::cookit::cookitpages [info nameofexecutable] [info nameofexecutable]]} \n
+    # initialize fsindex
+    append code {set ::cookit::cookitfsindex [cookfs::fsindex [$::cookit::cookitpages index]]} \n
+    # get metadata
+    append code {set ::cookit::cookitmountpoint [subst [$::cookit::cookitfsindex getmetadata cookit.mountpoint {[info nameofexecutable]}]]} \n
+
+    # mount cookfs archive
+    append code {
+	set ::cookit::cookfshandle [eval [concat \
+	    [list cookfs::Mount -pagesobject $::cookit::cookitpages -fsindexobject $::cookit::cookitfsindex -readonly] \
+	    [$::cookit::cookitfsindex getmetadata cookit.mountflags {}] \
+	    [list [info nameofexecutable] $::cookit::cookitmountpoint] \
+	    ]]
+    }
+    
+    # set platform
     append code [list set ::cookit::cookitplatform $::cookit::platform] \n
-    append code "set sourcevfs \[list source \[file join \[info nameofexecutable\] lib [list vfs[cookit::getPartVersion vfs]] vfs.tcl\]\]\n"
+    append code "set sourcevfs \[list source \[file join \$::cookit::cookitmountpoint lib [list vfs[cookit::getPartVersion vfs]] vfs.tcl\]\]\n"
     append code {
         if {[catch {
-            set ::cookit::cookitlibpath [file join [info nameofexecutable] lib]
+            set ::cookit::cookitlibpath [file join $::cookit::cookitmountpoint lib]
             set ::tcl_library [file join $::cookit::cookitlibpath tcl[info tclversion]]
             set ::tcl_pkgPath [list $::cookit::cookitlibpath]
             set ::tcl_libPath [list $cookit::cookitlibpath $::tcl_library]
@@ -161,9 +188,6 @@ proc cookit::cookit::vfsbootstrap {} {
             unset sourcevfs
 
             namespace eval ::cookit {}
-
-            proc ::cookit::writetomemory {} {cookfs::writetomemory $::cookit::cookitfsid}
-            proc ::cookit::aside {filename} {cookfs::aside $::cookit::cookitfsid $filename}
 
             proc _cookit_dumpinitcode {} {
                 rename _cookit_dumpinitcode ""
@@ -178,19 +202,19 @@ proc cookit::cookit::vfsbootstrap {} {
                 global argc argv argv0 tcl_interactive
                 rename _cookit_handlemainscript ""
 
-                if {[file isfile [file join [info nameofexecutable] main.tcl]]} {
+                if {[file isfile [file join $::cookit::cookitmountpoint main.tcl]]} {
                     if {[info commands console] != {}} { console hide }
                     set tcl_interactive 0
                     incr argc
                     set argv [linsert $argv 0 $argv0]
-                    set argv0 [file join [info nameofexecutable] main.tcl]
+                    set argv0 [file join $::cookit::cookitmountpoint main.tcl]
                     return $argv0
                 }  else  {
                     return ""
                 }
             }
         }]} {
-            puts "Initialization error:\n$::errorInfo"
+            puts "[$::cookit::cookitfsindex getmetadata cookit.initerrormessage {Cookit initialization error}]:\n$::errorInfo"
         }
 
     }
