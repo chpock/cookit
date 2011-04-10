@@ -190,13 +190,13 @@ proc cookit::cmdPartLink {plan} {
     if {$opt(upx) != "none"} {
         set cmd [lrange $opt(upxbinary) 0 end]
         uiAddItem "Compressing"
+        if {$platform == "win32-x86"} {
+            lappend cmd --compress-resources=0
+        }
         switch -- $opt(upx) {
             brute - ultra-brute {
-                lappend cmd --best --$opt(upx)
+                lappend cmd --best --$opt(upx) --8mib-ram
             }
-            brute {
-                lappend cmd --best --ultra-brute --8mib-ram
-	    }
             best {
                 lappend cmd --best
             }

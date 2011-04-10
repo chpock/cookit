@@ -106,6 +106,25 @@ proc cookit::cookfs::install-dynamic {} {
 
 proc cookit::cookfs::packageslist-dynamic {} {
     set packages [list]
+    
+    set basedir [cookit::getInstallDynamicDirectory]
+    set cookfsdir ""
+    foreach g [glob -directory $basedir lib/cookfs*] {
+        set gt [file tail $g]
+        if {[regexp -nocase "cookfs(-|)\[0-9\.]+\$" $gt]} {
+            set cookfsdir $g
+            break
+        }
+    }
+
+    if {$cookfsdir != ""} {
+        set customfiles {}
+        set filelist [cookit::filterFilelist \
+            [cookit::listAllFiles "lib/$gt" $g] \
+            ]
+        lappend packages "cookfs-[string range $gt 6 end]" [concat $filelist $customfiles]
+    }
+
     return $packages
 }
 
