@@ -30,6 +30,21 @@ proc cookit::sqlite3::configure-dynamic {} {
     cookit::buildConfigure -sourcepath relative -with-tcl relative \
         -mode dynamic
 
+    # change Makefile on OSX to disable NFS filesystem fix for OSX as it causes issues on <=10.4
+    if {$::cookit::platform == "macosx-x86"} {
+        set fn [file join [cookit::getBuildDynamicDirectory sqlite3] Makefile]
+        set fh [open $fn r]
+        fconfigure $fh -translation binary
+        set fc [read $fh]
+        close $fh
+
+        regsub -all -line -- "^(CFLAGS\\s+=.*)" $fc "\\1 -DSQLITE_ENABLE_LOCKING_STYLE=0" fc
+
+        set fh [open $fn w]
+        fconfigure $fh -translation binary
+        puts -nonewline $fh $fc
+        close $fh
+    }
 }
 
 proc cookit::sqlite3::build-dynamic {} {
