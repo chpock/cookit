@@ -194,13 +194,13 @@ proc cookit::cmdPartLink {plan} {
             lappend cmd --compress-resources=0
         }
         switch -- $opt(upx) {
-            brute - ultra-brute {
+            ultra-brute {
                 lappend cmd --best --$opt(upx) --8mib-ram
             }
-            best {
-                lappend cmd --best
+            best - brute {
+                lappend cmd --$opt(upx)
             }
-            1 - 9 {
+            1 - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 {
                 lappend cmd -$opt(upx)
             }
             noopt {

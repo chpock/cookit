@@ -53,10 +53,25 @@ static char preInitCmd[] =
 "load {} Cookfs\n"
 "load {} vfs\n"
 "proc getCookfsBootstrap {} {\n"
-"set ::cookit::cookitpages [cookfs::pages -readonly [info nameofexecutable]]\n"
-"uplevel #0 [$::cookit::cookitpages get 0]\n"
+" set ::cookit::cookitpages [cookfs::pages -readonly [info nameofexecutable]]\n"
+" uplevel #0 [$::cookit::cookitpages get 0]\n"
 "}\n"
-"getCookfsBootstrap ; rename getCookfsBootstrap {}\n"
+"if {[catch {\n"
+" getCookfsBootstrap ; rename getCookfsBootstrap {}\n"
+"}]} {\n"
+" set errorMsg \"Initialization error\"                                            \n"
+#ifdef _WIN32
+#ifdef KIT_INCLUDES_TK
+" catch {\n"
+"  wm withdraw .\n"
+"  tk_messageBox -message $errorMsg -title \"Fatal Error\"\n"
+"  exit 127\n"
+" }\n"
+#endif
+#endif
+" puts stderr $errorMsg\n"
+" exit 127\n"
+"}\n"
 "";
 
 int 
