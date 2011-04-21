@@ -31,7 +31,7 @@ proc cookit::sqlite3::configure-dynamic {} {
         -mode dynamic
 
     # change Makefile on OSX to disable NFS filesystem fix for OSX as it causes issues on <=10.4
-    if {$::cookit::platform == "macosx-x86"} {
+    if {[string match "macosx-*" $::cookit::platform]} {
         set fn [file join [cookit::getBuildDynamicDirectory sqlite3] Makefile]
         set fh [open $fn r]
         fconfigure $fh -translation binary

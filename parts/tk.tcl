@@ -49,7 +49,7 @@ proc cookit::tk::configure-static {} {
         }
     }
 
-    if {$::cookit::platform == "macosx-x86"} {
+    if {[string match "macosx-*" $::cookit::platform]} {
 	lappend additional --enable-aqua=$::cookit::opt(tk-aqua)
     }
 
@@ -155,7 +155,7 @@ proc cookit::tk::configure-dynamic {} {
         }
     }
 
-    if {$::cookit::platform == "macosx-x86"} {
+    if {[string match "macosx-*" $::cookit::platform]} {
 	lappend additional --enable-aqua=$::cookit::opt(tk-aqua)
     }
 

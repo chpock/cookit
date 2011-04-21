@@ -264,11 +264,15 @@ proc cookit::cmdPartAddVFS {plan} {
     }
 }
 # parts - dynamic builds
-proc cookit::cmdPartCompileDynamic {name version} {
+proc cookit::cmdPartConfigureDynamic {name version} {
     uiAddItem "Initializing"
     initPartBuild dynamic $name $version
     uiAddItem "Configuring"
     cookit::runPartCommand $name configure-dynamic
+}
+
+# parts - dynamic builds
+proc cookit::cmdPartMakeDynamic {name version} {
     uiAddItem "Compiling"
     cookit::runPartCommand $name build-dynamic
     uiAddItem "Installing"
@@ -312,6 +316,13 @@ proc cookit::cmdPartPackagesDynamic {name version} {
             }
         }
     }
+}
+
+# parts - info
+set cookit::commandInfo(info) {{} {Print information on platform}}
+proc cookit::cmdInfo {args} {
+    puts "Platform: $::cookit::platform"
+    exit 0
 }
 
 # parts - cleanup
@@ -550,7 +561,8 @@ proc cookit::cmdBuild-dynamic {args} {
         uiNextStep
         logInit $part-dynamic
         set version [getPartVersion $part]
-        cmdPartCompileDynamic $part $version
+        cmdPartConfigureDynamic $part $version
+        cmdPartMakeDynamic $part $version
         cmdPartPackagesDynamic $part $version
     }
     
@@ -579,7 +591,36 @@ proc cookit::cmdCompile-dynamic {args} {
         uiNextStep
         logInit $part-dynamic
         set version [getPartVersion $part]
-        cmdPartCompileDynamic $part $version
+        cmdPartConfigureDynamic $part $version
+        cmdPartMakeDynamic $part $version
+    }
+    
+    uiComplete
+}
+
+set cookit::commandInfo(make-dynamic) {{<parts>} {Compiles dynamically available extensions}}
+proc cookit::cmdMake-dynamic {args} {
+    variable opt
+    variable versions
+
+    set plan [createSolution dynamic $args]
+
+    setPartVersions $plan
+    initPartVersions dynamic $plan
+
+    set steps [list]
+    foreach part $args {
+        set version [getPartVersion $part]
+        lappend steps "Build $part $version"
+    }
+    
+    uiInitializeProgress $steps
+
+    foreach part $args {
+        uiNextStep
+        logInit $part-dynamic
+        set version [getPartVersion $part]
+        cmdPartMakeDynamic $part $version
     }
     
     uiComplete

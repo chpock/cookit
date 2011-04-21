@@ -18,10 +18,18 @@ proc cookit::setPlatform {} {
 	set platform linux-arm
     }  elseif {[string match "i*86*-Windows*-*" $p] || [string match "intel-Windows*-*" $p]} {
 	set platform win32-x86
-    }  elseif {[string match "i*86*-Darwin-*" $p] || [string match "intel-Darwin-*" $p]} {
-	set platform macosx-x86
-    }  elseif {[string match "Power*-Darwin-*" $p]} {
-	set platform macosx-ppc
+    }  elseif {[string match "*-Darwin-*" $p]} {
+        if {[info exists ::env(CFLAGS)] && [string match "*arch i386*" $::env(CFLAGS)] && [string match "*arch ppc*" $::env(CFLAGS)]} {
+            set platform macosx-universal
+        }  elseif {[info exists ::env(CFLAGS)] && [string match "*arch ppc" $::env(CFLAGS)]} {
+            set platform macosx-ppc
+        }  elseif {[info exists ::env(CFLAGS)] && [string match "*arch i386*" $::env(CFLAGS)]} {
+            set platform macosx-x86
+        }  elseif {[string match "i*86*-Darwin-*" $p] || [string match "intel-Darwin-*" $p]} {
+            set platform macosx-x86
+        }  else  {
+            set platform macosx-ppc
+        }
     }  elseif {[string match "i*86*-SunOS-*" $p] || [string match "intel-SunOS-*" $p]} {
 	set platform solaris-x86
     }  elseif {[string match "sun*-SunOS-*" $p]} {

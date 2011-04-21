@@ -64,7 +64,7 @@ proc cookit::tbcload::packageslist-dynamic {} {
     }
 
     if {$tbcloaddir != ""} {
-        lappend packages "tbcload-[string range $gt 4 end]" [cookit::filterFilelist \
+        lappend packages "tbcload-[string range $gt 7 end]" [cookit::filterFilelist \
             [cookit::listAllFiles "lib/$gt" $g] \
             ]
     }
