@@ -26,6 +26,12 @@ proc cookit::osSpecific {value} {
 
     set v $value
 
+    if {($value == "gcc") || ($value == "cc")} {
+        if {[info exists ::env(CC)]} {
+            return $::env(CC)
+        }
+    }
+
     switch -glob -- $value,$platform {
         .,win32-x86 - .,solaris-* {
             set value ""
