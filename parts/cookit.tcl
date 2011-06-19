@@ -8,6 +8,11 @@ proc cookit::cookit::parameters {version} {
     if {$::cookit::platform == "win32-x86"} {
         lappend dep resources ""
     }
+    # this might actually break - if it does, just put if {1} and
+    # later check when adding files to link against
+    if {[string match "8.5.*" [cookit::getPartVersion tcl]]} {
+        lappend dep zlib ""
+    }
     return [list \
         provides {virtual:cookit 1.0} depends $dep \
         buildmodes {static} \
@@ -21,6 +26,12 @@ proc cookit::cookit::configure-static {} {
 }
 
 proc cookit::cookit::build-static {} {
+    # prepare filelist for compiling and code
+    set filelist [list \
+        . cookit cookit \
+        ] 
+
+    # build cookit.c and compile it
     set gcc [cookit::osSpecific gcc]
 
     set compileflags [cookit::getParameters cookitCompileFlags]
@@ -31,7 +42,7 @@ proc cookit::cookit::build-static {} {
     lappend command -I.
     lappend command -I[cookit::wdrelative [file join [cookit::getSourceDirectory tcl] generic]]
     lappend command -I[cookit::wdrelative [file join [cookit::getSourceDirectory tcl] $::cookit::unixwinplatform]]
-    
+
     lappend command -DTCL_LOCAL_APPINIT=CooKit_AppInit
     lappend command -DSTATIC_BUILD=1
     lappend command -DBUILD_tcl
@@ -58,6 +69,15 @@ proc cookit::cookit::build-static {} {
         set appinitfile tclAppInit
     }
 
+    if {[string match "8.5.*" [cookit::getPartVersion tcl]]} {
+        lappend filelist [cookit::getSourceDirectory cookit] tclzlib tclzlib
+        cookit::addParameters cookitExternCode "Tcl_AppInitProc Tclzlib_Init;\n"
+        cookit::addParameters cookitAppinitCode "Tcl_StaticPackage(0, \"zlib\", Tclzlib_Init, NULL);\n"
+	lappend command -DCOOKIT_STATIC_ZLIB -I[cookit::getBuildStaticDirectory zlib]
+    }
+
+    lappend filelist $appinitdir $appinitfile appInit
+
     set command [concat $command $compileflags]
 
     set sfh [open [file join [cookit::getSourceDirectory cookit] cookit.c] r]
@@ -73,10 +93,7 @@ proc cookit::cookit::build-static {} {
     close $sfh
     close $dfh
 
-    foreach {sourcedir file destfile} [list \
-        . cookit cookit \
-        $appinitdir $appinitfile appInit \
-        ] {
+    foreach {sourcedir file destfile} $filelist {
         set eid [cookit::startExtCommand [linsert $command end \
             -c -o $destfile.o \
             [cookit::wdrelative [file join $sourcedir $file.c]]] \
@@ -107,6 +124,10 @@ proc cookit::cookit::linkerfiles-static {} {
     set rc [list]
     lappend rc [cookit::wdrelative [file join [cookit::getBuildStaticDirectory cookit] cookit.o]]
     lappend rc [cookit::wdrelative [file join [cookit::getBuildStaticDirectory cookit] appInit.o]]
+    if {[string match "8.5.*" [cookit::getPartVersion tcl]]} {
+        lappend rc [cookit::wdrelative [file join [cookit::getBuildStaticDirectory cookit] tclzlib.o]]
+        lappend rc [cookit::wdrelative [file join [cookit::getBuildStaticDirectory zlib] libz.a]]
+    }
     return $rc
 }
 

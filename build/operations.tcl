@@ -17,6 +17,8 @@ proc cookit::buildConfigure {args} {
         {threads.arg            {0}             {Enable/disable threads}}
         {with-tcl.arg           {}              {Add --with-tcl statement; "", relative or absolute}}
         {with-tk.arg            {}              {Add --with-tk statement; "", relative or absolute}}
+        {skipshared                             {Do not pass any information about threads enabled/disabled}}
+        {skipthreads                            {Do not pass any information about threads enabled/disabled}}
         {always                                 {Configure even if Makefile already exists}}
         {additional.arg         {}              {Additional things to pass to configure script}}
     }
@@ -61,15 +63,19 @@ proc cookit::buildConfigure {args} {
 
     set command [list [file join $path configure]]
 
-    if {$opt(threaded)} {
-        lappend command --enable-threads
-    }  else  {
-        lappend command --disable-threads
+    if {!$o(skipthreads)} {
+        if {$opt(threaded)} {
+            lappend command --enable-threads
+        }  else  {
+            lappend command --disable-threads
+        }
     }
 
     if {$o(mode) == "static"} {
         set prefix [getInstallStaticDirectory]
-        lappend command --disable-shared
+        if {!$o(skipshared)} {
+            lappend command --disable-shared
+        }
     }  else  {
         set prefix [getInstallDynamicDirectory]
     }
@@ -132,3 +138,36 @@ proc cookit::buildMake {args} {
     waitForExtCommand $eid 0
 }
 
+proc cookit::setEnv {args} {
+    set rc {}
+    foreach {name value} $args {
+        if {[info exists ::env($name)]} {
+            # ignore variables that are the same now
+            if {[string equal $::env($name) $value]} {
+                continue
+            }
+            lappend rc set $name $::env($name)
+        }  else  {
+            lappend rc unset $name -
+        }
+        log 3 "setEnv: Setting environment variable $name=$value"
+        set ::env($name) $value
+    }
+    log 5 "setEnv: Result $rc"
+    return $rc
+}
+
+proc cookit::revertEnv {rc} {
+    foreach {mode name value} $rc {
+        switch -- $mode {
+            set {
+                log 3 "revertEnv: Setting environment variable $name=$value"
+                set ::env($name) $value
+            }
+            unset {
+                log 3 "revertEnv: Unsetting environment variable $name"
+                catch {unset ::env($name)}
+            }
+        }
+    }
+}

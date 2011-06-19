@@ -53,6 +53,9 @@ static char preInitCmd[] =
 "load {} Cookfs\n"
 "load {} vfs\n"
 "proc getCookfsBootstrap {} {\n"
+#ifdef COOKIT_STATIC_ZLIB
+"load {} zlib\n"
+#endif
 " set ::cookit::cookitpages [cookfs::pages -readonly [info nameofexecutable]]\n"
 " uplevel #0 [$::cookit::cookitpages get 0]\n"
 "}\n"
