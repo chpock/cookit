@@ -179,7 +179,7 @@ proc cookit::tk::build-dynamic {} {
 
 proc cookit::tk::install-dynamic {} {
     if {$::cookit::platform == "win32-x86"} {
-        cookit::buildMake install-libraries
+        cookit::buildMake install
     }  else  {
         cookit::buildMake install
     }

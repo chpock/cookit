@@ -46,6 +46,7 @@ proc cookit::tktreectrl::install-dynamic {} {
 }
 
 proc cookit::tktreectrl::packageslist-dynamic {} {
+    set ver [cookit::getPartVersion tktreectrl]
     set packages [list]
     
     set basedir [cookit::getInstallDynamicDirectory]
@@ -61,6 +62,7 @@ proc cookit::tktreectrl::packageslist-dynamic {} {
     if {$tktreectrldir != ""} {
         lappend packages "tktreectrl-[string range $gt 8 end]" [cookit::filterFilelist \
             [cookit::listAllFiles "lib/$gt" $g] \
+            exclude match lib/treectrl$ver/htmldoc/* \
             ]
     }
 
