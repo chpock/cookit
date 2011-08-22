@@ -143,6 +143,9 @@ proc cookit::tk::linkerfiles-static {} {
 }
 
 proc cookit::tk::initialize-dynamic {version} {
+    catch {file attributes [file join [cookit::getSourceDirectory tk] unix install-sh] -permissions 0755}
+    catch {file attributes [file join [cookit::getSourceDirectory tk] macosx install-sh] -permissions 0755}
+    catch {file attributes [file join [cookit::getSourceDirectory tk] tclconfig install-sh] -permissions 0755}
 }
 
 proc cookit::tk::configure-dynamic {} {
