@@ -39,8 +39,8 @@ proc cookit::addParametersList {type args} {
 # not using [package vcompare] to allow older
 # Tcl versions to work
 proc cookit::compareVersionsConvert {a} {
-    if {[regexp "^(.*?)(a|b)(\[0-9\]+)\$" $a - v ab c]} {
-        set t "$v. $ab$c"
+    if {[regexp "^(.*?)(a|b)(\[0-9\]+)(.*)\$" $a - v ab c d]} {
+        set t "$v. $ab$c$d"
     }  elseif {[regexp "^(.*?)\\.(\[0-9\]+)\$" $a - v c]} {
         set t "$v.$c"
     }  else  {
