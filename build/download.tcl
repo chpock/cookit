@@ -9,7 +9,9 @@ proc cookit::unzip {zip dir} {
     if {[catch {
         package require vfs::zip
         vfs::zip::Mount $zip $zip
+        log 5 "unzip: Unpacking archive $zip"
         foreach g [glob -nocomplain -directory $zip -tail *] {
+            log 5 "unzip: Unpacking $g - [file type [file join $zip $g]]"
             file copy -force [file join $zip $g] [file join $dir $g]
         }
         vfs::unmount $zip

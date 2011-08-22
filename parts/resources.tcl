@@ -36,7 +36,9 @@ proc cookit::resources::build-static {} {
             --define $tkdefine \
             --include $sdir \
             --include [file join $tcldir generic] \
+            --include [file join $tcldir win] \
             --include [file join $tkdir generic] \
+            --include [file join $tkdir win] \
             --include [file join $tkdir win rc] \
             [file join $sdir resource-$::cookit::opt(resource-name)$suffix.rc] \
             ]

@@ -17,7 +17,6 @@
 
 #ifndef MAC_TCL
 
-#include <tcl.h>
 /* %COOKIT_INCLUDE_CODE% */
 
 #ifdef _WIN32
