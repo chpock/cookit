@@ -53,9 +53,9 @@ proc cookit::downloadURL {url {destinationfile ""}} {
 	}
 
         if {[catch {
-            set h [http::geturl $url -binary 1 -progress cookit::downloadURLProgress -headers $headers]
+            set h [http::geturl $url -binary 1 -progress cookit::downloadURLProgress -headers $headers -blocksize 262144]
         }]} {
-            set h [http::geturl $url -progress cookit::downloadURLProgress -headers $headers]
+            set h [http::geturl $url -progress cookit::downloadURLProgress -headers $headers -blocksize 262144]
         }
 
         upvar #0 $h t

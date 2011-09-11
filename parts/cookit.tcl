@@ -26,6 +26,8 @@ proc cookit::cookit::configure-static {} {
 }
 
 proc cookit::cookit::build-static {} {
+    cookit::loadConfigFile tcl conf
+
     # prepare filelist for compiling and code
     set filelist [list \
         . cookit cookit \
@@ -39,6 +41,8 @@ proc cookit::cookit::build-static {} {
     if {[info exists ::env(CFLAGS)]} {
         set command [concat $gcc $::env(CFLAGS)]
     }
+    set command [concat $command $conf(TCL_EXTRA_CFLAGS)]
+
     lappend command -I.
     lappend command -I[cookit::wdrelative [file join [cookit::getSourceDirectory tcl] generic]]
     lappend command -I[cookit::wdrelative [file join [cookit::getSourceDirectory tcl] $::cookit::unixwinplatform]]

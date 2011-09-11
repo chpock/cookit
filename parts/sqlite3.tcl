@@ -5,14 +5,46 @@ cookit::partRegister sqlite3 "SQLite3"
 proc cookit::sqlite3::retrievesource {} {
     set url "http://www.sqlite.org/download.html"
     set html [cookit::downloadURL $url]
-    if {![regexp "<a href=\"(sqlite-\[A-Za-z0-9\\._\\-\]+-tea.tar.gz)\">" $html - filename]} {
+    if {![regexp "<a href=\"(sqlite-autoconf-\[A-Za-z0-9\\._\\-\]+.tar.gz)\">" $html - filename]} {
         error "Unable to download sqlite3 sources - no URL on website"
     }
     set fileurl "http://www.sqlite.org/$filename"
-    set destfile [file join [cookit::getDownloadsDirectory] \
-        [string map [list _ . -tea "" "sqlite-" "sqlite3-"] $filename]]
 
-    cookit::downloadURL $fileurl $destfile
+    set tempdir [cookit::getTempDirectory]
+    set tempfile [file join $tempdir $filename]
+
+    cookit::downloadURL $fileurl $tempfile
+    set pwd [pwd]
+    cd $tempdir
+    set tempdir [pwd]
+    if {[catch {
+        exec tar -xzf $filename
+        file delete -force $filename
+    } err]} {
+        cookit::log 2 "Extracting failed: $err"
+        cd $pwd
+        error "Extracting sqlite3 failed"
+    }
+    cd $pwd
+    set g [glob -directory $tempdir *]
+    if {([llength $g] == 1) && ([file type $g] == "directory")} {
+        set basedir $g
+    }  else  {
+        set basedir $tempdir
+    }
+
+    set fh [open [file join $basedir configure] r]
+    set fc [read $fh]
+    close $fh
+
+    # figure out actual version
+    if {![regexp -line "^\\s*PACKAGE_VERSION=(.*)\\s*\$" $fc - version]} {
+        error "Unknown sqlite3 version"
+    }
+    set version [string trim $version "\"' \t"]
+
+    # copy source to actual location
+    cookit::copySourceRepository $basedir sqlite3 $version
 }
 
 proc cookit::sqlite3::parameters {version} {
@@ -23,12 +55,18 @@ proc cookit::sqlite3::parameters {version} {
 }
 
 proc cookit::sqlite3::initialize-dynamic {version} {
+    catch {file attributes [file join [cookit::getSourceDirectory sqlite3] tea tclconfig install-sh] -permissions 0755}
     catch {file attributes [file join [cookit::getSourceDirectory sqlite3] tclconfig install-sh] -permissions 0755}
 }
 
 proc cookit::sqlite3::configure-dynamic {} {
+    if {[file exists [file join [cookit::getSourceDirectory sqlite3] tea]]} {
+        set subdirectory "tea"
+    }  else  {
+        set subdirectory ""
+    }
     cookit::buildConfigure -sourcepath relative -with-tcl relative \
-        -mode dynamic
+        -mode dynamic -subdirectory $subdirectory
 
     # change Makefile on OSX to disable NFS filesystem fix for OSX as it causes issues on <=10.4
     if {[string match "macosx-*" $::cookit::platform]} {
@@ -73,14 +111,14 @@ proc cookit::sqlite3::packageslist-dynamic {} {
     set sqlite3dir ""
     foreach g [glob -directory $basedir lib/sqlite3*] {
         set gt [file tail $g]
-        if {[regexp -nocase "sqlite3(-|)\[0-9\.]+\$" $gt]} {
+        if {[regexp -nocase "sqlite(3\[0-9\\.]+)\$" $gt - version]} {
             set sqlite3dir $g
             break
         }
     }
 
     if {$sqlite3dir != ""} {
-        lappend packages "sqlite3-3.[string range $gt 8 end]" [cookit::filterFilelist \
+        lappend packages "sqlite3-$version" [cookit::filterFilelist \
             [cookit::listAllFiles "lib/$gt" $g] \
             ]
     }

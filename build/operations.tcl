@@ -1,6 +1,7 @@
 namespace eval cookit {}
 
 set cookit::allOptions(threaded) {Enable threads}
+set cookit::allOptions(64bit) {Enable 64-bit support}
 set cookit::allOptions(alwaysconfigure) {Always run configure}
 
 proc cookit::buildConfigure {args} {
@@ -13,11 +14,13 @@ proc cookit::buildConfigure {args} {
         {mode.arg               {static}        {Compile statically or dynamically}}
         {sourcepath.arg         {absolute}      {Way to specify source path in: relative or absolute}}
         {prefixpath.arg         {absolute}      {Way to specify prefix path in: relative or absolute}}
+        {subdirectory.arg       {}              {Run configure from specified subdirectory}}
         {platform                               {Use platform-specific directories}}
         {threads.arg            {0}             {Enable/disable threads}}
         {with-tcl.arg           {}              {Add --with-tcl statement; "", relative or absolute}}
         {with-tk.arg            {}              {Add --with-tk statement; "", relative or absolute}}
         {skipshared                             {Do not pass any information about threads enabled/disabled}}
+        {skip64bit                              {Do not pass any information about 64bit enabled/disabled}}
         {skipthreads                            {Do not pass any information about threads enabled/disabled}}
         {always                                 {Configure even if Makefile already exists}}
         {additional.arg         {}              {Additional things to pass to configure script}}
@@ -61,7 +64,13 @@ proc cookit::buildConfigure {args} {
         set path [wdrelative $path]
     }
 
-    set command [list [file join $path configure]]
+    set command [list [file join $path $o(subdirectory) configure]]
+
+    if {!$o(skip64bit)} {
+        if {$opt(64bit)} {
+            lappend command --enable-64bit
+        }
+    }
 
     if {!$o(skipthreads)} {
         if {$opt(threaded)} {

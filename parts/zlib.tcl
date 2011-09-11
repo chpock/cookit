@@ -39,10 +39,16 @@ proc cookit::zlib::configure-static {} {
 
     if {$::cookit::platform != "win32-x86"} {
         set d [cookit::setEnv CC [cookit::osSpecific gcc]]
-        cookit::log 3 "cookit::zlib::configure-static: Configuring zlib"
+        set additional {}
+
+        if {$::cookit::opt(64bit)} {
+            lappend additional --64
+        }
+
+        cookit::log 3 "cookit::zlib::configure-static: Configuring zlib with [list $additional] additional parameters"
         if {[catch {
-            cookit::buildConfigure -always -sourcepath relative -mode static -skipthreads -skipshared \
-                -additional {}
+            cookit::buildConfigure -always -sourcepath relative -mode static -skipthreads -skipshared -skip64bit \
+                -additional $additional
         } err]} {
             set ei $::errorInfo
             set ec $::errorCode
