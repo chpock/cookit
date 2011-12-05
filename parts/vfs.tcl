@@ -16,7 +16,7 @@ proc cookit::vfs::parameters {version} {
     return [list \
         retrieveByDefault 1 \
         provides {} depends {tcl ""} \
-	buildmodes {static} \
+	buildmodes {static dynamic} \
         ]
 }
 
@@ -79,3 +79,24 @@ proc cookit::vfs::linkerfiles-static {} {
     
     return $rc
 }
+
+proc cookit::vfs::initialize-dynamic {version} {
+}
+
+proc cookit::vfs::configure-dynamic {} {
+    cookit::buildConfigure -sourcepath relative -with-tcl relative -mode dynamic
+}
+
+proc cookit::vfs::build-dynamic {} {
+    cookit::buildMake all
+}
+
+proc cookit::vfs::install-dynamic {} {
+    # this is not needed
+    cookit::buildMake install
+}
+
+proc cookit::vfs::packageslist-dynamic {} {
+    return [list]
+}
+

@@ -65,9 +65,14 @@ proc cookit::getDownloadsDirectory {} {
 
 proc cookit::getOutputDirectory {} {
     variable outputdirectory
-    variable hostbuilddirectory
     variable platform
     return $outputdirectory
+}
+
+proc cookit::getToolsDirectory {} {
+    variable toolsdirectory
+    variable platform
+    return $toolsdirectory
 }
 
 proc cookit::getOutputPackagesDirectory {} {
@@ -194,11 +199,11 @@ proc cookit::listAllFiles {path directory {level 100}} {
     set rc [list]
     incr level -1
     if {$level == 0} {return [list]}
-    foreach g [glob -type d -nocomplain -directory $directory *] {
+    foreach g [lsort [glob -type d -nocomplain -directory $directory *]] {
         set gt [file tail $g]
         set rc [concat $rc [listAllFiles [file join $path $gt] $g $level]]
     }
-    foreach g [glob -type f -nocomplain -directory $directory *] {
+    foreach g [lsort [glob -type f -nocomplain -directory $directory *]] {
         set gt [file tail $g]
         lappend rc [file join $path $gt] file $g ""
     }

@@ -4,7 +4,7 @@ cookit::partRegister cookfs "CooKit VFS"
 
 set cookit::allOptions(cookfs-bz2) {{Enables bzip2 support}}
 set cookit::allOptions(cookfs-tcl-fallback) {{Enables tcl fallback support}}
-
+set cookit::allOptions(cookfs-internal-debug) {{Enables internal debug}}
 
 proc cookit::cookfs::retrievesource {} {
     if {![catch {
@@ -44,6 +44,10 @@ proc cookit::cookfs::configure-static {} {
     if {$::cookit::opt(cookfs-tcl-fallback)} {
 	lappend additional --enable-tcl-fallback
     }
+    if {$::cookit::opt(cookfs-internal-debug)} {
+	lappend additional --enable-internal-debug
+    }
+
     cookit::buildConfigure -sourcepath relative -with-tcl relative -mode static -additional $additional
 }
 
@@ -93,6 +97,7 @@ proc cookit::cookfs::configure-dynamic {} {
     if {$::cookit::opt(cookfs-tcl-fallback)} {
 	lappend additional --enable-tcl-fallback
     }
+
     cookit::buildConfigure -sourcepath relative -with-tcl relative -mode dynamic -additional $additional
 }
 

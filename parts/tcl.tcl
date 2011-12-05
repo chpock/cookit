@@ -178,6 +178,10 @@ proc cookit::tcl::build-dynamic {} {
 proc cookit::tcl::install-dynamic {} {
     cookit::buildMake install-binaries
     cookit::buildMake install-libraries
+
+    set tclsh [glob -directory [file join [cookit::getInstallDynamicDirectory] bin] -type f tclsh*]
+
+    file copy -force [lindex $tclsh 0] [file join [cookit::getInstallDynamicDirectory] bin tclkit]
 }
 
 proc cookit::tcl::packageslist-dynamic {} {

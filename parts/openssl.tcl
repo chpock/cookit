@@ -202,6 +202,9 @@ proc cookit::openssl::configure-dynamic {} {
         }  elseif {$::cookit::platform == "solaris-x86"} {
             set cmd [list ./Configure solaris-x86-gcc]
             lappend cmd no-asm
+        }  elseif {$::cookit::platform == "linux-x64"} {
+            set cmd [list ./Configure linux-x86_64]
+            lappend cmd no-asm -fPIC
         }  elseif {$::cookit::platform == "linux-x86"} {
             set cmd [list ./Configure linux-elf]
             lappend cmd no-asm

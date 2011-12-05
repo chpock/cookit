@@ -75,6 +75,7 @@ proc cookit::initDirectories {} {
     variable installdynamicdirectory
     variable tempdirectory
     variable outputdirectory
+    variable toolsdirectory
 
     if {$opt(buildvariant) != ""} {
         set hostbuilddirectory "$hostname-$opt(buildvariant)"
@@ -87,6 +88,8 @@ proc cookit::initDirectories {} {
     }  else  {
         set outputdirectory [file join $rootdirectory _output $platform]
     }
+
+    set toolsdirectory [file join $rootdirectory tools]
 
     set installstaticdirectory [file join $rootdirectory _install_static $hostbuilddirectory]
     set installdynamicdirectory [file join $rootdirectory _install_dynamic $hostbuilddirectory]

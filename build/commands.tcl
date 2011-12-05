@@ -653,3 +653,13 @@ proc cookit::cmdPackages-dynamic {args} {
     
     uiComplete
 }
+
+proc cookit::cmdScript {script args} {
+    set ::argv0 $script
+    set ::argv $args
+    set ::argc [llength $::argv]
+    if {[catch [list uplevel #0 [list source $::argv0]]]} {
+        puts $::errorInfo
+    }
+}
+

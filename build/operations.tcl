@@ -12,7 +12,7 @@ proc cookit::buildConfigure {args} {
 
     set options {
         {mode.arg               {static}        {Compile statically or dynamically}}
-        {sourcepath.arg         {absolute}      {Way to specify source path in: relative or absolute}}
+        {sourcepath.arg         {absolute}      {Way to specify source path in: relative, absolute or current}}
         {prefixpath.arg         {absolute}      {Way to specify prefix path in: relative or absolute}}
         {subdirectory.arg       {}              {Run configure from specified subdirectory}}
         {platform                               {Use platform-specific directories}}
@@ -62,6 +62,10 @@ proc cookit::buildConfigure {args} {
     if {$o(sourcepath) == "relative"} {
         log 5 "Converting directory to relative directory"
         set path [wdrelative $path]
+    }  elseif {$o(sourcepath) == "current"} {
+        set path [pwd]
+    }  elseif {$o(sourcepath) == "currentrelative"} {
+        set path "."
     }
 
     set command [list [file join $path $o(subdirectory) configure]]
