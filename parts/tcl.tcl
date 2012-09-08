@@ -44,6 +44,21 @@ proc cookit::tcl::configure-static {} {
 }
 
 proc cookit::tcl::build-static {} {
+    if {$::cookit::unixwinplatform == "unix"} {
+	set fh [open Makefile r]
+	fconfigure $fh -translation binary
+	set fc [read $fh]
+	close $fh
+
+	regsub -line -all -- {-DTCL_LIBRARY=\\".*\\"} $fc {-DTCL_LIBRARY=\\"/\\"} fc
+	regsub -line -all -- {-DTCL_PACKAGE_PATH="\\".*\\""} $fc {-DTCL_PACKAGE_PATH="\\"/\\""} fc
+
+	set fh [open Makefile w]
+	fconfigure $fh -translation binary
+	puts -nonewline $fh $fc
+	close $fh
+    }
+
     cookit::buildMake binaries
     cookit::buildMake libraries
 }
