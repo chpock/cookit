@@ -5,7 +5,7 @@ cookit::partRegister sqlite3 "SQLite3"
 proc cookit::sqlite3::retrievesource {} {
     set url "http://www.sqlite.org/download.html"
     set html [cookit::downloadURL $url]
-    if {![regexp "<a href=\"(sqlite-autoconf-\[A-Za-z0-9\\._\\-\]+.tar.gz)\">" $html - filename]} {
+    if {![regexp "<a href=\"(|/)(sqlite-autoconf-\[A-Za-z0-9\\._\\-\]+.tar.gz)\">" $html - - filename]} {
         error "Unable to download sqlite3 sources - no URL on website"
     }
     set fileurl "http://www.sqlite.org/$filename"
@@ -69,6 +69,7 @@ proc cookit::sqlite3::configure-dynamic {} {
         -mode dynamic -subdirectory $subdirectory
 
     # change Makefile on OSX to disable NFS filesystem fix for OSX as it causes issues on <=10.4
+    # and enable -DSQLITE_WITHOUT_ZONEMALLOC after http://sqlite.1065341.n5.nabble.com/PATCH-Fix-quot-Symbol-not-found-OSAtomicCompareAndSwapPtrBarrier-quot-on-Mac-OS-X-10-4-Tiger-td63847.html
     if {[string match "macosx-*" $::cookit::platform]} {
         set fn [file join [cookit::getBuildDynamicDirectory sqlite3] Makefile]
         set fh [open $fn r]
@@ -76,7 +77,7 @@ proc cookit::sqlite3::configure-dynamic {} {
         set fc [read $fh]
         close $fh
 
-        regsub -all -line -- "^(CFLAGS\\s+=.*)" $fc "\\1 -DSQLITE_ENABLE_LOCKING_STYLE=0" fc
+        regsub -all -line -- "^(CFLAGS\\s+=.*)" $fc "\\1 -DSQLITE_ENABLE_LOCKING_STYLE=0 -DSQLITE_WITHOUT_ZONEMALLOC" fc
 
         set fh [open $fn w]
         fconfigure $fh -translation binary
