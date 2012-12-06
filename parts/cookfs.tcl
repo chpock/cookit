@@ -8,7 +8,7 @@ set cookit::allOptions(cookfs-internal-debug) {{Enables internal debug}}
 
 proc cookit::cookfs::retrievesource {} {
     if {![catch {
-	set tempdir [cookit::svnExport https://cookit.svn.sourceforge.net/svnroot/cookit/cookfs]
+	set tempdir [cookit::svnExport svn://svn.code.sf.net/p/cookit/code/cookfs]
     }]} {
 	# get base version from configure.in
 	foreach {pkgname version} [cookit::getConfigureVersion $tempdir] break
