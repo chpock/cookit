@@ -135,7 +135,7 @@ proc cookit::openssl::configure-dynamic {} {
     cookit::log 3 "cookit::openssl::configure-dynamic: Syncing up OpenSSL sources"
     _copysource
 
-    if {[string match "macosx-*" $::cookit::platform]} {
+    if {[string match "macosx-universal" $::cookit::platform]} {
         set wd [pwd]
         file mkdir _ppc
         cookit::log 3 "cookit::openssl::configure-dynamic: Syncing up OpenSSL sources for PPC build"
@@ -208,6 +208,8 @@ proc cookit::openssl::configure-dynamic {} {
         }  elseif {$::cookit::platform == "linux-x86"} {
             set cmd [list ./Configure linux-elf]
             lappend cmd no-asm
+        }  elseif {$::cookit::platform == "macosx-x86"} {
+            set cmd [list ./Configure darwin-i386-cc]
         }  else  {
             # on Unix, run the config command
             set cmd [list ./config]
@@ -223,7 +225,7 @@ proc cookit::openssl::configure-dynamic {} {
 }
 
 proc cookit::openssl::build-dynamic {} {
-    if {[string match "macosx-*" $::cookit::platform]} {
+    if {[string match "macosx-universal" $::cookit::platform]} {
         set wd [pwd]
         _updatecflags
         foreach {dir instdir platform} [list \
@@ -243,7 +245,7 @@ proc cookit::openssl::build-dynamic {} {
 }
 
 proc cookit::openssl::install-dynamic {} {
-    if {[string match "macosx-*" $::cookit::platform]} {
+    if {[string match "macosx-universal" $::cookit::platform]} {
         set builddir [pwd]
         set installdir [file join [cookit::getInstallDynamicDirectory] openssl]
 

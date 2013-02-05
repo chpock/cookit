@@ -3,7 +3,7 @@ namespace eval cookit::tcllib {}
 cookit::partRegister tcllib "Tcllib"
 
 proc cookit::tcllib::retrievesource {} {
-    set tempdir [cookit::cvsExport :pserver:anonymous@tcllib.cvs.sourceforge.net:/cvsroot/tcllib tcllib]
+    set tempdir [cookit::fossilExport http://core.tcl.tk/tcllib]
     
     # get base version from configure.in
     foreach {pkgname version} [cookit::getConfigureVersion $tempdir] break
@@ -25,7 +25,7 @@ proc cookit::tcllib::_copysource {} {
 
 proc cookit::tcllib::parameters {version} {
     return [list \
-        provides {} depends {tcl ""} \
+        provides {} depends {tcl "" vfs "" cookfs ""} \
         buildmodes {dynamic} \
         ]
 }
