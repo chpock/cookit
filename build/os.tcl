@@ -23,8 +23,13 @@ proc cookit::shellScriptCommand {cmd} {
 proc cookit::osSpecific {value} {
     variable platform
     variable msysdirectory
+    variable rootdirectory
 
     set v $value
+
+    if {![info exists ::env(CRITCL)]} {
+        set ::env(CRITCL) [file normalize [file join $rootdirectory tools critcl]]
+    }
 
     if {($value == "gcc") || ($value == "cc")} {
         if {[info exists ::env(CC)]} {

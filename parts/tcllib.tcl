@@ -40,6 +40,9 @@ proc cookit::tcllib::configure-dynamic {} {
         -mode dynamic
 }
 
+proc cookit::tcllib::build-dynamic-library {} {
+}
+
 proc cookit::tcllib::build-dynamic {} {
     catch {file delete -force ~/.critcl}
 
@@ -74,7 +77,7 @@ proc cookit::tcllib::build-dynamic {} {
     close $fh
 
     if {[catch {
-        cookit::buildMake critcl
+        eval cookit::buildMake critcl
     } err]} {
         set fh [open modules/base64/yencode.tcl w]
         fconfigure $fh -translation binary
@@ -117,7 +120,6 @@ proc cookit::tcllib::build-dynamic {} {
     }
 
     # remove x86_64 platform that gets created even if not needed
-
     if {[string match "macosx-*" $::cookit::platform] && (
         (![info exists ::env(CFLAGS)]) || (![string match "*-arch x86_64*" $::env(CFLAGS)])
     )} {
@@ -136,8 +138,36 @@ proc cookit::tcllib::build-dynamic {} {
                 file copy -force $libfile.tmp $libfile
             }
 
+            # fix the library being built as x86_64 and only loaded properly on 64-bit platforms
+            set dirname [file dirname $libfile]
+            if {[string match "*x86_64*" [file tail $dirname]]} {
+                file rename $dirname [file join [file dirname $dirname] Darwin-x86]
+            }
+
             file delete -force $libfile.tmp
         }
+    }
+    if {1} {
+        # fix critcl::platform to report x86 on x64 machines if binary is running in 32bit mode
+        # the fix is applied for all platforms in case critcl.tcl from another platform overwrites this one
+        set critclfile modules/tcllibc/critcl.tcl
+        set fh [open $critclfile r]
+        set fc [read $fh]
+        close $fh
+
+        regexp {^(.*proc\s+platform.*?)(return\s.*)$} $fc - before after
+
+        set fix {
+            if {"$plat-$mach" == "Darwin-x86_64" && $::tcl_platform(wordSize) == 4} {
+                return "Darwin-x86"
+            }
+        }
+
+        set fc $before$fix$after
+
+        set fh [open $critclfile w]
+        puts -nonewline $fh $fc
+        close $fh
     }
 }
 
