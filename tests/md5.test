@@ -1,0 +1,15 @@
+tcltest::test md5-1.1 "Check tcllibc" -body {
+    package require md5
+    expr {([llength [lsearch -inline -glob [info loaded] *cllibc]] > 0) ? 1 : 0}
+} -result 1
+
+tcltest::test md5-1.2 "Test hex MD5 checksum for empty string" -body {
+    package require md5
+    string tolower [md5::md5 -hex {}]
+} -result d41d8cd98f00b204e9800998ecf8427e
+
+tcltest::test md5-1.3 "Test hex MD5 checksum for test string" -body {
+    package require md5
+    string tolower [md5::md5 -hex [string repeat test 1048576]]
+} -result 23074efb5e3c801b9a3a72d16411a079
+

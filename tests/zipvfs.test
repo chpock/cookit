@@ -1,0 +1,33 @@
+tcltest::test zipvfs-1.1 "Test store vfs::zip unpacking" -body {
+    package require vfs::zip
+    set file [tcltest::makeFile {} tempfile]
+    set fh [open $file w]
+    fconfigure $fh -translation binary
+    puts -nonewline $fh [binary format H* {504b03040a000000000092858242ad550a19200000002000000008001c007a65726f66696c655554090003d4ee5a51cdee5a5175780b000104e803000004e80300000000000000000000000000000000000000000000000000000000000000000000504b01021e030a000000000092858242ad550a192000000020000000080018000000000000000000a481000000007a65726f66696c655554050003d4ee5a5175780b000104e803000004e8030000504b050600000000010001004e000000620000000000}]
+    close $fh
+    vfs::zip::Mount $file $file
+    set fh [open $file/zerofile r]
+    fconfigure $fh -translation binary
+    set fc [read $fh]
+    close $fh
+    vfs::unmount $file
+    string length $fc
+} -result 32
+
+tcltest::test zipvfs-1.2 "Test zlib vfs::zip unpacking" -body {
+    package require vfs::zip
+    set file [tcltest::makeFile {} tempfile]
+    set fh [open $file w]
+    fconfigure $fh -translation binary
+    puts -nonewline $fh [binary format H* {504b03041400020008007a85824286d254ab210000000040000008001c007a65726f66696c655554090003a8ee5a51a8ee5a5175780b000104e803000004e8030000edc13101000000c2a0f54f6d0c1fa000000000000000000000000000000080b701504b01021e031400020008007a85824286d254ab2100000000400000080018000000000000000000a481000000007a65726f66696c655554050003a8ee5a5175780b000104e803000004e8030000504b050600000000010001004e000000630000000000}]
+    close $fh
+    vfs::zip::Mount $file $file
+    set fh [open $file/zerofile r]
+    fconfigure $fh -translation binary
+    set fc [read $fh]
+    close $fh
+    vfs::unmount $file
+    string length $fc
+} -result 16384
+
+

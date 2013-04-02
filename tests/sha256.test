@@ -1,0 +1,10 @@
+tcltest::test sha256-1.1 "Test hex MD5 checksum for empty string" -body {
+    package require sha256
+    string tolower [sha2::sha256 -hex {}]
+} -result e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+tcltest::test sha256-1.2 "Test hex MD5 checksum for test string" -body {
+    package require sha256
+    string tolower [sha2::sha256 -hex [string repeat test 1048576]]
+} -result a4104d8fa31970d706ff5ea051a925dbb7f4f4d7fd63c8513778ff9d9d32acc3
+
