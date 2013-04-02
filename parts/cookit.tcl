@@ -197,7 +197,7 @@ proc cookit::cookit::vfsbootstrap {} {
     
     # set platform
     append code [list set ::cookit::cookitplatform $::cookit::platform] \n
-    append code "set sourcevfs \[list source \[file join \$::cookit::cookitmountpoint lib [list vfs[cookit::getPartVersion vfs]] vfs.tcl\]\]\n"
+    append code "set sourcevfs \[list source \[file join \$::cookit::cookitmountpoint lib [list vfs[cookit::getPartVersion vfs]] vfs.tcl\]\]\\\;\[list source \[file join \$::cookit::cookitmountpoint lib [list vfs[cookit::getPartVersion vfs]] vfslib.tcl\]\]\n"
     append code {
         if {[catch {
             set ::cookit::cookitlibpath [file join $::cookit::cookitmountpoint lib]
