@@ -5,10 +5,12 @@ cookit::partRegister sqlite3 "SQLite3"
 proc cookit::sqlite3::retrievesource {} {
     set url "http://www.sqlite.org/download.html"
     set html [cookit::downloadURL $url]
-    if {![regexp "<a href=\"(|/)(sqlite-autoconf-\[A-Za-z0-9\\._\\-\]+.tar.gz)\">" $html - - filename]} {
+    if {![regexp "<a href=\"(|/|\[0-9\]+/)(sqlite-autoconf-\[A-Za-z0-9\\._\\-\]+.tar.gz)\">" $html - prefix filename]} {
         error "Unable to download sqlite3 sources - no URL on website"
     }
-    set fileurl "http://www.sqlite.org/$filename"
+    set prefix [string trim $prefix /]
+    set fileurl "http://www.sqlite.org/$prefix/$filename"
+    cookit::log 5 "Downloading from $fileurl"
 
     set tempdir [cookit::getTempDirectory]
     set tempfile [file join $tempdir $filename]
