@@ -15,8 +15,9 @@ proc cookit::unzip {zip dir} {
             file copy -force [file join $zip $g] [file join $dir $g]
         }
         vfs::unmount $zip
-    }]} {
-        error "vfs::zip unfound"
+    } err]} {
+        log 1 "Unable to unpack: $err"
+        error "vfs::zip not found"
     }
 }
 
