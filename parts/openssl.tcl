@@ -137,21 +137,37 @@ proc cookit::openssl::configure-dynamic {} {
 
     if {[string match "macosx-universal" $::cookit::platform]} {
         set wd [pwd]
-        file mkdir _ppc
-        cookit::log 3 "cookit::openssl::configure-dynamic: Syncing up OpenSSL sources for PPC build"
-        foreach g [glob -directory [pwd] -tails *] {
-            if {$g != "_ppc"} {
-                catch {file delete -force [file join _ppc $g]}
-                file copy -force $g [file join _ppc $g]
+	set buildppc [string match "*arch ppc*" $::env(CFLAGS)]
+	set buildx64 [string match "*arch x86_64*" $::env(CFLAGS)]
+
+        set builds [list $wd openssl darwin-i386-cc]
+
+	if {$buildppc} {
+	    file mkdir _ppc
+	    cookit::log 3 "cookit::openssl::configure-dynamic: Syncing up OpenSSL sources for PPC build"
+	    foreach g [glob -directory [pwd] -tails *] {
+		if {$g != "_ppc"} {
+		    catch {file delete -force [file join _ppc $g]}
+		    file copy -force $g [file join _ppc $g]
+		}
             }
+            lappend builds [file join $wd _ppc] openssl_ppc darwin-ppc-cc
+        }
+	if {$buildx64} {
+	    file mkdir _x64
+	    cookit::log 3 "cookit::openssl::configure-dynamic: Syncing up OpenSSL sources for x64 build"
+	    foreach g [glob -directory [pwd] -tails *] {
+		if {$g != "_x64"} {
+		    catch {file delete -force [file join _x64 $g]}
+		    file copy -force $g [file join _x64 $g]
+		}
+            }
+            lappend builds [file join $wd _x64] openssl_x64 darwin64-x86_64-cc
         }
 
         _updatecflags
 
-        foreach {dir instdir platform} [list \
-            [file join $wd _ppc] openssl_ppc darwin-ppc-cc\
-            $wd openssl darwin-i386-cc \
-            ] {
+        foreach {dir instdir platform} $builds {
             cookit::log 3 "cookit::openssl::configure-dynamic: Configuring OpenSSL ($dir) for $platform"
             cd $dir
             set cmd [list perl ./Configure $platform]
@@ -227,11 +243,18 @@ proc cookit::openssl::configure-dynamic {} {
 proc cookit::openssl::build-dynamic {} {
     if {[string match "macosx-universal" $::cookit::platform]} {
         set wd [pwd]
+	set buildppc [string match "*arch ppc*" $::env(CFLAGS)]
+	set buildx64 [string match "*arch x86_64*" $::env(CFLAGS)]
+        set builds [list $wd openssl darwin-i386-cc]
+	if {$buildppc} {
+            lappend builds [file join $wd _ppc] openssl_ppc darwin-ppc-cc
+        }
+	if {$buildx64} {
+            lappend builds [file join $wd _x64] openssl_x64 darwin64-x86_64-cc
+        }
+
         _updatecflags
-        foreach {dir instdir platform} [list \
-            [file join $wd _ppc] openssl_ppc darwin-ppc-cc\
-            $wd openssl darwin-i386-cc \
-            ] {
+        foreach {dir instdir platform} $builds {
             cd $dir
             cookit::buildMake all
         }
@@ -249,6 +272,9 @@ proc cookit::openssl::install-dynamic {} {
         set builddir [pwd]
         set installdir [file join [cookit::getInstallDynamicDirectory] openssl]
 
+	set buildppc [string match "*arch ppc*" $::env(CFLAGS)]
+	set buildx64 [string match "*arch x86_64*" $::env(CFLAGS)]
+
         _updatecflags
         cookit::buildMake install
         if {[info exists origcflags]} {
@@ -256,10 +282,15 @@ proc cookit::openssl::install-dynamic {} {
         }
 
         foreach lib {libssl libcrypto} {
-            combineArFiles [file join $installdir lib $lib.a] [list \
-                [file join $builddir $lib.a] \
-                [file join $builddir _ppc $lib.a] \
-                ]
+	    set filelist [list [file join $builddir $lib.a]]
+	    if {$buildppc} {
+		lappend filelist [file join $builddir _ppc $lib.a]
+	    }
+	    if {$buildx64} {
+		lappend filelist [file join $builddir _x64 $lib.a]
+	    }
+	    cookit::log 3 "cookit::openssl::install-dynamic: Combining $lib.a using $filelist"
+            combineArFiles [file join $installdir lib $lib.a] $filelist
         }
     }  else  {
         cookit::buildMake install

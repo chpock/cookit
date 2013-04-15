@@ -8,7 +8,7 @@ file mkdir _tmp
 catch {clock format [clock seconds]}
 catch {vfs::unmount [info nameofexe]}
 
-foreach platform {linux-x86 linux-x64 macosx-x86 solaris-x86 win32-x86} {
+foreach platform $argv {
     foreach type {daily daily85} {
         set dest _tmp/$platform-$type
         file mkdir $dest
