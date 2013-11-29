@@ -96,8 +96,10 @@ proc cookit::buildConfigure {args} {
     if {$o(prefixpath) == "relative"} {
         log 5 "Adding prefix as relative directory"
         lappend command --prefix=[wdrelative $prefix]
+        lappend command --libdir=[wdrelative $prefix]/lib
     }  else  {
         lappend command --prefix=$prefix
+        lappend command --libdir=$prefix/lib
     }
 
     if {$o(with-tcl) != ""} {
