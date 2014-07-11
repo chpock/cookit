@@ -4,7 +4,12 @@ cookit::partRegister tcl "Tcl language"
 
 proc cookit::tcl::retrievesource {} {
     #set tempdir [cookit::cvsExport :pserver:anonymous@tcl.cvs.sourceforge.net:/cvsroot/tcl tcl]
-    set tempdir [cookit::fossilExport http://core.tcl.tk/tcl]
+    if {[info exists ::cookit::opt(tcl)] && [string match 8.5.* $::cookit::opt(tcl)]} {
+	set r "core-8-5-branch"
+    }  else  {
+	set r "trunk"
+    }
+    set tempdir [cookit::fossilExport http://core.tcl.tk/tcl $r]
     
     # get base version from configure.in
     foreach {pkgname version} [cookit::getConfigureVersion $tempdir] break
