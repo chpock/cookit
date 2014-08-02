@@ -5,7 +5,7 @@ cookit::partRegister sqlite3 "SQLite3"
 proc cookit::sqlite3::retrievesource {} {
     set url "http://www.sqlite.org/download.html"
     set html [cookit::downloadURL $url]
-    if {![regexp "<a href=\"(|/|\[0-9\]+/)(sqlite-autoconf-\[A-Za-z0-9\\._\\-\]+.tar.gz)\">" $html - prefix filename]} {
+    if {![regexp {'([0-9]+/)(sqlite-autoconf[^\.]+\.tar.gz)'} $html - prefix filename]} {
         error "Unable to download sqlite3 sources - no URL on website"
     }
     set prefix [string trim $prefix /]
