@@ -147,10 +147,10 @@ proc cookit::tcllib::build-dynamic {} {
             file delete -force $libfile.tmp
         }
     }
-    if {1} {
+    set critclfile modules/tcllibc/critcl.tcl
+    if {[file exists $critclfile]} {
         # fix critcl::platform to report x86 on x64 machines if binary is running in 32bit mode
         # the fix is applied for all platforms in case critcl.tcl from another platform overwrites this one
-        set critclfile modules/tcllibc/critcl.tcl
         set fh [open $critclfile r]
         set fc [read $fh]
         close $fh
