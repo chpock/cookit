@@ -19,12 +19,14 @@ proc cookit::setPlatform {} {
     }  elseif {[string match "i*86*-Windows*-*" $p] || [string match "intel-Windows*-*" $p]} {
 	set platform win32-x86
     }  elseif {[string match "*-Darwin-*" $p]} {
-        if {[info exists ::env(CFLAGS)] && (
+        if {[info exists ::env(CFLAGS)] &&
 	    ([string match "*arch i386*" $::env(CFLAGS)] && [string match "*arch ppc*" $::env(CFLAGS)])
-	    ||
-	    ([string match "*arch i386*" $::env(CFLAGS)] && [string match "*arch x86_64*" $::env(CFLAGS)])
-	)} {
+	} {
             set platform macosx-universal
+        }  elseif {[info exists ::env(CFLAGS)] &&
+	    ([string match "*arch i386*" $::env(CFLAGS)] && [string match "*arch x86_64*" $::env(CFLAGS)])
+	} {
+            set platform macosx-universal64
         }  elseif {[info exists ::env(CFLAGS)] && [string match "*arch ppc*" $::env(CFLAGS)]} {
             set platform macosx-ppc
         }  elseif {[info exists ::env(CFLAGS)] && [string match "*arch i386*" $::env(CFLAGS)]} {

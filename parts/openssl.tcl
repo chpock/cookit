@@ -135,7 +135,7 @@ proc cookit::openssl::configure-dynamic {} {
     cookit::log 3 "cookit::openssl::configure-dynamic: Syncing up OpenSSL sources"
     _copysource
 
-    if {[string match "macosx-universal" $::cookit::platform]} {
+    if {[string match "macosx-universal*" $::cookit::platform]} {
         set wd [pwd]
 	set buildppc [string match "*arch ppc*" $::env(CFLAGS)]
 	set buildx64 [string match "*arch x86_64*" $::env(CFLAGS)]
@@ -241,7 +241,7 @@ proc cookit::openssl::configure-dynamic {} {
 }
 
 proc cookit::openssl::build-dynamic {} {
-    if {[string match "macosx-universal" $::cookit::platform]} {
+    if {[string match "macosx-universal*" $::cookit::platform]} {
         set wd [pwd]
 	set buildppc [string match "*arch ppc*" $::env(CFLAGS)]
 	set buildx64 [string match "*arch x86_64*" $::env(CFLAGS)]
@@ -268,7 +268,7 @@ proc cookit::openssl::build-dynamic {} {
 }
 
 proc cookit::openssl::install-dynamic {} {
-    if {[string match "macosx-universal" $::cookit::platform]} {
+    if {[string match "macosx-universal*" $::cookit::platform]} {
         set builddir [pwd]
         set installdir [file join [cookit::getInstallDynamicDirectory] openssl]
 
