@@ -5,7 +5,6 @@ set cookit::allOptions(tk-xft) {{Enables XFT support}}
 set cookit::allOptions(tk-aqua.arg) {{yes} {Value for --enable-aqua parameter}}
 
 proc cookit::tk::retrievesource {} {
-    #set tempdir [cookit::cvsExport :pserver:anonymous@tktoolkit.cvs.sourceforge.net:/cvsroot/tktoolkit tk]
     if {[info exists ::cookit::opt(tk)] && [string match 8.5.* $::cookit::opt(tk)]} {
 	set r "core-8-5-branch"
     }  else  {

@@ -3,7 +3,6 @@ namespace eval cookit::tcl {}
 cookit::partRegister tcl "Tcl language"
 
 proc cookit::tcl::retrievesource {} {
-    #set tempdir [cookit::cvsExport :pserver:anonymous@tcl.cvs.sourceforge.net:/cvsroot/tcl tcl]
     if {[info exists ::cookit::opt(tcl)] && [string match 8.5.* $::cookit::opt(tcl)]} {
 	set r "core-8-5-branch"
     }  else  {
