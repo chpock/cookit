@@ -119,13 +119,13 @@ proc cookit::tcllib::build-dynamic {} {
         cookit::log 2 "cookit::tcllib::build-dynamic: Unable to find library to strip - result: [list $libfiles]"
     }
 
+    set libfiles [glob -nocomplain modules/tcllibc/*/*.so modules/tcllibc/*/*.dylib]
+    set libfile [lindex $libfiles 0]
     # remove x86_64 platform that gets created even if not needed
     if {[string match "macosx-*" $::cookit::platform] && (
         (![info exists ::env(CFLAGS)]) || (![string match "*-arch x86_64*" $::env(CFLAGS)])
     )} {
-        set libfiles [glob -nocomplain modules/tcllibc/*/*.so modules/tcllibc/*/*.dylib]
         if {[llength $libfiles] == 1} {
-            set libfile [lindex $libfiles 0]
             cookit::log 2 "cookit::tcllib::build-dynamic: Removing x86_64 platform from $libfile..."
             file copy -force $libfile $libfile.tmp
 
@@ -157,17 +157,39 @@ proc cookit::tcllib::build-dynamic {} {
 
         regexp {^(.*proc\s+platform.*?)(return\s.*)$} $fc - before after
 
-        set fix {
-            if {"$plat-$mach" == "Darwin-x86_64" && $::tcl_platform(wordSize) == 4} {
-                return "Darwin-x86"
+        if {1} {
+            set fix {
+                if {$mach == "x86_64" && $::tcl_platform(wordSize) == 4} {
+                    set mach x86
+                }
             }
         }
-
+        # use Darwin-universal as platform for fat library
+        if {[string match "macosx-universal*" $::cookit::platform]} {
+            append fix {
+                if {$plat == "Darwin"} {
+                    return "Darwin-universal"
+                }
+            }
+        }
         set fc $before$fix$after
 
         set fh [open $critclfile w]
         puts -nonewline $fh $fc
         close $fh
+
+        # use Darwin-universal as platform for fat library - rename directory
+        if {[string match "macosx-universal*" $::cookit::platform]} {
+            if {[llength $libfiles] == 1} {
+                set dirname [file dirname $libfile]
+                set newdirname [file join [file dirname $dirname] Darwin-universal]
+                cookit::log 2 "cookit::tcllib::build-dynamic: Renaming directory $dirname to $newdirname"
+                if {$dirname != $newdirname} {
+                    file rename $dirname $newdirname
+                }
+            }
+        }
+
     }
 }
 

@@ -1,5 +1,8 @@
 package require tcltest
 
+puts "Platform:"
+parray tcl_platform
+
 if {[info exists ::env(COOKITPKGS)] && ($::env(COOKITPKGS) == "1" || $::env(COOKITPKGS) == "yes" || $::env(COOKITPKGS) == "true")} {
     set d [file normalize [file dirname [info nameofexecutable]]]
     foreach g [glob -directory $d packages/*.cfspkg] {
