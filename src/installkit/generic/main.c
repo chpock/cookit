@@ -1,7 +1,7 @@
 /* 
  * main.c --
  *
- *	Main entry point for wish and other Tk-based applications.
+ *      Main entry point for wish and other Tk-based applications.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
@@ -124,16 +124,16 @@ wsetargv(int *_argc)
  *
  * Installkit_Startup --
  *
- *	This procedure performs application-specific initialization.
- *	Most applications, especially those that incorporate additional
- *	packages, will have their own version of this procedure.
+ *      This procedure performs application-specific initialization.
+ *      Most applications, especially those that incorporate additional
+ *      packages, will have their own version of this procedure.
  *
  * Results:
- *	Returns a standard Tcl completion code, and leaves an error
- *	message in the interp's result if an error occurs.
+ *      Returns a standard Tcl completion code, and leaves an error
+ *      message in the interp's result if an error occurs.
  *
  * Side effects:
- *	Depends on the startup script.
+ *      Depends on the startup script.
  *
  *----------------------------------------------------------------------
  */
@@ -205,7 +205,7 @@ Installkit_Startup( Tcl_Interp *interp )
         VFS_MOUNT "/lib/tk", TCL_GLOBAL_ONLY );
 
     if (Tcl_Init(interp) == TCL_ERROR) {
-	goto error;
+        goto error;
     }
 
 #ifdef __WIN32__
@@ -215,7 +215,7 @@ Installkit_Startup( Tcl_Interp *interp )
     Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
 
     if( Tk_Init(interp) == TCL_ERROR ) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     Tcl_StaticPackage( interp, "tk", Tk_Init, 0 );
 #endif /* __WIN32__ */
@@ -258,7 +258,7 @@ error:
 #ifdef __WIN32__
     MessageBeep(MB_ICONEXCLAMATION);
     MessageBox(NULL, Tcl_GetStringResult(interp), "Fatal Error",
-	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+            MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     ExitProcess(1);
 #endif /* __WIN32__ */
     return TCL_ERROR;
@@ -271,38 +271,38 @@ error:
  *
  * setargv --
  *
- *	Parse the Windows command line string into argc/argv.  Done here
- *	because we don't trust the builtin argument parser in crt0.  
- *	Windows applications are responsible for breaking their command
- *	line into arguments.
+ *      Parse the Windows command line string into argc/argv.  Done here
+ *      because we don't trust the builtin argument parser in crt0.  
+ *      Windows applications are responsible for breaking their command
+ *      line into arguments.
  *
- *	2N backslashes + quote -> N backslashes + begin quoted string
- *	2N + 1 backslashes + quote -> literal
- *	N backslashes + non-quote -> literal
- *	quote + quote in a quoted string -> single quote
- *	quote + quote not in quoted string -> empty string
- *	quote -> begin quoted string
+ *      2N backslashes + quote -> N backslashes + begin quoted string
+ *      2N + 1 backslashes + quote -> literal
+ *      N backslashes + non-quote -> literal
+ *      quote + quote in a quoted string -> single quote
+ *      quote + quote not in quoted string -> empty string
+ *      quote -> begin quoted string
  *
  * Results:
- *	Fills argcPtr with the number of arguments and argvPtr with the
- *	array of arguments.
+ *      Fills argcPtr with the number of arguments and argvPtr with the
+ *      array of arguments.
  *
  * Side effects:
- *	Memory allocated.
+ *      Memory allocated.
  *
  *--------------------------------------------------------------------------
  */
 
 static void
 setargv(argcPtr, argvPtr)
-    int *argcPtr;		/* Filled with number of argument strings. */
-    char ***argvPtr;		/* Filled with argument strings (malloc'd). */
+    int *argcPtr;               /* Filled with number of argument strings. */
+    char ***argvPtr;            /* Filled with argument strings (malloc'd). */
 {
     char *cmdLine, *p, *arg, *argSpace;
     char **argv;
     int argc, size, inquote, copy, slashes;
     
-    cmdLine = GetCommandLine();	/* INTL: BUG */
+    cmdLine = GetCommandLine(); /* INTL: BUG */
 
     /*
      * Precompute an overly pessimistic guess at the number of arguments
@@ -311,72 +311,72 @@ setargv(argcPtr, argvPtr)
 
     size = 2;
     for (p = cmdLine; *p != '\0'; p++) {
-	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
-	    size++;
-	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
-		p++;
-	    }
-	    if (*p == '\0') {
-		break;
-	    }
-	}
+        if ((*p == ' ') || (*p == '\t')) {      /* INTL: ISO space. */
+            size++;
+            while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
+                p++;
+            }
+            if (*p == '\0') {
+                break;
+            }
+        }
     }
     argSpace = (char *) Tcl_Alloc(
-	    (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
+            (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
     argv = (char **) argSpace;
     argSpace += size * sizeof(char *);
     size--;
 
     p = cmdLine;
     for (argc = 0; argc < size; argc++) {
-	argv[argc] = arg = argSpace;
-	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
-	    p++;
-	}
-	if (*p == '\0') {
-	    break;
-	}
+        argv[argc] = arg = argSpace;
+        while ((*p == ' ') || (*p == '\t')) {   /* INTL: ISO space. */
+            p++;
+        }
+        if (*p == '\0') {
+            break;
+        }
 
-	inquote = 0;
-	slashes = 0;
-	while (1) {
-	    copy = 1;
-	    while (*p == '\\') {
-		slashes++;
-		p++;
-	    }
-	    if (*p == '"') {
-		if ((slashes & 1) == 0) {
-		    copy = 0;
-		    if ((inquote) && (p[1] == '"')) {
-			p++;
-			copy = 1;
-		    } else {
-			inquote = !inquote;
-		    }
+        inquote = 0;
+        slashes = 0;
+        while (1) {
+            copy = 1;
+            while (*p == '\\') {
+                slashes++;
+                p++;
+            }
+            if (*p == '"') {
+                if ((slashes & 1) == 0) {
+                    copy = 0;
+                    if ((inquote) && (p[1] == '"')) {
+                        p++;
+                        copy = 1;
+                    } else {
+                        inquote = !inquote;
+                    }
                 }
                 slashes >>= 1;
             }
 
             while (slashes) {
-		*arg = '\\';
-		arg++;
-		slashes--;
-	    }
+                *arg = '\\';
+                arg++;
+                slashes--;
+            }
 
-	    if ((*p == '\0')
-		    || (!inquote && ((*p == ' ') || (*p == '\t')))) {
+            if ((*p == '\0')
+                    || (!inquote && ((*p == ' ') || (*p == '\t')))) {
                 /* INTL: ISO space. */
-		break;
-	    }
-	    if (copy != 0) {
-		*arg = *p;
-		arg++;
-	    }
-	    p++;
+                break;
+            }
+            if (copy != 0) {
+                *arg = *p;
+                arg++;
+            }
+            p++;
         }
-	*arg = '\0';
-	argSpace = arg + 1;
+        *arg = '\0';
+        argSpace = arg + 1;
     }
     argv[argc] = NULL;
 
@@ -389,13 +389,13 @@ setargv(argcPtr, argvPtr)
  *
  * WishPanic --
  *
- *	Display a message and exit.
+ *      Display a message and exit.
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Exits the program.
+ *      Exits the program.
  *
  *----------------------------------------------------------------------
  */
@@ -412,7 +412,7 @@ WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
 
     MessageBeep(MB_ICONEXCLAMATION);
     MessageBox(NULL, buf, "Fatal Error",
-	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+            MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 #ifdef _MSC_VER
     DebugBreak();
 #endif
@@ -424,14 +424,14 @@ WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
  *
  * WinMain --
  *
- *	Main entry point from Windows.
+ *      Main entry point from Windows.
  *
  * Results:
- *	Returns false if initialization fails, otherwise it never
- *	returns. 
+ *      Returns false if initialization fails, otherwise it never
+ *      returns. 
  *
  * Side effects:
- *	Just about anything, since from here we call arbitrary Tcl code.
+ *      Just about anything, since from here we call arbitrary Tcl code.
  *
  *----------------------------------------------------------------------
  */
@@ -466,14 +466,14 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
  *
  * main --
  *
- *	Main entry point from the console.
+ *      Main entry point from the console.
  *
  * Results:
- *	None: Tcl_Main never returns here, so this procedure never
+ *      None: Tcl_Main never returns here, so this procedure never
  *      returns either.
  *
  * Side effects:
- *	Whatever the applications does.
+ *      Whatever the applications does.
  *
  *----------------------------------------------------------------------
  */

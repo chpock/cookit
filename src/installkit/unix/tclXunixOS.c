@@ -110,12 +110,12 @@ ChannelToFnum (channel, direction)
     if (direction == 0) {
         if (Tcl_GetChannelHandle (channel, TCL_READABLE, &handle) != TCL_OK &&
             Tcl_GetChannelHandle (channel, TCL_WRITABLE, &handle) != TCL_OK) {
-	    return -1;
-	}
+            return -1;
+        }
     } else {
         if (Tcl_GetChannelHandle (channel, direction, &handle) != TCL_OK) {
             return -1;
-	}
+        }
     }
     return (int) handle;
 }
@@ -961,10 +961,10 @@ TclXOSgetpeername (interp, channel, sockaddr, sockaddrSize)
 {
 
     if (getpeername (ChannelToFnum (channel, 0),
-		(struct sockaddr *) sockaddr, &sockaddrSize) < 0) {
+                (struct sockaddr *) sockaddr, &sockaddrSize) < 0) {
         TclX_AppendObjResult (interp, Tcl_GetChannelName (channel), ": ",
-		Tcl_PosixError (interp), (char *) NULL);
-	return TCL_ERROR;
+                Tcl_PosixError (interp), (char *) NULL);
+        return TCL_ERROR;
     }
     return TCL_OK;
 }
@@ -990,10 +990,10 @@ TclXOSgetsockname (interp, channel, sockaddr, sockaddrSize)
     int         sockaddrSize;
 {
     if (getsockname (ChannelToFnum (channel, 0),
-		(struct sockaddr *) sockaddr, &sockaddrSize) < 0) {
-	TclX_AppendObjResult (interp, Tcl_GetChannelName (channel), ": ",
-		Tcl_PosixError (interp), (char *) NULL);
-	return TCL_ERROR;
+                (struct sockaddr *) sockaddr, &sockaddrSize) < 0) {
+        TclX_AppendObjResult (interp, Tcl_GetChannelName (channel), ": ",
+                Tcl_PosixError (interp), (char *) NULL);
+        return TCL_ERROR;
     }
     return TCL_OK;
 }
@@ -1021,9 +1021,9 @@ TclXOSgetsockopt (interp, channel, option, valuePtr)
     int valueLen = sizeof (*valuePtr);
 
     if (getsockopt (ChannelToFnum (channel, 0), SOL_SOCKET, option, 
-		(void*) valuePtr, &valueLen) != 0) {
-	TclX_AppendObjResult (interp, Tcl_GetChannelName (channel), ": ",
-		Tcl_PosixError (interp), (char *) NULL);
+                (void*) valuePtr, &valueLen) != 0) {
+        TclX_AppendObjResult (interp, Tcl_GetChannelName (channel), ": ",
+                Tcl_PosixError (interp), (char *) NULL);
         return TCL_ERROR;
     }
     return TCL_OK;
@@ -1261,13 +1261,13 @@ TclXOSChangeOwnGrpObj (interp, options, ownerStr, groupStr, fileListObj, funcNam
         return TCL_ERROR;
 
     if (Tcl_ListObjGetElements (interp, fileListObj, &fileCount, &filesObjv)
-	    != TCL_OK)
-	return TCL_ERROR;
+            != TCL_OK)
+        return TCL_ERROR;
 
     Tcl_DStringInit (&pathBuf);
 
     for (idx = 0; idx < fileCount; idx++) {
-	fileNameString = Tcl_GetStringFromObj (filesObjv [idx], NULL);
+        fileNameString = Tcl_GetStringFromObj (filesObjv [idx], NULL);
         filePath = Tcl_TranslateFileName (interp, fileNameString, &pathBuf);
         if (filePath == NULL) {
             Tcl_DStringFree (&pathBuf);
@@ -1344,14 +1344,14 @@ TclXOSFChangeOwnGrpObj (interp, options, ownerStr, groupStr, channelIdsObj,
         return TCL_ERROR;
 
     if (Tcl_ListObjGetElements (interp, channelIdsObj,
-	    &channelCount, &channelIdsListObj) != TCL_OK)
-	return TCL_ERROR;
+            &channelCount, &channelIdsListObj) != TCL_OK)
+        return TCL_ERROR;
 
     for (idx = 0; idx < channelCount; idx++) {
         channel = TclX_GetOpenChannelObj (interp, channelIdsListObj [idx], 0);
         if (channel == NULL) {
             return TCL_ERROR;
-	}
+        }
         fnum = ChannelToFnum (channel, 0);
         
         /*

@@ -35,7 +35,7 @@
  * Internal interp flags compatibility - removed in Tcl 8.5 sources.
  */
 #ifndef ERR_IN_PROGRESS
-#define ERR_IN_PROGRESS	2
+#define ERR_IN_PROGRESS 2
 #endif
 #ifndef ERROR_CODE_SET
 #define ERROR_CODE_SET 8
@@ -58,7 +58,7 @@
  * If no MAXLONG, assume sizeof (long) == sizeof (int).
  */
 #ifndef MAXINT
-#    ifdef INT_MAX	/* POSIX */
+#    ifdef INT_MAX      /* POSIX */
 #        define MAXINT INT_MAX
 #    else
 #        define BITSPERBYTE   8
@@ -69,7 +69,7 @@
 #endif
 
 #ifndef MININT
-#    ifdef INT_MIN		/* POSIX */
+#    ifdef INT_MIN              /* POSIX */
 #        define MININT INT_MIN
 #    else
 #        define MININT (-MAXINT)-1
@@ -163,10 +163,10 @@ extern Tcl_Obj *tclXWrongArgsObj;
         (((str1)[0] == (str2)[0]) && (strncmp(str1, str2, cnt) == 0))
 
 #define OBJSTREQU(obj1, str1) \
-	(strcmp(Tcl_GetStringFromObj(obj1, NULL), str1) == 0)
+        (strcmp(Tcl_GetStringFromObj(obj1, NULL), str1) == 0)
 
 #define OBJSTRNEQU(obj1, str1, cnt) \
-	(strncmp(Tcl_GetStringFromObj(obj1, NULL), str1, cnt) == 0)
+        (strncmp(Tcl_GetStringFromObj(obj1, NULL), str1, cnt) == 0)
 /*
  * Macro to do ctype functions with 8 bit character sets.
  */
@@ -200,11 +200,11 @@ typedef int
 
 extern int
 TclX_CreateObjCommand _ANSI_ARGS_((Tcl_Interp* interp, char* cmdName,
-				   Tcl_ObjCmdProc *proc, ClientData clientData,
-				   Tcl_CmdDeleteProc *deleteProc, int flags));
+                                   Tcl_ObjCmdProc *proc, ClientData clientData,
+                                   Tcl_CmdDeleteProc *deleteProc, int flags));
 extern void *
 TclX_StructOffset _ANSI_ARGS_((void *nsPtr, size_t offset,
-	unsigned int offType));
+        unsigned int offType));
 
 /*
  * Macro to use to fill in "offset" fields of a structure.
@@ -221,14 +221,14 @@ TclX_StructOffset _ANSI_ARGS_((void *nsPtr, size_t offset,
 /* Special flags for "TclX_CreateObjCommand".
  */
 
-#define TCLX_CMD_NOPREFIX	1  /* don't define with "exp_" prefix */
-#define TCLX_CMD_REDEFINE	2  /* stomp on old commands with same name */
+#define TCLX_CMD_NOPREFIX       1  /* don't define with "exp_" prefix */
+#define TCLX_CMD_REDEFINE       2  /* stomp on old commands with same name */
 
 /*
  * UTF-8 compatibility handling
  */
 #ifndef TCL_UTF_MAX
-#define Tcl_WriteChars	Tcl_Write
+#define Tcl_WriteChars  Tcl_Write
 #endif
 
 #define TclX_WriteNL(channel) (Tcl_Write (channel, "\n", 1))
@@ -289,7 +289,7 @@ TclX_JoinPath _ANSI_ARGS_((char        *path1,
 extern int  
 TclX_WrongArgs _ANSI_ARGS_((Tcl_Interp *interp, 
                             Tcl_Obj    *commandNameObj, 
-			    char       *string));
+                            char       *string));
 
 extern int
 TclX_IsNullObj _ANSI_ARGS_((Tcl_Obj *objPtr));
@@ -409,7 +409,7 @@ TclXNotAvailableError _ANSI_ARGS_((Tcl_Interp *interp,
                                    char       *funcName));
 extern int
 TclXNotAvailableObjError _ANSI_ARGS_((Tcl_Interp *interp,
-				      Tcl_Obj *obj));
+                                      Tcl_Obj *obj));
 
 extern clock_t
 TclXOSTicksToMS _ANSI_ARGS_((clock_t numTicks));

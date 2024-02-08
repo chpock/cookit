@@ -43,7 +43,7 @@ if test -z "$PLATFORM"; then
         MACHINE=`uname -m`
 
         case $MACHINE in
-	    *86_64*)
+            *86_64*)
                 MACHINE=x86_64
                 ;;
             *86*)
@@ -75,8 +75,8 @@ case $1 in
 
     makedist)
         echo "Don't forget to update the version file before distributing"
-	rm -rf $PREFIX/$PLATFORM
-	mkdir $PREFIX/$PLATFORM
+        rm -rf $PREFIX/$PLATFORM
+        mkdir $PREFIX/$PLATFORM
         cp version $PREFIX/$PLATFORM
 
         for i in installkit installkit.exe installkitA.exe \
@@ -99,7 +99,7 @@ case $1 in
         rm -f $PLATFORM.zip
         FILES=`find $PLATFORM -type f`
         $PREFIX/bin/tclsh8.5 $TOP/src/tools/makezip.tcl $PLATFORM.zip $FILES
-	rm -rf $PREFIX/$PLATFORM
+        rm -rf $PREFIX/$PLATFORM
         mv $PLATFORM.zip $TOP/work
         echo "File is in work/$PLATFORM.zip"
         ;;

@@ -27,7 +27,7 @@ do
   -h|--help)       help ;;
   --debug)         SYMBOLS_FLAG=--enable-symbols
                    echo "Extra debugging features enabled"
-		   ;;
+                   ;;
   *) echo "Invalid configure option $i" ; help ; exit 1 ;;
   esac
 done
@@ -80,23 +80,23 @@ cat > Makefile << EOF
 ## Created with $0 $@
 ##
 
-TOP_SRCDIR	= $ABS_TOP_SRCDIR
-TOP_BUILDDIR	= $ABS_TOP_BUILDDIR
+TOP_SRCDIR      = $ABS_TOP_SRCDIR
+TOP_BUILDDIR    = $ABS_TOP_BUILDDIR
 
-CC		= ${CC-gcc}
+CC              = ${CC-gcc}
 CFLAGS          = $CFLAGS
-AQUA_FLAG	= $AQUA_FLAG
-SHARED_FLAG	= $SHARED_FLAG
-THREADS_FLAG	= $THREADS_FLAG
-SYMBOLS_FLAG	= $SYMBOLS_FLAG
-TCL_SYSTEM	= $TCL_SYSTEM
-IJ_PLATFORM	= $IJ_PLATFORM
+AQUA_FLAG       = $AQUA_FLAG
+SHARED_FLAG     = $SHARED_FLAG
+THREADS_FLAG    = $THREADS_FLAG
+SYMBOLS_FLAG    = $SYMBOLS_FLAG
+TCL_SYSTEM      = $TCL_SYSTEM
+IJ_PLATFORM     = $IJ_PLATFORM
 TCLSH           = $TCLSH
 
-PREFIX		= \$(TOP_BUILDDIR)/out
-KIT_PREFIX	= \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
+PREFIX          = \$(TOP_BUILDDIR)/out
+KIT_PREFIX      = \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
 
-TARGETS		= $TARGETS
+TARGETS         = $TARGETS
 
 EOF
 

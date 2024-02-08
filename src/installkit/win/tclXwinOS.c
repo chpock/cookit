@@ -51,17 +51,17 @@ TclXNotAvailableError (Tcl_Interp *interp,
                        char       *funcName)
 {
     Tcl_AppendResult(interp, funcName, " is not available on MS Windows",
-	    (char *) NULL);
+            (char *) NULL);
     return TCL_ERROR;
 }
 int
 TclXNotAvailableObjError (Tcl_Interp *interp,
-			  Tcl_Obj *obj)
+                          Tcl_Obj *obj)
 {
     char *funcName = Tcl_GetStringFromObj(obj, NULL);
 
     Tcl_AppendResult(interp, funcName, " is not available on MS Windows",
-	    (char *) NULL);
+            (char *) NULL);
     return TCL_ERROR;
 }
 
@@ -84,24 +84,24 @@ TclXNotAvailableObjError (Tcl_Interp *interp,
  *
  * setargv --
  *
- *	Parse the Windows command line string into argc/argv.  Done here
- *	because we don't trust the builtin argument parser in crt0.  
- *	Windows applications are responsible for breaking their command
- *	line into arguments.
+ *      Parse the Windows command line string into argc/argv.  Done here
+ *      because we don't trust the builtin argument parser in crt0.  
+ *      Windows applications are responsible for breaking their command
+ *      line into arguments.
  *
- *	2N backslashes + quote -> N backslashes + begin quoted string
- *	2N + 1 backslashes + quote -> literal
- *	N backslashes + non-quote -> literal
- *	quote + quote in a quoted string -> single quote
- *	quote + quote not in quoted string -> empty string
- *	quote -> begin quoted string
+ *      2N backslashes + quote -> N backslashes + begin quoted string
+ *      2N + 1 backslashes + quote -> literal
+ *      N backslashes + non-quote -> literal
+ *      quote + quote in a quoted string -> single quote
+ *      quote + quote not in quoted string -> empty string
+ *      quote -> begin quoted string
  *
  * Results:
- *	Fills argcPtr with the number of arguments and argvPtr with the
- *	array of arguments.
+ *      Fills argcPtr with the number of arguments and argvPtr with the
+ *      array of arguments.
  *
  * Side effects:
- *	Memory allocated.
+ *      Memory allocated.
  *
  *--------------------------------------------------------------------------
  */
@@ -122,70 +122,70 @@ TclX_SplitWinCmdLine (int    *argcPtr,
 
     size = 2;
     for (p = cmdLine; *p != '\0'; p++) {
-	if (isspace(*p)) {
-	    size++;
-	    while (isspace(*p)) {
-		p++;
-	    }
-	    if (*p == '\0') {
-		break;
-	    }
-	}
+        if (isspace(*p)) {
+            size++;
+            while (isspace(*p)) {
+                p++;
+            }
+            if (*p == '\0') {
+                break;
+            }
+        }
     }
     argSpace = (char *) ckalloc((unsigned) (size * sizeof(char *) 
-	    + strlen(cmdLine) + 1));
+            + strlen(cmdLine) + 1));
     argv = (char **) argSpace;
     argSpace += size * sizeof(char *);
     size--;
 
     p = cmdLine;
     for (argc = 0; argc < size; argc++) {
-	argv[argc] = arg = argSpace;
-	while (isspace(*p)) {
-	    p++;
-	}
-	if (*p == '\0') {
-	    break;
-	}
+        argv[argc] = arg = argSpace;
+        while (isspace(*p)) {
+            p++;
+        }
+        if (*p == '\0') {
+            break;
+        }
 
-	inquote = 0;
-	slashes = 0;
-	while (1) {
-	    copy = 1;
-	    while (*p == '\\') {
-		slashes++;
-		p++;
-	    }
-	    if (*p == '"') {
-		if ((slashes & 1) == 0) {
-		    copy = 0;
-		    if ((inquote) && (p[1] == '"')) {
-			p++;
-			copy = 1;
-		    } else {
-			inquote = !inquote;
-		    }
+        inquote = 0;
+        slashes = 0;
+        while (1) {
+            copy = 1;
+            while (*p == '\\') {
+                slashes++;
+                p++;
+            }
+            if (*p == '"') {
+                if ((slashes & 1) == 0) {
+                    copy = 0;
+                    if ((inquote) && (p[1] == '"')) {
+                        p++;
+                        copy = 1;
+                    } else {
+                        inquote = !inquote;
+                    }
                 }
                 slashes >>= 1;
             }
 
             while (slashes) {
-		*arg = '\\';
-		arg++;
-		slashes--;
-	    }
+                *arg = '\\';
+                arg++;
+                slashes--;
+            }
 
-	    if ((*p == '\0') || (!inquote && isspace(*p))) {
-		break;
-	    }
-	    if (copy != 0) {
-		*arg = *p;
-		arg++;
-	    }
-	    p++;
+            if ((*p == '\0') || (!inquote && isspace(*p))) {
+                break;
+            }
+            if (copy != 0) {
+                *arg = *p;
+                arg++;
+            }
+            p++;
         }
-	*arg = '\0';
-	argSpace = arg + 1;
+        *arg = '\0';
+        argSpace = arg + 1;
     }
     argv[argc] = NULL;
 
@@ -213,23 +213,23 @@ TclX_SplitWinCmdLine (int    *argcPtr,
  *-----------------------------------------------------------------------------
  */
 static HANDLE
-ChannelToHandle (Tcl_Channel		channel,
-                 int         		direction,
-                 tclXwinFileType	*typePtr)
+ChannelToHandle (Tcl_Channel            channel,
+                 int                    direction,
+                 tclXwinFileType        *typePtr)
 {
     ClientData handle;
-    int	sockType;
-    int	sockTypeLen = sizeof(sockType);
+    int sockType;
+    int sockTypeLen = sizeof(sockType);
     
     if (direction == 0) {
         if (Tcl_GetChannelHandle (channel, TCL_READABLE, &handle) != TCL_OK &&
-	    Tcl_GetChannelHandle (channel, TCL_WRITABLE, &handle) != TCL_OK) {
-	    handle = INVALID_HANDLE_VALUE;
-	}
+            Tcl_GetChannelHandle (channel, TCL_WRITABLE, &handle) != TCL_OK) {
+            handle = INVALID_HANDLE_VALUE;
+        }
     } else {
         if (Tcl_GetChannelHandle (channel, direction, &handle) != TCL_OK) {
-	    handle = INVALID_HANDLE_VALUE;
-	}
+            handle = INVALID_HANDLE_VALUE;
+        }
     }
 
     /*
@@ -238,23 +238,23 @@ ChannelToHandle (Tcl_Channel		channel,
      * may not be the same on some machines.
      */
     switch (GetFileType ((HANDLE) handle)) {
-	case FILE_TYPE_DISK:
-	    *typePtr = TCLX_WIN_FILE;
-	    break;
-	case FILE_TYPE_CHAR:
-	    *typePtr = TCLX_WIN_CONSOLE;
-	    break;
-	case FILE_TYPE_PIPE:
-	    if (getsockopt ((SOCKET)handle, SOL_SOCKET, SO_TYPE, 
-			    (void *)&sockType, &sockTypeLen) == 0) {
-		*typePtr = TCLX_WIN_SOCKET;
-	    } else {
-		*typePtr = TCLX_WIN_PIPE;
-	    }
-	    break;
-	case FILE_TYPE_UNKNOWN:
-	    handle = INVALID_HANDLE_VALUE;
-	    break;
+        case FILE_TYPE_DISK:
+            *typePtr = TCLX_WIN_FILE;
+            break;
+        case FILE_TYPE_CHAR:
+            *typePtr = TCLX_WIN_CONSOLE;
+            break;
+        case FILE_TYPE_PIPE:
+            if (getsockopt ((SOCKET)handle, SOL_SOCKET, SO_TYPE, 
+                            (void *)&sockType, &sockTypeLen) == 0) {
+                *typePtr = TCLX_WIN_SOCKET;
+            } else {
+                *typePtr = TCLX_WIN_PIPE;
+            }
+            break;
+        case FILE_TYPE_UNKNOWN:
+            handle = INVALID_HANDLE_VALUE;
+            break;
     }
     
     return (HANDLE) handle;
@@ -378,7 +378,7 @@ TclXOSpipe (interp, channels)
     sec.bInheritHandle = FALSE;
 
     if (!CreatePipe (&readHandle, &writeHandle, &sec, 0)) {
-	TclWinConvertError (GetLastError ());
+        TclWinConvertError (GetLastError ());
         TclX_AppendObjResult (interp, "pipe creation failed: ",
                               Tcl_PosixError (interp), (char *) NULL);
         return TCL_ERROR;
@@ -578,7 +578,7 @@ TclXOSElapsedTime (clock_t *realTime,
      * If this is the first call, get base time.
      */
     if (startTime == 0) {
-	startTime = GetTickCount ();
+        startTime = GetTickCount ();
     }
     *realTime = GetTickCount () - startTime;
     *cpuTime = 0;
@@ -608,8 +608,8 @@ TclXOSkill (Tcl_Interp *interp,
 
     processHandle = OpenProcess(PROCESS_TERMINATE, FALSE, (int) pid);
     if (processHandle == NULL) {
-	Tcl_AppendResult(interp, "invalid pid", (char *) NULL);
-	return TCL_ERROR;
+        Tcl_AppendResult(interp, "invalid pid", (char *) NULL);
+        return TCL_ERROR;
     }
 
     TerminateProcess(processHandle, 7);
@@ -652,7 +652,7 @@ TclXOSFstat (Tcl_Interp  *interp,
         TclX_AppendObjResult (interp, "channel \"",
                               Tcl_GetChannelName (channel),
                               "\" has no device handle", (char *) NULL);
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
 
     /*
@@ -910,7 +910,7 @@ TclXOSGetFileSize (Tcl_Channel  channel,
     handle = ChannelToHandle (channel, 0, &type);
 
     if (handle == INVALID_HANDLE_VALUE) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     
     switch (type) {
@@ -966,7 +966,7 @@ TclXOSftruncate (Tcl_Interp  *interp,
                               Tcl_GetChannelName (channel),
                               "\" failed: can only truncate disk files",
                               (char *) NULL);
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     pos = (int) Tcl_Tell (channel);
     if (SetFilePointer (handle, (LONG)newSize, NULL,
@@ -1320,7 +1320,7 @@ TclXOSChangeOwnGrpObj (interp, options, ownerStr, groupStr, files, funcName)
     unsigned     options;
     char        *ownerStr;
     char        *groupStr;
-    Tcl_Obj	*files;
+    Tcl_Obj     *files;
     char       *funcName;
 {
     return TclXNotAvailableError (interp, funcName);
@@ -1392,7 +1392,7 @@ TclXOSGetSelectFnum (Tcl_Interp *interp,
 
     if (type != TCLX_WIN_SOCKET) {
         TclX_AppendObjResult (interp, "channel \"",
-			      Tcl_GetChannelName (channel),
+                              Tcl_GetChannelName (channel),
                               "\" is not a socket; select only works on ",
                               "sockets on Windows", (char *) NULL);
         return TCL_ERROR;
@@ -1465,7 +1465,7 @@ LockUnlockSetup (Tcl_Interp     *interp,
         TclX_AppendObjResult (interp, "channel \"",
                               Tcl_GetChannelName (lockInfoPtr->channel),
                               "\" has no device handle", (char *) NULL);
-	return handle;
+        return handle;
     }
 
     switch (type) {
@@ -1720,7 +1720,7 @@ TclXOSGetCloseOnExec (interp, channel, valuePtr)
         TclX_AppendObjResult (interp, "channel \"",
                               Tcl_GetChannelName (channel),
                               "\" has no device handle", (char *) NULL);
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
 
     /*
@@ -1770,7 +1770,7 @@ TclXOSSetCloseOnExec (interp, channel, value)
         TclX_AppendObjResult (interp, "channel \"",
                               Tcl_GetChannelName (channel),
                               "\" has no device handle", (char *) NULL);
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
 
     /*

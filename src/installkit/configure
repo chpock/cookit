@@ -113,7 +113,7 @@ case $PLATFORM in
 
         MAKEFILE=unix/Makefile.in
 
-	LIB_PREFIX="lib"
+        LIB_PREFIX="lib"
 
         if test "x${TCL_LIB_VERSIONS_OK}" = "xnodots"; then
           TKVERSION_LIB=$TKVERSION_NODOT
@@ -149,37 +149,37 @@ case $PLATFORM in
 
         TARGETS="\$(PROG).exe \$(PROG)U.exe \$(PROG)A.exe \$(PROG)UA.exe"
 
-	DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13.a \$(TK_LIBS)\
+        DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13.a \$(TK_LIBS)\
             -luuid -lrpcrt4 -mwindows"
-	DYNAMIC_LFLAGS=""
+        DYNAMIC_LFLAGS=""
 
-	EXE=".exe"
+        EXE=".exe"
 
         if test -f /c/Progra~1/Bitsum~1/Pecomp~1/PEC2.exe; then
             UPX="/c/Progra~1/Bitsum~1/Pecomp~1/PEC2.exe /NoBackup /Ko:N /Ri:No"
         fi
 
-	EXTRA_LIBS="\$(LIB_THREAD)"
-	EXTRA_INCLUDES="-DTCL_THREADS"
-	;;
+        EXTRA_LIBS="\$(LIB_THREAD)"
+        EXTRA_INCLUDES="-DTCL_THREADS"
+        ;;
 
   Linux)
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -rdynamic -ldl"
-	;;
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -rdynamic -ldl"
+        ;;
 
   *BSD)
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -rdynamic"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -rdynamic"
         ;;
 
   SunOS)
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -ldl -lsocket -lnsl -lresolv"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -ldl -lsocket -lnsl -lresolv"
         ;;
 
   Darwin)
-	DYNAMIC_CFLAGS="$CFLAGS"
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework CoreFoundation"
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework Carbon"
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS $DYNAMIC_CFLAGS"
+        DYNAMIC_CFLAGS="$CFLAGS"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework CoreFoundation"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework Carbon"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS $DYNAMIC_CFLAGS"
         ;;
 
   *)

@@ -44,7 +44,7 @@ TclX_SystemObjCmd (clientData, interp, objc, objv)
     int exitCode;
 
     if (objc < 2)
-	return TclX_WrongArgs (interp, objv [0], "cmdstr1 ?cmdstr2...?");
+        return TclX_WrongArgs (interp, objv [0], "cmdstr1 ?cmdstr2...?");
 
     cmdObjPtr = Tcl_ConcatObj (objc - 1, &(objv[1]));
     cmdStr = Tcl_GetStringFromObj (cmdObjPtr, NULL);
@@ -69,8 +69,8 @@ TclX_InitCommands (interp)
 {
     TclX_CreateObjCommand (interp,
                           "system",
-			  TclX_SystemObjCmd,
+                          TclX_SystemObjCmd,
                           (ClientData) NULL,
-			  (Tcl_CmdDeleteProc*) NULL, 0);
+                          (Tcl_CmdDeleteProc*) NULL, 0);
 
 }

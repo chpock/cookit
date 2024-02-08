@@ -157,11 +157,11 @@ UseridToUsernameResult (interp, userId)
     char          userIdString[16];
 
     if ((pw == NULL) || ((int) uid != userId)) {
-	sprintf (userIdString, "%d", uid);
-	Tcl_AppendStringsToObj (resultObj, 
-	    "unknown user id: ", 
-	    userIdString,
-	    NULL);
+        sprintf (userIdString, "%d", uid);
+        Tcl_AppendStringsToObj (resultObj, 
+            "unknown user id: ", 
+            userIdString,
+            NULL);
         endpwent ();
         return TCL_ERROR;
     }
@@ -179,10 +179,10 @@ UsernameToUseridResult (interp, userName)
     Tcl_Obj       *resultObj = Tcl_GetObjResult (interp);
 
     if (pw == NULL) {
-	Tcl_AppendStringsToObj (resultObj,
-				"unknown user id: ", 
-				userName, 
-				 (char *) NULL);
+        Tcl_AppendStringsToObj (resultObj,
+                                "unknown user id: ", 
+                                userName, 
+                                 (char *) NULL);
         endpwent ();
         return TCL_ERROR;
     }
@@ -204,10 +204,10 @@ GroupidToGroupnameResult (interp, groupId)
     sprintf (groupIdString, "%d", gid);
 
     if ((grp == NULL) || ((int) gid != groupId)) {
-	Tcl_AppendStringsToObj (resultObj, 
-				"unknown group id: ", 
-				groupIdString,
-				(char *)NULL);
+        Tcl_AppendStringsToObj (resultObj, 
+                                "unknown group id: ", 
+                                groupIdString,
+                                (char *)NULL);
         endgrent ();
         return TCL_ERROR;
     }
@@ -225,9 +225,9 @@ GroupnameToGroupidResult (interp, groupName)
     Tcl_Obj       *resultObj = Tcl_GetObjResult (interp);
     if (grp == NULL) {
         Tcl_AppendStringsToObj (resultObj, 
-				"unknown group id: ",
-				groupName,
-				(char *) NULL);
+                                "unknown group id: ",
+                                groupName,
+                                (char *) NULL);
         return TCL_ERROR;
     }
     Tcl_SetIntObj (resultObj, grp->gr_gid);
@@ -298,7 +298,7 @@ IdEffective (interp, objc, objv)
         return UseridToUsernameResult (interp, geteuid ());
     
     if (STREQU (subCommand, "userid")) {
-	Tcl_SetObjResult (interp, Tcl_NewIntObj (geteuid ()));
+        Tcl_SetObjResult (interp, Tcl_NewIntObj (geteuid ()));
         return TCL_OK;
     }
     
@@ -306,7 +306,7 @@ IdEffective (interp, objc, objv)
         return GroupidToGroupnameResult (interp, getegid ());
     
     if (STREQU (subCommand, "groupid")) {
-	Tcl_SetObjResult (interp, Tcl_NewIntObj (getegid ()));
+        Tcl_SetObjResult (interp, Tcl_NewIntObj (getegid ()));
         return TCL_OK;
     }
 
@@ -331,11 +331,11 @@ IdProcess (interp, objc, objv)
 
     if (objc > 4)
         return TclX_WrongArgs (interp, 
-			       objv [0], 
-			       "process ?parent|group? ?set?");
+                               objv [0], 
+                               "process ?parent|group? ?set?");
 
     if (objc == 2) {
-	Tcl_SetObjResult (interp, Tcl_NewIntObj (getpid ()));
+        Tcl_SetObjResult (interp, Tcl_NewIntObj (getpid ()));
         return TCL_OK;
     }
 
@@ -346,15 +346,15 @@ IdProcess (interp, objc, objv)
             return TclX_WrongArgs (interp, objv [0], 
                               " process parent");
 
-	Tcl_SetObjResult (interp, Tcl_NewIntObj (getppid ()));
+        Tcl_SetObjResult (interp, Tcl_NewIntObj (getppid ()));
         return TCL_OK;
     }
     if (STREQU (subCommand, "group")) {
         if (objc == 3) {
-	    Tcl_SetObjResult (interp, Tcl_NewIntObj (getpgrp ()));
+            Tcl_SetObjResult (interp, Tcl_NewIntObj (getpgrp ()));
             return TCL_OK;
         }
-	trailerCommand = Tcl_GetStringFromObj (objv[3], NULL);
+        trailerCommand = Tcl_GetStringFromObj (objv[3], NULL);
         if ((objc != 4) || !STREQU (trailerCommand, "set"))
             return TclX_WrongArgs (interp, objv [0], 
                               " process group ?set?");
@@ -395,7 +395,7 @@ IdGroupids (interp, objc, objv, symbolic)
     int            nGroups, groupIndex;
     struct group  *grp;
     Tcl_Obj       *resultObj = Tcl_GetObjResult (interp);
-    Tcl_Obj	  *newObj;
+    Tcl_Obj       *newObj;
 
     if (objc != 2)
         return TclX_WrongArgs (interp, objv [0], "arg");
@@ -417,28 +417,28 @@ IdGroupids (interp, objc, objv, symbolic)
 
     for (groupIndex = 0; groupIndex < nGroups; groupIndex++) {
         if (symbolic) {
-	    int    groupId = groups [groupIndex];
+            int    groupId = groups [groupIndex];
             grp = getgrgid (groupId);
             if (grp == NULL) {
-		char    groupIdString[16];
+                char    groupIdString[16];
 
-		sprintf (groupIdString, "%d", groupId);
-		Tcl_AppendStringsToObj (resultObj,
-		    "unknown group id: ",
-		    groupIdString,
-		    (char *)NULL);
+                sprintf (groupIdString, "%d", groupId);
+                Tcl_AppendStringsToObj (resultObj,
+                    "unknown group id: ",
+                    groupIdString,
+                    (char *)NULL);
                 endgrent ();
                 return TCL_ERROR;
             }
-	    newObj = Tcl_NewStringObj (grp->gr_name, -1);
+            newObj = Tcl_NewStringObj (grp->gr_name, -1);
             Tcl_ListObjAppendElement (interp, 
-				      resultObj,
-				      newObj);
+                                      resultObj,
+                                      newObj);
         } else {
-	    newObj = Tcl_NewIntObj(groups[groupIndex]);
+            newObj = Tcl_NewIntObj(groups[groupIndex]);
             Tcl_ListObjAppendElement (interp, 
-				      resultObj,
-				      newObj);
+                                      resultObj,
+                                      newObj);
         }
     }
     if (symbolic)
@@ -470,14 +470,14 @@ IdHost (interp, objc, objv)
     if (objc != 2)
         return TclX_WrongArgs (interp, objv [0], "host");
 
-	if (gethostname (hostNameBuf, MAXHOSTNAMELEN) < 0) {
+        if (gethostname (hostNameBuf, MAXHOSTNAMELEN) < 0) {
             TclX_AppendObjResult (interp, Tcl_PosixError (interp),
                                   (char *) NULL);
-	    return TCL_ERROR;
-	}
-	hostNameBuf[MAXHOSTNAMELEN-1] = '\0';
-	Tcl_SetObjResult (interp, Tcl_NewStringObj (hostNameBuf, -1));
-	return TCL_OK;
+            return TCL_ERROR;
+        }
+        hostNameBuf[MAXHOSTNAMELEN-1] = '\0';
+        Tcl_SetObjResult (interp, Tcl_NewStringObj (hostNameBuf, -1));
+        return TCL_OK;
 #else
         TclX_AppendObjResult (interp, "host name unavailable on this system ",
                               "(no gethostname function)", (char *) NULL);
@@ -550,7 +550,7 @@ IdUserId (interp, objc, objv)
         return GetSetWrongArgs (interp, objv);
 
     if (objc == 2) {
-	Tcl_SetObjResult (interp, Tcl_NewIntObj (getuid()));
+        Tcl_SetObjResult (interp, Tcl_NewIntObj (getuid()));
         return TCL_OK;
     }
 
@@ -619,7 +619,7 @@ IdGroupId (interp, objc, objv)
         return GetSetWrongArgs (interp, objv);
 
     if (objc == 2) {
-	Tcl_SetIntObj (Tcl_GetObjResult (interp), getgid());
+        Tcl_SetIntObj (Tcl_GetObjResult (interp), getgid());
         return TCL_OK;
     }
 
@@ -644,7 +644,7 @@ TclX_IdObjCmd (clientData, interp, objc, objv)
     char       *subCommand;
 
     if (objc < 2)
-	return TclX_WrongArgs (interp, objv [0], "arg ?arg...?");
+        return TclX_WrongArgs (interp, objv [0], "arg ?arg...?");
 
     subCommand = Tcl_GetStringFromObj (objv [1], NULL);
     /*
@@ -726,8 +726,8 @@ TclX_IdInit (interp)
     Tcl_Interp *interp;
 {
     Tcl_CreateObjCommand (interp,
-			  "id",
-			  TclX_IdObjCmd,
+                          "id",
+                          TclX_IdObjCmd,
                           (ClientData) NULL,
-			  (Tcl_CmdDeleteProc*) NULL);
+                          (Tcl_CmdDeleteProc*) NULL);
 }

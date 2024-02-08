@@ -40,11 +40,11 @@ proc ::installkit::addfiles { filename files args } {
     set fp [miniarc::open crap $filename a]
 
     if {[llength $args] == 1} {
-	miniarc::addfiles $fp $files [lindex $args 0]
+        miniarc::addfiles $fp $files [lindex $args 0]
     } else {
-	foreach file $files {
-	    eval [list miniarc::addfile $fp $file] $args
-	}
+        foreach file $files {
+            eval [list miniarc::addfile $fp $file] $args
+        }
     }
 
     miniarc::close $fp
@@ -117,9 +117,9 @@ proc ::installkit::makestub { args } {
     close $ofp
 
     if {$::tcl_platform(platform) eq "windows"} { 
-	file attributes $executable -readonly 0
+        file attributes $executable -readonly 0
     } else {
-	file attributes $executable -permissions 00755
+        file attributes $executable -permissions 00755
     }
 
     return $executable
@@ -162,7 +162,7 @@ proc ::installkit::wrap { args } {
 
     if {[string length $installkit(mainScript)]
         && ![file exists $installkit(mainScript)]} {
-	return -code error "Could not find $installkit(mainScript) to wrap."
+        return -code error "Could not find $installkit(mainScript) to wrap."
     }
 
     if {$installkit(executable) eq ""} {
@@ -171,7 +171,7 @@ proc ::installkit::wrap { args } {
         }
 
         set fname [file root $installkit(mainScript)]
-	set installkit(executable) $fname
+        set installkit(executable) $fname
         if {$::tcl_platform(platform) eq "windows"} {
             append installkit(executable) ".exe"
         }
@@ -211,10 +211,10 @@ proc ::installkit::wrap { args } {
 
     ## If no main script was specified we just make a stub.
     if {$installkit(mainScript) ne ""} {
-	miniarc::addfile $fp $installkit(mainScript) -corefile 1 -name main.tcl
+        miniarc::addfile $fp $installkit(mainScript) -corefile 1 -name main.tcl
 
         if {[llength $installkit(wrapFiles)]} {
-	    foreach file   $installkit(wrapFiles) \
+            foreach file   $installkit(wrapFiles) \
                     name   $installkit(wrapNames) \
                     method $installkit(wrapMethods) {
 
@@ -229,16 +229,16 @@ proc ::installkit::wrap { args } {
                 } else {
                     eval [list miniarc::addfile $fp $file] $opts
                 }
-	    }
+            }
         }
     }
 
     miniarc::close $fp
 
     if {$::tcl_platform(platform) eq "windows"} { 
-	file attributes $installkit(executable) -readonly 0
+        file attributes $installkit(executable) -readonly 0
     } else {
-	file attributes $installkit(executable) -permissions 00755
+        file attributes $installkit(executable) -permissions 00755
     }
 
     return $installkit(executable)
@@ -255,9 +255,9 @@ proc ::installkit::ParseWrapArgs { arrayName arglist {withFiles 1} } {
         command         ""
         catalogs        {}
         packages        {}
-	stubfile	""
+        stubfile        ""
         password        ""
-	wrapFiles	{}
+        wrapFiles       {}
         wrapNames       {}
         mainScript      ""
         executable      ""
@@ -266,44 +266,44 @@ proc ::installkit::ParseWrapArgs { arrayName arglist {withFiles 1} } {
     }
 
     for {set i 0} {$i < [llength $arglist]} {incr i} {
-	set arg  [lindex $arglist $i]
-	switch -- $arg {
-	    "-f" {
-		## They specified a file which contains files to wrap.
-		## We want to read each line of the file as a file to wrap.
-		set arg [lindex $arglist [incr i]]
+        set arg  [lindex $arglist $i]
+        switch -- $arg {
+            "-f" {
+                ## They specified a file which contains files to wrap.
+                ## We want to read each line of the file as a file to wrap.
+                set arg [lindex $arglist [incr i]]
                 if {!$withFiles} { continue }
-		if {![file readable $arg]} {
-		     return -code error \
-			 "Could not find list file: $arg.\n\nWrapping aborted."
-		}
+                if {![file readable $arg]} {
+                     return -code error \
+                         "Could not find list file: $arg.\n\nWrapping aborted."
+                }
 
-		set fp [open $arg]
-		while {[gets $fp line] != -1} {
+                set fp [open $arg]
+                while {[gets $fp line] != -1} {
                     set file   [lindex $line 0]
                     set name   [lindex $line 1]
                     set method [lindex $line 2]
-		    lappend installkit(wrapFiles) $file
+                    lappend installkit(wrapFiles) $file
 
                     if {$name eq ""} { set name $file }
                     lappend installkit(wrapNames) $name
 
                     lappend installkit(wrapMethods) $method
-		}
-		close $fp
-	    }
+                }
+                close $fp
+            }
 
-	    "-o" {
+            "-o" {
                 ## Output file.
-		set arg [lindex $arglist [incr i]]
-		set installkit(executable) [string map [list \\ /] $arg]
-	    }
+                set arg [lindex $arglist [incr i]]
+                set installkit(executable) [string map [list \\ /] $arg]
+            }
 
-	    "-w" {
+            "-w" {
                 ## Input installkit stub file.
-		set arg [lindex $arglist [incr i]]
-		set installkit(stubfile) [string map [list \\ /] $arg]
-	    }
+                set arg [lindex $arglist [incr i]]
+                set installkit(stubfile) [string map [list \\ /] $arg]
+            }
 
             "-method" {
                 ## Compression level.
@@ -388,10 +388,10 @@ proc ::installkit::ParseWrapArgs { arrayName arglist {withFiles 1} } {
                 break
             }
 
-	    default {
+            default {
                 break
             }
-	}
+        }
     }
 
     if {$withFiles} {
@@ -431,7 +431,7 @@ proc ::installkit::UpdateWindowsResources { executable arrayName } {
         close $fp
         crapvfs::unmount $mnt
 
-	installkit::addfiles $executable [list $tmp(icon)] \
+        installkit::addfiles $executable [list $tmp(icon)] \
             -corefile 1 -name installkit.ico
 
         set fp [open $tmp(icon)]
@@ -518,10 +518,10 @@ proc ::installkit::Windows::DecodeIcon {data} {
     set result [list]
     binary scan $data sss - type count
     for {set pos 6} {[incr count -1] >= 0} {incr pos 16} {
-	binary scan $data @${pos}ccccssii w h cc - p bc bir io
-	if {$cc == 0} { set cc 256 }
-	binary scan $data @${io}a$bir image
-	lappend result ${w}x${h}/$cc $image
+        binary scan $data @${pos}ccccssii w h cc - p bc bir io
+        if {$cc == 0} { set cc 256 }
+        binary scan $data @${io}a$bir image
+        lappend result ${w}x${h}/$cc $image
     }
     return $result
 }
@@ -536,9 +536,9 @@ proc ::installkit::Windows::ReplaceIcon { exeFile oldIconData newIconData } {
 
     set map [list]
     foreach {k v} [DecodeIcon $oldIconData] {
-	if {![info exists new($k)]} { continue }
-	if {[string length $new($k)] != [string length $v]} { continue }
-	lappend map $v $new($k)
+        if {![info exists new($k)]} { continue }
+        if {[string length $new($k)] != [string length $v]} { continue }
+        lappend map $v $new($k)
     }
 
     set out [string map $map $exe]

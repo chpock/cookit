@@ -78,18 +78,18 @@
  * it delays signals.
  */
 #define TCLX_WAITPID(pid, status, options) \
-	Tcl_WaitPid((Tcl_Pid)pid, status, options)
+        Tcl_WaitPid((Tcl_Pid)pid, status, options)
 
 #define bcopy(from, to, length)    memmove((to), (from), (length))
 
 /*
  * Compaibility functions.
  */
-extern long	random(void);
+extern long     random(void);
 
-extern void	srandom(unsigned int x);
+extern void     srandom(unsigned int x);
 
-extern int	getopt(int nargc, char * const *nargv, const char *ostr);
+extern int      getopt(int nargc, char * const *nargv, const char *ostr);
 
 #endif
 
