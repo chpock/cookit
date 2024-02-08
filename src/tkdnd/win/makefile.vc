@@ -1,0 +1,196 @@
+# Microsoft Developer Studio Generated NMAKE File, Based on tkdnd.dsp
+!IF "$(CFG)" == ""
+CFG=Release
+!MESSAGE No configuration specified. Defaulting to Release.
+!ENDIF 
+
+!IF "$(CFG)" != "Release" && "$(CFG)" != "Debug"
+!MESSAGE Invalid configuration "$(CFG)" specified.
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "makefile.vc" CFG="Debug"
+!MESSAGE 
+!MESSAGE Possible choices for configuration are:
+!MESSAGE 
+!MESSAGE "Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE 
+!ERROR An invalid configuration is specified.
+!ENDIF 
+
+!IF "$(OS)" == "Windows_NT"
+NULL=
+!ELSE 
+NULL=nul
+!ENDIF 
+
+##
+## CHANGE HERE TO POINT TO THE CORRECT INCLUDE AND LIB DIRECTORIES
+##
+
+INCLUDES	= -I "C:\Tcl\TclPro1501\include" -I "..\generic"
+DEFINES		= -DWIN32 -DUSE_TCL_STUBS -DUSE_TK_STUBS \
+		  -DTKDND_ENABLE_SHAPE_EXTENSION
+LIBS		= /libpath:"C:\Tcl\TclPro1501\lib" tclstub83.lib tkstub83.lib
+
+!IF  "$(CFG)" == "Release"
+
+OUTDIR=.\Release
+INTDIR=.\Release
+
+ALL : "..\lib\tkDND\libtkdnd.dll"
+
+CLEAN :
+	-@erase "$(INTDIR)\OleDND.obj"
+	-@erase "$(INTDIR)\tkDND.obj"
+	-@erase "$(INTDIR)\tkDNDBind.obj"
+	-@erase "$(INTDIR)\tkOleDND.obj"
+	-@erase "$(INTDIR)\tkOleDND_TEnumFormatEtc.obj"
+	-@erase "$(INTDIR)\tkShape.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\Version.res"
+	-@erase "$(OUTDIR)\libtkdnd.exp"
+	-@erase "$(OUTDIR)\libtkdnd.lib"
+	-@erase "..\lib\tkDND\libtkdnd.dll"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MT /W3 /GX /O2 $(INCLUDES) $(DEFINES) /D "NDEBUG" /Fp"$(INTDIR)\tkdnd.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /TP /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /o "NUL" /tkdnd32 
+RSC=rc.exe
+RSC_PROJ=/l 0x408 /fo"$(INTDIR)\Version.res" /d "NDEBUG" 
+
+LINK32=link.exe
+LINK32_FLAGS= $(LIBS) kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\libtkdnd.pdb" /machine:I386 /out:"../lib/tkDND/libtkdnd.dll" /implib:"$(OUTDIR)\libtkdnd.lib"
+LINK32_OBJS= \
+	"$(INTDIR)\OleDND.obj" \
+	"$(INTDIR)\tkDND.obj" \
+	"$(INTDIR)\tkDNDBind.obj" \
+	"$(INTDIR)\tkOleDND.obj" \
+	"$(INTDIR)\tkOleDND_TEnumFormatEtc.obj" \
+	"$(INTDIR)\tkShape.obj" \
+	"$(INTDIR)\Version.res"
+
+"..\lib\tkDND\libtkdnd.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ELSEIF  "$(CFG)" == "Debug"
+
+OUTDIR=.\Debug
+INTDIR=.\Debug
+
+ALL : "..\lib\tkDND\libtkdnd.dll"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\OleDND.obj"
+	-@erase "$(INTDIR)\tkDND.obj"
+	-@erase "$(INTDIR)\tkDNDBind.obj"
+	-@erase "$(INTDIR)\tkOleDND.obj"
+	-@erase "$(INTDIR)\tkOleDND_TEnumFormatEtc.obj"
+	-@erase "$(INTDIR)\tkShape.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
+	-@erase "$(INTDIR)\Version.res"
+	-@erase "$(OUTDIR)\libtkdnd.exp"
+	-@erase "$(OUTDIR)\libtkdnd.lib"
+	-@erase "$(OUTDIR)\libtkdnd.pdb"
+	-@erase "..\lib\tkDND\libtkdnd.dll"
+	-@erase "..\lib\tkDND\libtkdnd.ilk"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MTd /W3 /Gm /GX /ZI /Od /D $(INCLUDES) $(DEFINES) "_DEBUG" /D "DND_DEBUG" /Fp"$(INTDIR)\tkdnd.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /TP /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /o "NUL" /tkdnd32 
+RSC=rc.exe
+RSC_PROJ=/l 0x408 /fo"$(INTDIR)\Version.res" /d "_DEBUG" 
+	
+LINK32=link.exe
+LINK32_FLAGS=$(LIBS) kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)\libtkdnd.pdb" /debug /machine:I386 /out:"../lib/tkDND/libtkdnd.dll" /implib:"$(OUTDIR)\libtkdnd.lib" /pdbtype:sept
+LINK32_OBJS= \
+	"$(INTDIR)\OleDND.obj" \
+	"$(INTDIR)\tkDND.obj" \
+	"$(INTDIR)\tkDNDBind.obj" \
+	"$(INTDIR)\tkOleDND.obj" \
+	"$(INTDIR)\tkOleDND_TEnumFormatEtc.obj" \
+	"$(INTDIR)\tkShape.obj" \
+	"$(INTDIR)\Version.res"
+
+"..\lib\tkDND\libtkdnd.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ENDIF 
+
+
+!IF "$(CFG)" == "Release" || "$(CFG)" == "Debug"
+SOURCE=.\OleDND.cpp
+
+"$(INTDIR)\OleDND.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=..\generic\tkDND.c
+
+"$(INTDIR)\tkDND.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\generic\tkDNDBind.c
+
+"$(INTDIR)\tkDNDBind.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=.\tkOleDND.cpp
+
+"$(INTDIR)\tkOleDND.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\tkOleDND_TEnumFormatEtc.cpp
+
+"$(INTDIR)\tkOleDND_TEnumFormatEtc.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\tkShape.cpp
+
+"$(INTDIR)\tkShape.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\Version.rc
+
+"$(INTDIR)\Version.res" : $(SOURCE) "$(INTDIR)"
+	$(RSC) $(RSC_PROJ) $(SOURCE)
+
+!ENDIF 

@@ -1,0 +1,57 @@
+
+## Include the tclConfig.sh and tkConfig.sh scripts that were built by configure
+include ./tclConfig.sh
+include ./tkConfig.sh
+
+#### Full name of the application
+PROG        = installkit
+PROG_BARE   = $(PROG)_bare$(EXE)
+PROG_FINAL  = $(PROG)$(EXE)
+
+#### The path for the top-level build directory
+TOP = .
+
+#### Location of previously compiled TCLSH program
+TCLSH = $(TCL_PREFIX)/bin/$(TCLSH_NAME)
+
+#### Some operating system specific commands
+CP      = cp
+RM      = rm -f
+CAT     = cat
+MKDIR   = mkdir
+RENAME  = mv
+DELTREE = rm -rf
+
+BUILDVFS = $(TOP_SRCDIR)/tools/buildvfs.tcl
+BUILDKIT = $(TOP_SRCDIR)/tools/buildkit.tcl
+
+#### Select a C compiler
+CC = $(TCL_CC)
+
+#### Select standard command-line options for the C compiler.
+IK_CFLAGS = $(TCL_DEFS) $(TCL_CFLAGS_OPTIMIZE) $(HDR_TCL) $(HDR_ZLIB) $(DYNAMIC_CFLAGS) $(CFLAGS)
+#IK_CFLAGS = $(TCL_DEFS) $(TCL_CFLAGS_DEBUG) $(HDR_TCL) $(HDR_ZLIB) $(DYNAMIC_CFLAGS) $(CFLAGS)
+
+#### Tcl configuration.
+HDR_TCL     = $(TCL_INCLUDE_SPEC) -I$(TCL_SRC_DIR)/generic -I$(TCL_SRC_DIR)/unix -I$(TCL_SRC_DIR)/win
+LIB_TCL     = $(TCL_PREFIX)/lib/libtcl$(TCLVERSION_LIB)$(TCL_UNSHARED_LIB_SUFFIX)
+
+#### Zlib configuration.
+HDR_ZLIB      = -I$(ZLIB_PREFIX)/include -I$(ZLIB_PREFIX)/src/zip
+LIB_Z         = $(ZLIB_PREFIX)/lib/libz.a
+
+#### Installkit configuration.
+WRAP_BOOT     = $(TOP_SRCDIR)/library/boot.tcl
+WRAP_MAIN     = $(TOP_SRCDIR)/library/main.tcl
+WRAP_MANIFEST = vfsdir/lib/installkit/manifest.txt
+
+#### Select standard command-line options for the C compiler.
+INCLUDES = -I$(TOP_SRCDIR)/generic -I$(MINIARC_SRCDIR)/generic \
+	   -I$(LZMA_SRCDIR) $(HDR_TCL) $(HDR_ZLIB) $(EXTRA_INCLUDES)
+
+###############################################################################
+# You should not have to change anything below this line
+###############################################################################
+
+## All library options to the linker
+LIBS = $(LIB_MINIARC) $(LIB_TCL) $(LIB_Z)

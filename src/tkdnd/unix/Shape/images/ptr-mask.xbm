@@ -1,0 +1,4 @@
+#define ptr-mask_width 8
+#define ptr-mask_height 8
+static unsigned char ptr-mask_bits[] = {
+  0x00, 0x07, 0x1e, 0x7e, 0x06, 0x06, 0x04, 0x04, };

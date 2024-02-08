@@ -1,0 +1,20 @@
+INSTALLKIT
+
+This is the source code for the installkit that powers the
+platform-specific elements of InstallJammer.
+
+
+BUILDING
+
+$ ./configure && make
+$ make dist
+
+The toplevel configure script is not a traditional autoconf script as all
+it does is setup the environment for the build.  The configuration of the
+rest of the components will be done during the make since things have
+to be bootstrapped in a particular order to build the rest.
+
+The 'make dist' is only used to build a .zip of the resulting binaries if
+you want to send them back to the InstallJammer project.  If InstallJammer
+doesn't already support the platform you are building, we would certainly
+appreciate you sending us the binaries to add to our platform list. 0-]

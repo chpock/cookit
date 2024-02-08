@@ -1,0 +1,56 @@
+# This Makefile is used to create the example loadable module.
+# It also illustrates how to take advantage of configuration
+# exported by Tcl to set up Makefiles for shared libraries.
+#
+# SCCS: @(#) Makefile.in 1.5 97/08/14 19:01:21
+
+SOFILE =	libshape03.so.1.0
+EXEFILE =	shapewish
+OBJS =		shape.o
+
+all: @PRIMARY_TARGET@
+
+# The directory containing the Tcl library archive file appropriate
+# for this version of Tk:
+TCL_BIN_DIR = @TCL_BIN_DIR@
+
+# Libraries to use when linking:
+LIBS = @TCL_LIB_SPEC@ @TCL_LIBS@ -lc
+
+#----------------------------------------------------------------
+# The information below is modified by the configure script when
+# Makefile is generated from Makefile.in.  You shouldn't normally
+# modify any of this stuff by hand.
+#----------------------------------------------------------------
+
+CC =			@CC@
+SHLIB_CFLAGS =		@SHLIB_CFLAGS@
+SHLIB_LD =		@SHLIB_LD@
+SHLIB_SUFFIX =		@SHLIB_SUFFIX@
+TCL_INCLUDE_DIR =	@TCL_INCLUDE@
+TK_INCLUDE_DIR =	@TK_INCLUDE@
+TK_XINCLUDES =		@TK_XINCLUDES@
+VPATH =			@srcdir@
+TK_LIB_SPEC =		@TK_LIB_SPEC@
+TCL_LIB_SPEC = 		@TCL_LIB_SPEC@
+TK_LIBS =		@TK_LIBS@
+
+# ----------------------------------------------------------------------
+CFLAGS = -g
+CC_SWITCHES = $(CFLAGS) -Iinclude -I${TK_INCLUDE_DIR} ${TK_XINCLUDES} -I${TCL_INCLUDE_DIR} ${SHLIB_CFLAGS}
+# ----------------------------------------------------------------------
+.c.o:
+	$(CC) -c $(CC_SWITCHES) $<
+# ----------------------------------------------------------------------
+$(SOFILE): $(OBJS)
+	${SHLIB_LD} -o $@ $^ @SHLIB_LD_LIBS@
+$(EXEFILE): $(OBJS) tkAppInit.o
+	$(CC) -o $@ $^ @SHLIB_LD_LIBS@ ${TK_LIB_SPEC} ${TCL_LIB_SPEC} ${TK_LIBS}
+# ----------------------------------------------------------------------
+clean:
+	rm -f *.o *.a $(SOFILE) $(EXEFILE) core
+distclean: clean
+	rm -f Makefile config.cache config.log config.status
+# ----------------------------------------------------------------------
+Makefile: Makefile.in
+	./config.status

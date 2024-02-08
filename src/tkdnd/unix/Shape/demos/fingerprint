@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# This little demo (in the splendid tradition of xteddy and xbomb :^)
+# is due to John LoVerso <loverso@opengroup.org> and I have adapted it
+# a little in order to increase its effectiveness.
+
+# Now we make cunning use of the backslash/shell trick \
+[ -x `dirname $0`/../shapewish ] && exec `dirname $0`/../shapewish $0 ${1+"$@"} || exec wish8.0 $0 ${1+"$@"} || { echo "`basename $0`: couldn't start wish" >&2 ; exit 1; }
+
+set dir [file join [file dirname [info script]] ..]
+lappend auto_path $dir
+package require shape
+
+set images [file join $dir images]
+
+. config -bg tan -cursor dotbox
+wm overrideredirect . 1
+wm withdraw .
+update idle
+shape set . -bound bitmap @[file join $images fingerprint.xbm]
+wm deiconify .
+bind . <1> {
+    regexp {\+(-?[0-9]+)\+(-?[0-9]+)} [winfo geometry .] dummy x y
+    set x [expr $x-%X]
+    set y [expr $y-%Y]
+}
+bind . <B1-Motion> {
+    wm geometry . +[expr %X+$x]+[expr %Y+$y]
+}

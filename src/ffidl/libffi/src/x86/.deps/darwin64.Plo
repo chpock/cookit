@@ -1,0 +1,2 @@
+src/x86/darwin64.lo src/x86/darwin64.o:  \
+ /Users/damon/src/installkit/src/ffidl/lib-src/libffi/src/x86/darwin64.S

@@ -1,0 +1,70 @@
+
+## Include the tclConfig.sh and tkConfig.sh scripts that were built by configure
+include ./tclConfig.sh
+include ./tkConfig.sh
+
+#### Full name of the application
+PROG            = installkit
+
+#### The path for the top-level build directory
+TOP = .
+
+#### Location of previously compiled TCLSH program
+TCLSH = $(TCL_PREFIX)/bin/$(TCLSH_NAME)
+
+#### Some operating system specific commands
+CP      = cp
+RM      = rm -f
+CAT     = cat
+MKDIR   = mkdir
+RENAME  = mv
+DELTREE = rm -rf
+
+BUILDVFS = $(TOP_SRCDIR)/tools/buildvfs.tcl
+BUILDKIT = $(TOP_SRCDIR)/tools/buildkit.tcl
+
+#### Select a C compiler
+CC = $(TCL_CC) -DSTATIC_BUILD=1
+
+#### Select standard command-line options for the C compiler.
+CFLAGS = $(TCL_DEFS) $(TCL_CFLAGS_OPTIMIZE) $(HDR_TCL) $(HDR_ZLIB)
+#CFLAGS = $(TCL_DEFS) $(TCL_CFLAGS_DEBUG) $(HDR_TCL) $(HDR_ZLIB)
+
+#### Tcl configuration.
+HDR_TCL		= $(TCL_INCLUDE_SPEC) -I$(TCL_SRC_DIR)/generic -I$(TCL_SRC_DIR)/unix -I$(TCL_SRC_DIR)/win
+LIB_TCL		= $(TCL_PREFIX)/lib/$(TCL_LIB_FILE)
+LIB_TCL_STUB	= $(TCL_PREFIX)/lib/$(TCL_STUB_LIB_FILE)
+
+#### Tk configuration.
+LIB_TK		= $(TK_PREFIX)/lib/$(TK_LIB_FILE)
+LIB_TK_STUB	= $(TK_PREFIX)/lib/$(TK_STUB_LIB_FILE)
+
+#### Thread configuration.
+LIB_THREAD	= $(TCL_PREFIX)/lib/thread$(THREADVERSION_DIR)/$(LIB_PREFIX)thread$(THREADVERSION_LIB).a
+
+#### Zlib configuration.
+HDR_ZLIB	= -I$(ZLIB_PREFIX)/include -I$(PREFIX)/src/zip
+LIB_Z		= $(ZLIB_PREFIX)/lib/libz.a
+
+#### Installkit configuration.
+WRAP_BOOT	= $(TOP_SRCDIR)/library/boot.tcl
+WRAP_MAIN	= $(TOP_SRCDIR)/library/main.tcl
+WRAP_MANIFEST	= vfsdir/lib/installkit/manifest.txt
+
+#### Select standard command-line options for the C compiler.
+INCLUDES	= -I$(TOP_SRCDIR)/generic -I$(MINIARC_SRCDIR)/generic \
+		  -I$(LZMA_SRCDIR) $(HDR_TCL) $(HDR_TK) $(HDR_ZLIB) \
+		  $(EXTRA_INCLUDES)
+
+###############################################################################
+# You should not have to change anything below this line
+###############################################################################
+
+## All library options to the linker
+LIBS = \
+  $(LIB_TK) \
+  $(LIB_TK_STUB) \
+  $(LIB_TCL) \
+  $(LIB_TCL_STUB) \
+  $(LIB_Z) \
+  $(EXTRA_LIBS)

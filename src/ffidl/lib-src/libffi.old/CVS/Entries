@@ -1,0 +1,31 @@
+/.cvsignore/1.1/Tue Jun 15 07:42:07 2004//
+/ChangeLog.libgcj/1.6/Thu Jan 15 03:41:46 2004//
+/ChangeLog.v1/1.1.1.1/Sun Aug  8 13:27:19 1999/-ko/
+/LICENSE/1.2/Tue Oct 21 19:01:53 2003/-ko/
+/README/1.5/Sun Jan 25 06:58:33 2004/-ko/
+/libtool-version/1.2/Sat Jun 26 20:37:03 2004//
+/stamp-h.in/1.1.1.1/Sun Aug  8 13:27:19 1999/-ko/
+D/include////
+D/src////
+D/testsuite////
+/configure.host/1.1/Mon Aug 30 15:43:00 2004//
+/acinclude.m4/1.5/Fri Feb  4 20:40:20 2005//
+/ChangeLog/1.231/Thu Apr 21 10:07:39 2005/-ko/
+/Makefile.am/1.39/Thu Apr 21 10:07:39 2005/-ko/
+/configure.ac/1.11/Thu Apr 21 10:07:40 2005//
+/Makefile.in/1.50/Thu Apr 21 12:40:26 2005/-ko/
+/fficonfig.h.in/1.10/Thu Apr 21 12:40:27 2005/-ko/
+/aclocal.m4/1.13/Thu Apr 21 12:58:38 2005/-ko/
+/configure/1.74/Thu Apr 21 13:00:34 2005/-ko/
+/accross.m4/0/dummy timestamp//
+/compile/0/dummy timestamp//
+/config.guess/0/dummy timestamp//
+/config.sub/0/dummy timestamp//
+/depcomp/0/dummy timestamp//
+/install-sh/0/dummy timestamp//
+/libtool.m4/0/dummy timestamp//
+/ltmain.sh/0/dummy timestamp//
+/missing/0/dummy timestamp//
+/mkinstalldirs/0/dummy timestamp//
+/ltconfig/0/dummy timestamp//
+/ltcf-c.sh/0/dummy timestamp//

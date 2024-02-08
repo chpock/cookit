@@ -1,0 +1,8 @@
+#
+# Tcl package index file
+#
+package ifneeded miniarc @PACKAGE_VERSION@ " ;\
+    namespace eval ::miniarc { variable version @PACKAGE_VERSION@ }
+    load [file join $dir @PKG_LIB_FILE@] @PACKAGE_NAME@ ;\
+    source [file join $dir miniarc.tcl] ;\
+"

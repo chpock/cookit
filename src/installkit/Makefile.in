@@ -1,0 +1,131 @@
+
+all: vfsdir $(TARGETS)
+
+vfsdir:
+	$(DELTREE) vfsdir
+
+	$(MKDIR) -p vfsdir/lib/installkit
+
+	$(CP) $(WRAP_BOOT) vfsdir
+	@if test -f $(WRAP_MAIN); then $(CP) $(WRAP_MAIN) vfsdir/main.tcl; fi
+	@if test ! -z "$(EXE)"; then $(CP) $(TOP_SRCDIR)/win/rc/installkit.ico vfsdir; fi
+
+	$(TCLSH) $(BUILDVFS) $(BUILD) $(TOP_SRCDIR) $(TCL_PREFIX)/lib \
+	    $(TOP)/vfsdir/lib
+	@find vfsdir -type f | sed 's/vfsdir\///g' > $(WRAP_MANIFEST)
+
+$(PROG)_bare: $(OBJS)
+	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare $(OBJS) $(LIBS) $(DYNAMIC_LIBS)
+
+$(PROG)_bare.exe: $(OBJS) installkit.user.res.o
+	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare.exe $(OBJS) \
+	    installkit.user.res.o $(LIBS) $(DYNAMIC_LIBS)
+
+$(PROG)A_bare.exe: $(OBJS) installkit.admin.res.o
+	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)A_bare.exe $(OBJS) \
+	    installkit.admin.res.o $(LIBS) $(DYNAMIC_LIBS)
+
+$(PROG)$(EXE): $(PROG)_bare$(EXE)
+	$(RM) $(PROG)$(EXE)
+	$(CP) $(PROG)_bare$(EXE) $(PROG)$(EXE)
+	$(UPX) $(PROG)$(EXE)
+	$(TCLSH) $(BUILDKIT) $(PROG)$(EXE) $(TOP)/vfsdir
+
+$(PROG)U$(EXE): $(PROG)_bare$(EXE)
+	$(RM) $(PROG)U$(EXE)
+	$(CP) $(PROG)_bare$(EXE) $(PROG)U$(EXE)
+	$(TCLSH) $(BUILDKIT) $(PROG)U$(EXE) $(TOP)/vfsdir
+
+$(PROG)A.exe: $(PROG)A_bare.exe
+	$(RM) $(PROG)A.exe
+	$(CP) $(PROG)A_bare.exe $(PROG)A.exe
+	$(UPX) $(PROG)A.exe
+	$(TCLSH) $(BUILDKIT) $(PROG)A.exe $(TOP)/vfsdir
+
+$(PROG)UA.exe: $(PROG)A_bare.exe
+	$(RM) $(PROG)UA.exe
+	$(CP) $(PROG)A_bare.exe $(PROG)UA.exe
+	$(TCLSH) $(BUILDKIT) $(PROG)UA.exe $(TOP)/vfsdir
+
+$(PROG).com: $(PROG).exe
+	$(RM) $(PROG).com
+	$(CP) $(PROG).exe $(PROG).com
+	editbin -nologo -subsystem:console $(PROG_CONSOLE)
+
+main.o: $(TOP_SRCDIR)/generic/main.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/main.c" -o $@
+
+crap.o: $(MINIARC_SRCDIR)/generic/crap.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(MINIARC_SRCDIR)/generic/crap.c" -o $@
+
+crapvfs.o: $(TOP_SRCDIR)/generic/crapvfs.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/crapvfs.c" -o $@
+
+installkit.o: $(TOP_SRCDIR)/generic/installkit.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/installkit.c" -o $@
+
+miniarc.o: $(MINIARC_SRCDIR)/generic/miniarc.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(MINIARC_SRCDIR)/generic/miniarc.c" -o $@
+
+sha1.o: $(MINIARC_SRCDIR)/generic/sha1.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(MINIARC_SRCDIR)/generic/sha1.c" -o $@
+
+LZMADecode.o: $(TOP_SRCDIR)/generic/LZMADecode.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/LZMADecode.c" -o $@
+
+zlib.o: $(TOP_SRCDIR)/generic/zlib.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/zlib.c" -o $@
+
+zvfs.o: $(TOP_SRCDIR)/generic/zvfs.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/zvfs.c" -o $@
+
+tclXcmds.o: $(TOP_SRCDIR)/generic/tclXcmds.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/tclXcmds.c" -o $@
+
+tclXutil.o: $(TOP_SRCDIR)/generic/tclXutil.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/tclXutil.c" -o $@
+
+tclXunixId.o: $(TOP_SRCDIR)/unix/tclXunixId.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/unix/tclXunixId.c" -o $@
+
+tclXunixOS.o: $(TOP_SRCDIR)/unix/tclXunixOS.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/unix/tclXunixOS.c" -o $@
+
+tclXwinOS.o: $(TOP_SRCDIR)/win/tclXwinOS.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/win/tclXwinOS.c" -o $@
+
+Alloc.o: $(LZMA_SRCDIR)/Alloc.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(LZMA_SRCDIR)/Alloc.c" -o $@
+
+LzFind.o: $(LZMA_SRCDIR)/LzFind.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(LZMA_SRCDIR)/LzFind.c" -o $@
+
+LzmaEnc.o: $(LZMA_SRCDIR)/LzmaEnc.c
+	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(LZMA_SRCDIR)/LzmaEnc.c" -o $@
+
+installkit.user.res.o: $(TOP_SRCDIR)/win/rc/installkit.user.rc
+	windres -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.user.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
+
+installkit.admin.res.o: $(TOP_SRCDIR)/win/rc/installkit.admin.rc
+	windres -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.admin.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
+
+install:
+	mkdir -p $(PREFIX)/bin
+	$(CP) $(TARGETS) $(PREFIX)/bin
+
+clean:
+	$(RM) *.o core *.exe
+	$(RM) $(VFS_HEADER)
+	$(RM) null.zip $(PROG).zip
+	$(DELTREE) vfsdir
+	$(RM) $(PROG)$(EXE)
+	$(RM) $(PROG)U$(EXE)
+	$(RM) $(PROG)A$(EXE)
+	$(RM) $(PROG)UA$(EXE)
+	$(RM) $(PROG)_bare$(EXE)
+	$(RM) $(PROG)A_bare$(EXE)
+	$(RM) $(PROG).com
+
+distclean: clean
+	$(RM) tclConfig.sh tkConfig.sh
+	$(RM) Makefile

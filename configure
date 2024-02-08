@@ -1,0 +1,106 @@
+#!/bin/sh
+
+ABS_TOP_BUILDDIR=`/bin/pwd`
+
+TOP_SRCDIR=`dirname "$0"`
+ABS_TOP_SRCDIR=`cd "$TOP_SRCDIR" && /bin/pwd`
+
+help ( ) {
+  echo "configure commands available:"
+  echo ""
+  echo "--help             displays this page"
+  echo "--debug            Enable additional Tcl debugging features"
+  echo
+  exit 0
+}
+
+IJ_PLATFORM=`$TOP_SRCDIR/helper.sh platform`
+
+echo
+echo "Platform is $IJ_PLATFORM"
+
+SYMBOLS_FLAG=
+
+for i in $@
+do
+  case $i in
+  -h|--help)       help ;;
+  --debug)         SYMBOLS_FLAG=--enable-symbols
+                   echo "Extra debugging features enabled"
+		   ;;
+  *) echo "Invalid configure option $i" ; help ; exit 1 ;;
+  esac
+done
+
+echo
+
+TCL_SYSTEM=unix
+TARGETS="tcl-static tcl"
+TCLSH="\$(PREFIX)/bin/tclsh8.6"
+AQUA_FLAG=
+SHARED_FLAG="--enable-shared"
+THREADS_FLAG="--disable-threads"
+
+case "$IJ_PLATFORM" in
+  Windows)
+    TCL_SYSTEM=win
+    TCLSH="\$(PREFIX)/bin/tclsh86s"
+    TARGETS="tcl-static thread"
+    SHARED_FLAG="--disable-shared"
+    THREADS_FLAG="--enable-threads"
+    ;;
+
+  MacOS-X)
+    CFLAGS="-arch i386 -mmacosx-version-min=10.4 $CFLAGS"
+    AQUA_FLAG="--enable-aqua=carbon"
+    ;;
+
+  MacOS-X-ppc)
+    CFLAGS="-arch ppc -mmacosx-version-min=10.2 $CFLAGS"
+    AQUA_FLAG="--enable-aqua=carbon"
+    ;;
+esac
+
+TARGETS="$TARGETS tk zlib miniarc installkit"
+
+case "$IJ_PLATFORM" in
+  Windows|MacOS-X)
+    TARGETS="$TARGETS tktable"
+    ;;
+
+  *)
+    TARGETS="$TARGETS tkdnd tktable"
+    ;;
+esac
+
+cat > Makefile << EOF
+##
+## Makefile
+##
+## Created with $0 $@
+##
+
+TOP_SRCDIR	= $ABS_TOP_SRCDIR
+TOP_BUILDDIR	= $ABS_TOP_BUILDDIR
+
+CC		= ${CC-gcc}
+CFLAGS          = $CFLAGS
+AQUA_FLAG	= $AQUA_FLAG
+SHARED_FLAG	= $SHARED_FLAG
+THREADS_FLAG	= $THREADS_FLAG
+SYMBOLS_FLAG	= $SYMBOLS_FLAG
+TCL_SYSTEM	= $TCL_SYSTEM
+IJ_PLATFORM	= $IJ_PLATFORM
+TCLSH           = $TCLSH
+
+PREFIX		= \$(TOP_BUILDDIR)/out
+KIT_PREFIX	= \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
+
+TARGETS		= $TARGETS
+
+EOF
+
+cat >> Makefile < "$TOP_SRCDIR/Makefile.in"
+
+echo "Now type: make"
+echo

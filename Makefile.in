@@ -1,0 +1,181 @@
+BUILD_ENV = \
+	CFLAGS="$(CFLAGS)"
+
+all: $(TARGETS)
+	@echo
+	@echo "Now type: make dist"
+	@echo
+
+tcl: work/stamp-tcl
+work/stamp-tcl:
+	mkdir -p work/tcl
+	cd work/tcl || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tcl/$(TCL_SYSTEM)/configure \
+		--prefix=$(PREFIX) \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/tcl \
+	 && $(MAKE) all install-binaries install-libraries
+	touch $@
+
+tcl-static: work/stamp-tcl-static
+work/stamp-tcl-static:
+	mkdir -p work/tcl-static
+	cd work/tcl-static || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tcl/$(TCL_SYSTEM)/configure \
+		--prefix=$(PREFIX) \
+		--disable-shared $(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/tcl-static \
+	 && $(MAKE) all install-binaries install-libraries
+	touch $@
+
+tk: work/stamp-tk
+work/stamp-tk:
+	mkdir -p work/tk
+	cd work/tk || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tk/$(TCL_SYSTEM)/configure \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		$(AQUA_FLAG) $(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/tk \
+	 && $(MAKE) all install-binaries install-libraries
+	touch $@
+
+miniarc: work/stamp-miniarc
+work/stamp-miniarc:
+	mkdir -p work/miniarc
+	cd work/miniarc || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/miniarc/configure \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--with-tk=$(PREFIX)/lib \
+		--with-zlib=$(PREFIX) \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/miniarc && $(MAKE) all install
+	touch $@
+
+tkpng: work/stamp-tkpng
+work/stamp-tkpng:
+	mkdir -p work/tkpng
+	cd work/tkpng || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tkpng/configure \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--with-tk=$(PREFIX)/lib \
+		--with-zlib=$(PREFIX) \
+		$(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/tkpng && $(MAKE) all install
+	touch $@
+
+thread: work/stamp-thread
+work/stamp-thread:
+	mkdir -p work/thread
+	cd work/thread || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/thread/configure \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		$(SHARED_FLAG)
+	cd work/thread && $(MAKE) all install
+	touch $@
+
+# Note: We always build zlib as a static archive library (i.e. libz.a), but
+# pass in shared-library flags so that it is compiled as PIC code, thereby
+# allowing it to be statically linked into shared libraries.
+#
+# Note: Yes, the shared library flags are not needed on x86. They _are_
+# needed on pretty much every other architecture.
+#
+zlib: work/stamp-zlib
+work/stamp-zlib:
+	rm -rf work/zlib
+	cp -r $(TOP_SRCDIR)/src/zlib work
+	. $(PREFIX)/lib/tclConfig.sh && \
+	 cd work/zlib && \
+	 CC="$(CC)" \
+	 CFLAGS="$(CFLAGS) $$TCL_SHLIB_CFLAGS" \
+	 $(CONFIG_SHELL) ./configure --prefix=$(PREFIX)
+	cd work/zlib && $(MAKE) install
+	touch $@
+
+installkit: work/stamp-installkit
+work/stamp-installkit:
+	mkdir -p work/installkit
+	cd work/installkit || exit; \
+	 test -f Makefile \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/installkit/configure \
+		--prefix=$(KIT_PREFIX) \
+		--with-miniarc-src=$(TOP_SRCDIR)/src/miniarc \
+		--with-lzma-src=$(TOP_SRCDIR)/src/miniarc/generic/LzmaC \
+		--with-tcl=$(PREFIX)/lib \
+		--with-tk=$(PREFIX)/lib \
+		--with-zlib=$(PREFIX)
+	cd work/installkit && $(MAKE) all install
+	touch $@
+
+tktable: work/stamp-tktable
+work/stamp-tktable:
+	mkdir -p work/tktable
+	cd work/tktable || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tktable/configure \
+		--prefix=$(KIT_PREFIX) \
+		--exec-prefix=$(KIT_PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--with-tk=$(PREFIX)/lib \
+		$(THREADS_FLAG)
+	cd work/tktable && $(MAKE) all install-binaries
+	touch $@
+
+tkdnd: work/stamp-tkdnd
+work/stamp-tkdnd:
+	mkdir -p work/tkdnd
+	cd work/tkdnd || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tkdnd/configure \
+		--prefix=$(KIT_PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--with-tk=$(PREFIX)/lib \
+		$(THREADS_FLAG)
+	cd work/tkdnd && $(MAKE) all install-binaries
+	touch $@
+
+dist:
+	cp -fp $(TOP_SRCDIR)/version kit/$(IJ_PLATFORM)
+	cd kit && $(TCLSH) \
+		$(TOP_SRCDIR)/src/tools/makezip.tcl \
+		../$(IJ_PLATFORM).zip \
+		`find $(IJ_PLATFORM) -type f | sort`
+
+clean-tcl:
+	rm -rf work/tcl work/stamp-tcl
+clean-tcl-static:
+	rm -rf work/tcl-static work/stamp-tcl-static
+clean-tk:
+	rm -rf work/tk work/stamp-tk
+clean-zlib:
+	rm -rf work/zlib work/stamp-zlib
+clean-tkpng:
+	rm -rf work/tkpng work/stamp-tkpng
+clean-miniarc:
+	rm -rf work/miniarc work/stamp-miniarc
+clean-thread:
+	rm -rf work/thread work/stamp-thread
+clean-installkit:
+	rm -rf work/installkit work/stamp-installkit
+clean-tktable:
+	rm -rf work/tktable work/stamp-tktable
+clean-tkdnd:
+	rm -rf work/tkdnd work/stamp-tkdnd
+
+clean:
+	rm -rf kit out work
+	rm -f $(IJ_PLATFORM).zip
+
+distclean: clean
+	rm -f Makefile
+	rm -f *.zip
