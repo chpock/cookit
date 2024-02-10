@@ -10,12 +10,17 @@
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #include <Shlwapi.h>
+#include <shlobj.h>
+#include <shellapi.h>
 #endif /* __WIN32__ */
 
 #include "crap.h"
 
 #define streq(a,b) (a[0] == b[0] && strcmp(a,b) == 0)
 #define tstreq(a,b) (a[0] == b[0] && wcscmp(a,b) == 0)
+
+extern Tcl_AppInitProc Thread_Init;
+extern Tcl_AppInitProc Miniarc_Init;
 
 static int
 LibraryPathObjCmd(
@@ -63,7 +68,7 @@ LoadThreadObjCmd(
         return TCL_ERROR;
     }
     Tcl_StaticPackage( interp, "thread", Thread_Init, 0 );
-    
+
     return TCL_OK;
 }
 #endif /* TCL_THREADS */
@@ -80,7 +85,7 @@ LoadMiniarcObjCmd(
         return TCL_ERROR;
     }
     Tcl_StaticPackage( interp, "miniarc", Miniarc_Init, 0 );
-    
+
     return TCL_OK;
 }
 
@@ -92,7 +97,7 @@ WindowsCreateShortcutObjCmd(
     int objc,
     Tcl_Obj *CONST objv[])
 {
-    HRESULT hres; 
+    HRESULT hres;
     int error = 1;
     int i, len, index, iconIdx, showCommand;
     char *opt, *val;
@@ -101,7 +106,7 @@ WindowsCreateShortcutObjCmd(
     Tcl_DString dsArgs, dsDesc, dsIcon;
     Tcl_DString dsPath, dsTarget, dsWork;
 
-    IShellLinkW  *psl = NULL; 
+    IShellLinkW  *psl = NULL;
     IPersistFile *ppf = NULL;
     Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
 
@@ -129,9 +134,9 @@ WindowsCreateShortcutObjCmd(
     }
 
     CoInitialize(NULL);
- 
-    hres = CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, 
-                            &IID_IShellLinkW, (LPVOID*)&psl); 
+
+    hres = CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
+                            &IID_IShellLinkW, (LPVOID*)&psl);
 
     if( FAILED(hres) ) {
         Tcl_SetStringObj( resultObj, "failed to create COM instance", -1 );
@@ -217,23 +222,23 @@ WindowsCreateShortcutObjCmd(
         }
     }
 
-    hres = psl->lpVtbl->QueryInterface(psl, &IID_IPersistFile, (LPVOID*)&ppf); 
+    hres = psl->lpVtbl->QueryInterface(psl, &IID_IPersistFile, (LPVOID*)&ppf);
 
     if (FAILED(hres)) {
         Tcl_SetStringObj( resultObj, "failed to query file interface", -1 );
         goto error;
     }
- 
+
     /* Save the link  */
     linkPath = Tcl_WinUtfToTChar(Tcl_GetString(objv[1]), -1, &dsPath);
-    hres = ppf->lpVtbl->Save(ppf, linkPath, TRUE); 
-    ppf->lpVtbl->Release(ppf); 
+    hres = ppf->lpVtbl->Save(ppf, linkPath, TRUE);
+    ppf->lpVtbl->Release(ppf);
 
     error = 0;
 
 error:
     if (psl) {
-        psl->lpVtbl->Release(psl); 
+        psl->lpVtbl->Release(psl);
     }
 
     Tcl_DStringFree(&dsArgs);
@@ -433,7 +438,7 @@ WindowsDriveObjCmd(
         return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], subCommands, "option", 0, &idx) 
+    if (Tcl_GetIndexFromObj(interp, objv[1], subCommands, "option", 0, &idx)
         != TCL_OK) return TCL_ERROR;
 
     switch( idx ) {
@@ -577,7 +582,7 @@ WindowsDriveObjCmd(
         }
 
         drive  = Tcl_GetStringFromObj( objv[2], &size );
-        
+
         if( objc == 4 ) {
             if( !Tcl_StringMatch( Tcl_GetString(objv[2]), "-user" ) ) {
                 Tcl_WrongNumArgs( interp, 1, objv, "freespace ?-user? drive" );
@@ -681,7 +686,7 @@ WindowsTrashObjCmd(
 
         if (opt[0] != '-') break;
 
-        if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &idx) 
+        if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &idx)
             != TCL_OK) return TCL_ERROR;
 
         switch (idx) {
@@ -951,7 +956,7 @@ Installkit_Init( Tcl_Interp *interp )
     Tcl_CreateObjCommand( interp,
             "installkit::Windows::revertWow64FsRedirection",
             WindowsRevertWow64FsRedirection, 0, 0);
-    
+
 #else
     /* Add the "id" command from TclX on UNIX. */
     TclX_IdInit(interp);

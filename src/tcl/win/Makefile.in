@@ -111,6 +111,7 @@ ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's!\\!/!g')
 #TOMMATH_DIR_NATIVE	= $(TOMMATH_DIR)
 #WIN_DIR_NATIVE		= $(WIN_DIR)
 #ROOT_DIR_NATIVE		= $(ROOT_DIR)
+SCRIPT_INSTALL_DIR_NATIVE = $(shell $(CYGPATH) '$(SCRIPT_INSTALL_DIR)' | sed 's!\\!/!g')
 
 # Fully qualify library path so that `make test`
 # does not depend on the current directory.
@@ -687,14 +688,14 @@ install-libraries: libraries install-tzdata install-msgs
 install-tzdata:
 	@echo "Installing time zone data"
 	@TCL_LIBRARY="${LIBRARY_DIR}"; export TCL_LIBRARY; \
-	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
-	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tools/installData.tcl" \
+	    "$(ROOT_DIR_NATIVE)/library/tzdata" "$(SCRIPT_INSTALL_DIR_NATIVE)/tzdata"
 
 install-msgs:
 	@echo "Installing message catalogs"
 	@TCL_LIBRARY="${LIBRARY_DIR}"; export TCL_LIBRARY; \
-	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
-	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tools/installData.tcl" \
+	    "$(ROOT_DIR_NATIVE)/library/msgs" "$(SCRIPT_INSTALL_DIR_NATIVE)/msgs"
 
 install-doc: doc
 

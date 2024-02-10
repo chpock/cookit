@@ -103,9 +103,11 @@ case $PLATFORM in
 
         MAKEFILE=win/Makefile.in
 
+        LIB_PREFIX="lib"
+
         TKVERSION_LIB=$TKVERSION_NODOT
         TCLVERSION_LIB=$TCLVERSION_NODOT
-        THREADVERSION_LIB=$THREADVERSION_NODOT
+        #THREADVERSION_LIB=$THREADVERSION_NODOT
         MINIARCVERSION_LIB=$MINIARCVERSION_NODOT
         ;;
   *)
@@ -128,7 +130,7 @@ esac
 OBJS="crap.o crapvfs.o miniarc.o sha1.o LZMADecode.o installkit.o main.o zlib.o zvfs.o Alloc.o LzFind.o LzmaEnc.o"
 
 case $PLATFORM in
-  MINGW*)
+  MINGW*|CYGWIN_NT*)
         OBJS="$OBJS tclXcmds.o tclXutil.o tclXwinOS.o"
         ;;
   *)
@@ -140,6 +142,8 @@ TARGETS="\$(PROG)"
 
 ## Setup dynamic options.
 DYNAMIC_LFLAGS="-lc -lm -L/usr/X11/lib -L/usr/X11R6/lib"
+
+CYGPATH="echo"
 
 case $PLATFORM in
   CYGWIN_NT*|MINGW*)
@@ -161,6 +165,8 @@ case $PLATFORM in
 
         EXTRA_LIBS="\$(LIB_THREAD)"
         EXTRA_INCLUDES="-DTCL_THREADS"
+
+        CYGPATH="cygpath -m"
         ;;
 
   Linux)
@@ -201,6 +207,10 @@ TOP_SRCDIR = $ABS_TOP_SRCDIR
 PREFIX = $PREFIX
 EXE    = $EXE
 
+RC     = ${RC-windres}
+
+IK_CFLAGS = -O2
+
 ## The package versions we are using.
 TKVERSION_DIR=$TKVERSION_DIR
 TKVERSION_LIB=$TKVERSION_LIB
@@ -219,6 +229,7 @@ MINIARC_SRCDIR=$MINIARC_SRCDIR
 
 ZLIB_PREFIX=$ZLIBDIR
 
+CYGPATH = $CYGPATH
 
 ## Name of the UPX binary
 UPX = $UPX

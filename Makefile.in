@@ -1,5 +1,5 @@
 BUILD_ENV = \
-	CFLAGS="$(CFLAGS)"
+	CFLAGS="$(CFLAGS)" CC="$(CC)" RC="$(RC)"
 
 all: $(TARGETS)
 	@echo
@@ -27,7 +27,7 @@ work/stamp-tcl-static:
 		--prefix=$(PREFIX) \
 		--disable-shared $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/tcl-static \
-	 && $(MAKE) all install-binaries install-libraries
+	 && $(BUILD_ENV) $(MAKE) all install-binaries install-libraries
 	touch $@
 
 tk: work/stamp-tk
@@ -147,7 +147,7 @@ work/stamp-tkdnd:
 dist:
 	cp -fp $(TOP_SRCDIR)/version kit/$(IJ_PLATFORM)
 	cd kit && $(TCLSH) \
-		$(TOP_SRCDIR)/src/tools/makezip.tcl \
+		`$(CYGPATH) $(TOP_SRCDIR)/src/tools/makezip.tcl` \
 		../$(IJ_PLATFORM).zip \
 		`find $(IJ_PLATFORM) -type f | sort`
 

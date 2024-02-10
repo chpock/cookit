@@ -40,6 +40,7 @@ TCLSH="\$(PREFIX)/bin/tclsh8.6"
 AQUA_FLAG=
 SHARED_FLAG="--enable-shared"
 THREADS_FLAG="--disable-threads"
+CYGPATH="echo"
 
 case "$IJ_PLATFORM" in
   Windows)
@@ -48,6 +49,8 @@ case "$IJ_PLATFORM" in
     TARGETS="tcl-static thread"
     SHARED_FLAG="--disable-shared"
     THREADS_FLAG="--enable-threads"
+    CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
+    CYGPATH="cygpath -m"
     ;;
 
   MacOS-X)
@@ -84,6 +87,7 @@ TOP_SRCDIR      = $ABS_TOP_SRCDIR
 TOP_BUILDDIR    = $ABS_TOP_BUILDDIR
 
 CC              = ${CC-gcc}
+RC              = ${RC-windres}
 CFLAGS          = $CFLAGS
 AQUA_FLAG       = $AQUA_FLAG
 SHARED_FLAG     = $SHARED_FLAG

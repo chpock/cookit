@@ -255,7 +255,7 @@ proc miniarc::zip::ReadArchiveHeader { fp arrayName } {
     seek $fp -22 end
     set hdr [read $fp 22]
 
-    binary scan $hdr A4ssssiis xhdr ndisk cdisk nitems ntotal csize coff comment 
+    binary scan $hdr A4ssssiis xhdr ndisk cdisk nitems ntotal csize coff comment
     if {![string equal "PK\05\06" $xhdr]} {
 	return -code error "bad end of central directory record"
     }

@@ -163,7 +163,7 @@ proc installkit::Windows::FileType { option fileType args } {
             }
             set key "$root\\$fileType\\Shell"
             set newOrder [lindex $args 0]
-            
+
             ## If no new order was given, return them the current command
             ## order.  If one has not been specified, return them a list
             ## of the commands in order as keys.

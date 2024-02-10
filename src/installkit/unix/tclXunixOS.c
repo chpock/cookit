@@ -63,7 +63,7 @@ ConvertOwnerGroup _ANSI_ARGS_((Tcl_Interp  *interp,
                                uid_t       *ownerId,
                                gid_t       *groupId));
 
-
+
 /*-----------------------------------------------------------------------------
  * TclXNotAvailableError --
  *   Return an error about functionality not being available under Windows.
@@ -84,7 +84,7 @@ TclXNotAvailableError (interp, funcName)
                           (char *) NULL);
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * ChannelToFnum --
  *
@@ -119,7 +119,7 @@ ChannelToFnum (channel, direction)
     }
     return (int) handle;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSTicksToMS --
  *
@@ -159,7 +159,7 @@ TclXOSTicksToMS (numTicks)
         return ((numTicks) * 1000.0 / msPerTick);
     }
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSgetpriority --
  *   System dependent interface to getpriority functionality.
@@ -185,7 +185,7 @@ TclXOSgetpriority (interp, priority, funcName)
 #endif
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSincrpriority--
  *   System dependent interface to increment or decrement the current priority.
@@ -223,7 +223,7 @@ TclXOSincrpriority (interp, priorityIncr, priority, funcName)
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSpipe --
  *   System dependent interface to create a pipes for the pipe command.
@@ -258,7 +258,7 @@ TclXOSpipe (interp, channels)
     return TCL_OK;
 }
 
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSsetitimer --
  *   System dependent interface to setitimer functionality.
@@ -293,7 +293,7 @@ TclXOSsetitimer (interp, seconds, funcName)
     timer.it_value.tv_usec    = (long) ((*seconds - secFloor) *
                                         (double) TCL_USECS_PER_SEC);
     timer.it_interval.tv_sec  = 0;
-    timer.it_interval.tv_usec = 0;  
+    timer.it_interval.tv_usec = 0;
 
     if (setitimer (ITIMER_REAL, &timer, &oldTimer) < 0) {
         TclX_AppendObjResult (interp, "unable to obtain timer: ",
@@ -314,7 +314,7 @@ TclXOSsetitimer (interp, seconds, funcName)
     return TCL_OK;
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSsleep --
  *   System dependent interface to sleep functionality.
@@ -329,7 +329,7 @@ TclXOSsleep (seconds)
 {
     Tcl_Sleep (seconds*1000);
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSsync --
  *   System dependent interface to sync functionality.
@@ -340,7 +340,7 @@ TclXOSsync ()
 {
     sync ();
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSfsync --
  *   System dependent interface to fsync functionality.  Does a sync if fsync
@@ -374,7 +374,7 @@ TclXOSfsync (interp, channel)
                           Tcl_PosixError (interp), (char *) NULL);
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSsystem --
  *   System dependent interface to system functionality (executing a command
@@ -443,7 +443,7 @@ TclXOSsystem (interp, command, exitCode)
                               Tcl_PosixError (interp), (char *) NULL);
         return TCL_ERROR;
     }
-    
+
     /*
      * Return status based on wait result.
      */
@@ -476,7 +476,7 @@ TclXOSsystem (interp, command, exitCode)
     close (errPipes [1]);
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclX_OSlink --
  *   System dependent interface to link functionality.
@@ -499,13 +499,13 @@ TclX_OSlink (interp, srcPath, targetPath, funcName)
 {
     if (link (srcPath, targetPath) != 0) {
         TclX_AppendObjResult (interp, "linking \"", srcPath, "\" to \"",
-                              targetPath, "\" failed: ", 
+                              targetPath, "\" failed: ",
                               Tcl_PosixError (interp), (char *) NULL);
         return TCL_ERROR;
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclX_OSsymlink --
  *   System dependent interface to symlink functionality.
@@ -535,16 +535,16 @@ TclX_OSsymlink (interp, srcPath, targetPath, funcName)
     }
     return TCL_OK;
 #else
-    TclX_AppendObjResult (interp, 
+    TclX_AppendObjResult (interp,
                           "symbolic links are not supported on this",
                           " Unix system", (char *) NULL);
     return TCL_ERROR;
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSElapsedTime --
- *   System dependent interface to get the elapsed CPU and real time. 
+ *   System dependent interface to get the elapsed CPU and real time.
  *
  * Parameters:
  *   o realTime - Elapsed real time, in milliseconds is returned here.
@@ -575,7 +575,7 @@ TclXOSElapsedTime (realTime, cpuTime)
      */
     if ((startTime.tv_sec == 0) && (startTime.tv_usec == 0))
         gettimeofday (&startTime, NULL);
-    
+
     gettimeofday (&currentTime, NULL);
     currentTime.tv_sec  = currentTime.tv_sec  - startTime.tv_sec;
     currentTime.tv_usec = currentTime.tv_usec - startTime.tv_usec;
@@ -584,7 +584,7 @@ TclXOSElapsedTime (realTime, cpuTime)
     *cpuTime = TclXOSTicksToMS (cpuTimes.tms_utime + cpuTimes.tms_stime);
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSkill --
  *   System dependent interface to send a signal to a process.
@@ -617,23 +617,23 @@ TclXOSkill (interp, pid, signal, funcName)
                                   (char *) NULL);
         } else if (pid == 0) {
             sprintf (pidStr, "%d", getpgrp ());
-            TclX_AppendObjResult (interp, " to current process group (", 
+            TclX_AppendObjResult (interp, " to current process group (",
                                   pidStr, ")", (char *) NULL);
         } else if (pid == -1) {
-            TclX_AppendObjResult (interp, " to all processess ", 
+            TclX_AppendObjResult (interp, " to all processess ",
                                   (char *) NULL);
         } else if (pid < -1) {
             sprintf (pidStr, "%d", -pid);
-            TclX_AppendObjResult (interp, " to process group ", 
+            TclX_AppendObjResult (interp, " to process group ",
                                   pidStr, (char *) NULL);
         }
-        TclX_AppendObjResult (interp, " failed: ", 
+        TclX_AppendObjResult (interp, " failed: ",
                               Tcl_PosixError (interp), (char *) NULL);
         return TCL_ERROR;
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSFstat --
  *   System dependent interface to get status information on an open file.
@@ -667,7 +667,7 @@ TclXOSFstat (interp, channel, statBuf, ttyDev)
         *ttyDev = isatty (fileNum);
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSSeakable --
  *   System dependent interface to determine if a channel is seekable.
@@ -699,14 +699,14 @@ TclXOSSeekable (interp, channel, seekablePtr)
                               Tcl_PosixError (interp), (char *) NULL);
         return TCL_ERROR;
     }
-    if (S_ISREG (statBuf.st_mode)) {
+    if (S_ISREG (Tcl_GetModeFromStat(&statBuf))) {
         *seekablePtr = TRUE;
     } else {
         *seekablePtr = FALSE;
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSWalkDir --
  *   System dependent interface to reading the contents of a directory.  The
@@ -782,7 +782,7 @@ TclXOSWalkDir (interp, path, hidden, callback, clientData)
     }
     return result;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSGetFileSize --
  *   System dependent interface to get the size of an open file.
@@ -804,10 +804,10 @@ TclXOSGetFileSize (channel, fileSize)
     if (fstat (ChannelToFnum (channel, 0), &statBuf)) {
         return TCL_ERROR;
     }
-    *fileSize = statBuf.st_size;
+    *fileSize = Tcl_GetSizeFromStat(&statBuf);
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSftruncate --
  *   System dependent interface to ftruncate functionality.
@@ -828,7 +828,7 @@ TclXOSftruncate (interp, channel, newSize, funcName)
     off_t        newSize;
     char        *funcName;
 {
-#if (!defined(NO_FTRUNCATE)) || defined(HAVE_CHSIZE) 
+#if (!defined(NO_FTRUNCATE)) || defined(HAVE_CHSIZE)
     int stat;
 
 #ifndef NO_FTRUNCATE
@@ -846,7 +846,7 @@ TclXOSftruncate (interp, channel, newSize, funcName)
     return TclXNotAvailableError (interp, funcName);
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSfork --
  *   System dependent interface to fork functionality.
@@ -864,10 +864,10 @@ TclXOSfork (interp, funcNameObj)
     Tcl_Obj    *funcNameObj;
 {
     pid_t pid;
-    
+
     pid = fork ();
     if (pid < 0) {
-        TclX_AppendObjResult (interp, "fork failed: ", 
+        TclX_AppendObjResult (interp, "fork failed: ",
                               Tcl_PosixError (interp), (char *) NULL);
         return TCL_ERROR;
     }
@@ -875,7 +875,7 @@ TclXOSfork (interp, funcNameObj)
     Tcl_SetIntObj (Tcl_GetObjResult (interp), (int)pid);
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSexecl --
  *   System dependent interface to execl functionality.
@@ -903,7 +903,7 @@ TclXOSexecl (interp, path, argList)
                           Tcl_PosixError (interp), (char *) NULL);
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSInetAtoN --
  *
@@ -938,7 +938,7 @@ TclXOSInetAtoN (interp, strAddress, inAddress)
     }
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSgetpeername --
  *   System dependent interface to getpeername functionality.
@@ -968,7 +968,7 @@ TclXOSgetpeername (interp, channel, sockaddr, sockaddrSize)
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSgetsockname --
  *   System dependent interface to getsockname functionality.
@@ -997,11 +997,11 @@ TclXOSgetsockname (interp, channel, sockaddr, sockaddrSize)
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSgetsockopt --
  *    Get the value of a integer socket option.
- *     
+ *
  * Parameters:
  *   o interp - Errors are returned in the result.
  *   o channel - Channel associated with the socket.
@@ -1020,7 +1020,7 @@ TclXOSgetsockopt (interp, channel, option, valuePtr)
 {
     int valueLen = sizeof (*valuePtr);
 
-    if (getsockopt (ChannelToFnum (channel, 0), SOL_SOCKET, option, 
+    if (getsockopt (ChannelToFnum (channel, 0), SOL_SOCKET, option,
                 (void*) valuePtr, &valueLen) != 0) {
         TclX_AppendObjResult (interp, Tcl_GetChannelName (channel), ": ",
                 Tcl_PosixError (interp), (char *) NULL);
@@ -1028,11 +1028,11 @@ TclXOSgetsockopt (interp, channel, option, valuePtr)
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSsetsockopt --
  *    Set the value of a integer socket option.
- *     
+ *
  * Parameters:
  *   o interp - Errors are returned in the result.
  *   o channel - Channel associated with the socket.
@@ -1059,7 +1059,7 @@ TclXOSsetsockopt (interp, channel, option, value)
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSchmod --
  *   System dependent interface to chmod functionality.
@@ -1085,7 +1085,7 @@ TclXOSchmod (interp, fileName, mode)
     }
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSfchmod --
  *   System dependent interface to fchmod functionality.
@@ -1117,7 +1117,7 @@ TclXOSfchmod (interp, channel, mode, funcName)
     return TclXNotAvailableError (interp, funcName);
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * ConvertOwnerGroup --
  *   Convert the owner and group specification to ids.
@@ -1197,17 +1197,17 @@ ConvertOwnerGroup (interp, options, ownerStr, groupStr, ownerId, groupId)
     return TCL_OK;
 
   unknownUser:
-    TclX_AppendObjResult (interp, "unknown user id: ", 
+    TclX_AppendObjResult (interp, "unknown user id: ",
                           ownerStr, (char *) NULL);
     goto errorExit;
 
   noGroupForUser:
-    TclX_AppendObjResult (interp, "can't find group for user id: ", 
+    TclX_AppendObjResult (interp, "can't find group for user id: ",
                           ownerStr, (char *) NULL);
     goto errorExit;
 
   unknownGroup:
-    TclX_AppendObjResult (interp, "unknown group id: ", groupStr, 
+    TclX_AppendObjResult (interp, "unknown group id: ", groupStr,
                           (char *) NULL);
     goto errorExit;
 
@@ -1215,7 +1215,7 @@ ConvertOwnerGroup (interp, options, ownerStr, groupStr, ownerId, groupId)
     endpwent ();
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSChangeOwnGrpObj --
  *   Change the owner and/or group of a file by file name.
@@ -1298,7 +1298,7 @@ TclXOSChangeOwnGrpObj (interp, options, ownerStr, groupStr, fileListObj, funcNam
     Tcl_DStringFree (&pathBuf);
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSFChangeOwnGrpObj --
  *   Change the owner and/or group of a file by open channel.
@@ -1353,7 +1353,7 @@ TclXOSFChangeOwnGrpObj (interp, options, ownerStr, groupStr, channelIdsObj,
             return TCL_ERROR;
         }
         fnum = ChannelToFnum (channel, 0);
-        
+
         /*
          * If we are not changing both owner and group, we need to get the
          * old ids.
@@ -1380,7 +1380,7 @@ TclXOSFChangeOwnGrpObj (interp, options, ownerStr, groupStr, channelIdsObj,
     return TclXNotAvailableError (interp, funcName);
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSFChangeOwnGrp --
  *   Change the owner and/or group of a file by open channel.
@@ -1427,7 +1427,7 @@ TclXOSFChangeOwnGrp (interp, options, ownerStr, groupStr, channelIds, funcName)
         if (channel == NULL)
             return TCL_ERROR;
         fnum = ChannelToFnum (channel, 0);
-        
+
         /*
          * If we are not changing both owner and group, we need to get the
          * old ids.
@@ -1454,7 +1454,7 @@ TclXOSFChangeOwnGrp (interp, options, ownerStr, groupStr, channelIds, funcName)
     return TclXNotAvailableError (interp, funcName);
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSGetSelectFnum --
  *   Convert a channel its read or write file numbers for use in select.
@@ -1488,7 +1488,7 @@ TclXOSGetSelectFnum (interp, channel, direction, fnumPtr)
     *fnumPtr = (int) handle;
     return TCL_OK;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSHaveFlock --
  *   System dependent interface to determine if file locking is available.
@@ -1505,7 +1505,7 @@ TclXOSHaveFlock ()
     return FALSE;
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSFlock --
  *   System dependent interface to locking a file.
@@ -1526,7 +1526,7 @@ TclXOSFlock (interp, lockInfoPtr)
 #ifdef F_SETLKW
     int fnum, stat;
     struct flock flockInfo;
-    
+
     flockInfo.l_start = lockInfoPtr->start;
     flockInfo.l_len = lockInfoPtr->len;
     flockInfo.l_type =
@@ -1535,7 +1535,7 @@ TclXOSFlock (interp, lockInfoPtr)
 
     fnum = ChannelToFnum (lockInfoPtr->channel, lockInfoPtr->access);
 
-    stat = fcntl (fnum, lockInfoPtr->block ?  F_SETLKW : F_SETLK, 
+    stat = fcntl (fnum, lockInfoPtr->block ?  F_SETLKW : F_SETLK,
                   &flockInfo);
 
     /*
@@ -1546,7 +1546,7 @@ TclXOSFlock (interp, lockInfoPtr)
         lockInfoPtr->gotLock = FALSE;
         return TCL_OK;
     }
-    
+
     if (stat < 0) {
         lockInfoPtr->gotLock = FALSE;
         TclX_AppendObjResult (interp, "lock of \"",
@@ -1563,7 +1563,7 @@ TclXOSFlock (interp, lockInfoPtr)
                                   "file locking");
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSFunlock --
  *   System dependent interface to unlocking a file.
@@ -1584,7 +1584,7 @@ TclXOSFunlock (interp, lockInfoPtr)
 #ifdef F_SETLKW
     int fnum, stat;
     struct flock flockInfo;
-    
+
     flockInfo.l_start = lockInfoPtr->start;
     flockInfo.l_len = lockInfoPtr->len;
     flockInfo.l_type = F_UNLCK;
@@ -1606,7 +1606,7 @@ TclXOSFunlock (interp, lockInfoPtr)
                                   "file locking");
 #endif
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSGetAppend --
  *   System dependent interface determine if a channel is in force append mode.
@@ -1648,7 +1648,7 @@ TclXOSGetAppend (interp, channel, valuePtr)
                           Tcl_PosixError (interp), (char *) NULL);
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSSetAppend --
  *   System dependent interface set force append mode on a channel.
@@ -1694,7 +1694,7 @@ TclXOSSetAppend (interp, channel, value)
                           Tcl_PosixError (interp), (char *) NULL);
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSGetCloseOnExec --
  *   System dependent interface determine if a channel has close-on-exec set.
@@ -1740,7 +1740,7 @@ TclXOSGetCloseOnExec (interp, channel, valuePtr)
      */
     if ((readFnum >= 0) && (writeFnum >= 0) &&
         ((readMode & 1) != (writeMode & 1))) {
-        TclX_AppendObjResult (interp, Tcl_GetChannelName (channel), 
+        TclX_AppendObjResult (interp, Tcl_GetChannelName (channel),
                               ": read file of channel has close-on-exec ",
                               (readMode & 1) ? "on" : "off",
                               " and write file has it ",
@@ -1758,7 +1758,7 @@ TclXOSGetCloseOnExec (interp, channel, valuePtr)
                           Tcl_PosixError (interp), (char *) NULL);
     return TCL_ERROR;
 }
-
+
 /*-----------------------------------------------------------------------------
  * TclXOSSetCloseOnExec --
  *   System dependent interface set close-on-exec on a channel.

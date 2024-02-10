@@ -1792,7 +1792,7 @@ echo "${ECHO_T}warning: requested TEA version \"3.7\", have \"${TEA_VERSION}\"" 
 echo "${ECHO_T}ok (TEA ${TEA_VERSION})" >&6; }
     fi
     case "`uname -s`" in
-	*win32*|*WIN32*|*MINGW32_*)
+	*win32*|*WIN32*|*MINGW32_*|*CYGWIN*)
 	    # Extract the first word of "cygpath", so it can be a program name with args.
 set dummy cygpath; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
@@ -1810,7 +1810,7 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CYGPATH="cygpath -w"
+    ac_cv_prog_CYGPATH="cygpath -m"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi

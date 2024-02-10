@@ -1,4 +1,4 @@
-/* 
+/*
  * main.c --
  *
  *      Main entry point for wish and other Tk-based applications.
@@ -24,6 +24,8 @@
 #endif
 
 #define VFS_MOUNT "/installkitvfs"
+
+extern Tcl_AppInitProc Registry_Init;
 
 /*
  * Forward declarations for procedures defined later in this file:
@@ -118,7 +120,7 @@ wsetargv(int *_argc)
     return argv;
 }
 #endif /* __WIN32__ */
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -263,7 +265,7 @@ error:
 #endif /* __WIN32__ */
     return TCL_ERROR;
 }
-
+
 
 #ifdef __WIN32__
 /*
@@ -272,7 +274,7 @@ error:
  * setargv --
  *
  *      Parse the Windows command line string into argc/argv.  Done here
- *      because we don't trust the builtin argument parser in crt0.  
+ *      because we don't trust the builtin argument parser in crt0.
  *      Windows applications are responsible for breaking their command
  *      line into arguments.
  *
@@ -301,7 +303,7 @@ setargv(argcPtr, argvPtr)
     char *cmdLine, *p, *arg, *argSpace;
     char **argv;
     int argc, size, inquote, copy, slashes;
-    
+
     cmdLine = GetCommandLine(); /* INTL: BUG */
 
     /*
@@ -383,7 +385,7 @@ setargv(argcPtr, argvPtr)
     *argcPtr = argc;
     *argvPtr = argv;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -406,7 +408,7 @@ WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
     va_list argList;
     char buf[1024];
     CONST char *format;
-    
+
     format = TCL_VARARGS_START(CONST char *,arg1,argList);
     vsprintf(buf, format, argList);
 
@@ -418,7 +420,7 @@ WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
 #endif
     ExitProcess(1);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -428,7 +430,7 @@ WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
  *
  * Results:
  *      Returns false if initialization fails, otherwise it never
- *      returns. 
+ *      returns.
  *
  * Side effects:
  *      Just about anything, since from here we call arbitrary Tcl code.
@@ -460,7 +462,7 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
     return 1;
 }
 #else
-
+
 /*
  *----------------------------------------------------------------------
  *

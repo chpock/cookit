@@ -33,7 +33,7 @@ proc main { installkitBin vfsDir } {
         lappend names $file
     }
 
-    if {[catch { build $installkitBin lzma $files $names }]} {
+    if {[catch { build $installkitBin none $files $names }]} {
         build $installkitBin zlib $files $names
     }
 }
