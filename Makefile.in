@@ -1,6 +1,10 @@
 BUILD_ENV = \
 	CFLAGS="$(CFLAGS)" CC="$(CC)" RC="$(RC)"
 
+# Path to UPX
+PATH := $(PATH):$(TOP_SRCDIR)/src/installkit/tools/$(IJ_PLATFORM)
+export PATH
+
 all: $(TARGETS)
 	@echo
 	@echo "Now type: make dist"
