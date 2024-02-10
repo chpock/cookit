@@ -15,7 +15,7 @@ vfsdir:
 	@find vfsdir -type f | sed 's/vfsdir\///g' > $(WRAP_MANIFEST)
 
 $(PROG)_bare: $(OBJS)
-	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare $(OBJS) $(LIBS) $(DYNAMIC_LIBS)
+	$(CC) $(IK_CFLAGS) -o $(PROG)_bare $(OBJS) $(LIBS) $(DYNAMIC_LIBS) $(DYNAMIC_LFLAGS)
 
 $(PROG)_bare.exe: $(OBJS) installkit.user.res.o
 	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare.exe $(OBJS) \
