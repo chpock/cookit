@@ -182,9 +182,12 @@ case $PLATFORM in
         ;;
 
   Darwin)
+        # Disable UPX on MacOS due unstable work:
+        # https://github.com/upx/upx/issues/777
+        UPX="echo"
         DYNAMIC_CFLAGS="$CFLAGS"
+        DYNAMIC_LFLAGS="-lc -lm"
         DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework CoreFoundation"
-        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework Carbon"
         DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS $DYNAMIC_CFLAGS"
         ;;
 

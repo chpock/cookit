@@ -54,13 +54,13 @@ case "$IJ_PLATFORM" in
     ;;
 
   MacOS-X)
-    CFLAGS="-arch i386 -mmacosx-version-min=10.4 $CFLAGS"
-    AQUA_FLAG="--enable-aqua=carbon"
+    CFLAGS="-arch i386 -mmacosx-version-min=10.5 $CFLAGS"
+    AQUA_FLAG="--enable-aqua"
     ;;
 
   MacOS-X-ppc)
-    CFLAGS="-arch ppc -mmacosx-version-min=10.2 $CFLAGS"
-    AQUA_FLAG="--enable-aqua=carbon"
+    CFLAGS="-arch ppc -mmacosx-version-min=10.5 $CFLAGS"
+    AQUA_FLAG="--enable-aqua"
     ;;
 esac
 

@@ -9723,7 +9723,7 @@ fi
 if test $tk_aqua != no; then
     if test $tk_aqua = yes; then
 	LIBS="$LIBS -framework Cocoa -framework Carbon -framework IOKit"
-	EXTRA_CC_SWITCHES='-std=gnu99 -x objective-c -fobjc-gc'
+	EXTRA_CC_SWITCHES='-std=gnu99 -x objective-c'
     else
 	LIBS="$LIBS -framework Carbon -framework IOKit"
 	CFLAGS="$CFLAGS -fpascal-strings"
