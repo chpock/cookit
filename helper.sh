@@ -7,7 +7,7 @@ case $OS in
         PLATFORM=AIX-ppc
         ;;
     Darwin)
-        PLATFORM=MacOS-X
+        OS=MacOS-X
         ;;
     FreeBSD)
         VERSION=`uname -r | cut -f 1 -d .`
@@ -55,13 +55,24 @@ if test -z "$PLATFORM"; then
             Power*)
                 MACHINE=ppc
                 ;;
+            arm64)
+                MACHINE=arm64
+                ;;
         esac
     fi
 
-    if test -n "$VERSION"; then
-        PLATFORM=$OS-$VERSION-$MACHINE
-    else
-        PLATFORM=$OS-$MACHINE
+    if [ "$PLATFORM" = "MacOS-X" ] || [ "$PLATFORM" = "Windows" ]; then
+        if [ "$MACHINE" = "x86" ]; then
+            unset MACHINE
+        fi
+    fi
+
+    if [ -n "$MACHINE" ]; then
+        if test -n "$VERSION"; then
+            PLATFORM=$OS-$VERSION-$MACHINE
+        else
+            PLATFORM=$OS-$MACHINE
+        fi
     fi
 fi
 

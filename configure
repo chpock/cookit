@@ -58,6 +58,12 @@ case "$IJ_PLATFORM" in
     AQUA_FLAG="--enable-aqua"
     ;;
 
+  MacOS-X-arm64)
+    CFLAGS="-arch arm64 -mmacosx-version-min=10.5 $CFLAGS"
+    CFLAGS="-DSTDC_HEADERS $CFLAGS"
+    AQUA_FLAG="--enable-aqua"
+    ;;
+
   MacOS-X-ppc)
     CFLAGS="-arch ppc -mmacosx-version-min=10.5 $CFLAGS"
     AQUA_FLAG="--enable-aqua"
@@ -67,7 +73,7 @@ esac
 TARGETS="$TARGETS tk zlib miniarc installkit"
 
 case "$IJ_PLATFORM" in
-  Windows|MacOS-X)
+  Windows|MacOS-X*)
     TARGETS="$TARGETS tktable"
     ;;
 
