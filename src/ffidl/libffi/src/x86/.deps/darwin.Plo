@@ -1,9 +1,0 @@
-src/x86/darwin.lo src/x86/darwin.o:  \
- /Users/damon/src/installkit/src/ffidl/lib-src/libffi/src/x86/darwin.S \
-  fficonfig.h include/ffi.h include/ffitarget.h
-
-fficonfig.h:
-
-include/ffi.h:
-
-include/ffitarget.h:
