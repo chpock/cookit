@@ -8,7 +8,7 @@
  *
  * Ffidl - Copyright (c) 1999 by Roger E Critchlow Jr,
  * Santa Fe, NM, USA, rec@elf.org
- * 
+ *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the ``Software''), to deal in the Software without
@@ -16,10 +16,10 @@
  * modify, merge, publish, distribute, sublicense, and/or sell copies
  * of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -241,7 +241,7 @@ static void *tkStubsPtr, *tkPlatStubsPtr, *tkIntStubsPtr, *tkIntPlatStubsPtr, *t
 #define av_start_slong	av_start_long
 #define av_start_slonglong	av_start_longlong
 #define av_start_sshort	av_start_short
- 
+
 /* NB, abbreviated to the most usual, add cases as required */
 #if SIZEOF_CHAR == 1
 #define lib_type_uint8	lib_type_uchar
@@ -333,7 +333,7 @@ static void *tkStubsPtr, *tkPlatStubsPtr, *tkIntStubsPtr, *tkIntPlatStubsPtr, *t
 #endif
 
 /*****************************************
- *				  
+ *
  * ffidlopen, ffidlsym, and ffidlclose abstractions
  * of dlopen(), dlsym(), and dlclose().
  */
@@ -400,7 +400,7 @@ struct ffidl_load_flags {
 typedef struct ffidl_load_flags ffidl_load_flags;
 
 /*****************************************
- *				  
+ *
  * Functions exported from this file.
  */
 
@@ -1005,7 +1005,7 @@ static int ffidlsymfallback(ffidl_LoadHandle handle,
    */
   *address = GetProcAddress(handle, nativeSymbolName);
   if (!*address) {
-    unknown = "unknown error";
+    //*error = "unknown error";
     status = TCL_ERROR;
   }
 #else
@@ -1745,7 +1745,7 @@ static int cif_parse(Tcl_Interp *interp, ffidl_client *client, Tcl_Obj *args, Tc
     cif = cif_alloc(client, argc);
     cif->protocol = protocol;
     if (cif == NULL) {
-      Tcl_AppendResult(interp, "couldn't allocate the ffidl_cif", NULL); 
+      Tcl_AppendResult(interp, "couldn't allocate the ffidl_cif", NULL);
       goto error;
     }
     /* parse return value spec */
@@ -2007,7 +2007,7 @@ static int callout_prep(ffidl_callout *callout)
 }
 
 /* make a call */
-/* consider what happens if we reenter using the same cif */  
+/* consider what happens if we reenter using the same cif */
 static void callout_call(ffidl_callout *callout)
 {
   ffidl_cif *cif = callout->cif;
@@ -2500,7 +2500,7 @@ static void callback_callback(void *user_data, va_alist alist)
     Tcl_AppendResult(interp, ", converting callback return value", NULL);
     goto escape;
   }
-  
+
   /* convert return value */
   switch (cif->rtype->typecode) {
   case FFIDL_VOID:	va_return_void(alist); break;
@@ -2517,7 +2517,7 @@ static void callback_callback(void *user_data, va_alist alist)
   case FFIDL_UINT64:	va_return_uint64(alist, obj_value.v_wideint); break;
   case FFIDL_SINT64:	va_return_sint64(alist, obj_value.v_wideint); break;
 #endif
-  case FFIDL_STRUCT:	
+  case FFIDL_STRUCT:
     {
       int len;
       void *bytes = Tcl_GetByteArrayFromObj(obj, &len);
@@ -2899,7 +2899,7 @@ static int tcl_ffidl_info(ClientData clientData, Tcl_Interp *interp, int objc, T
     Tcl_SetObjResult(interp, Ffidl_NewPointerObj(NULL));
     return TCL_OK;
   }
-  
+
   /* return an error */
   Tcl_AppendResult(interp, "missing option implementation: ", Tcl_GetString(objv[option_ix]), NULL);
   return TCL_ERROR;
@@ -3195,7 +3195,7 @@ static int tcl_ffidl_call(ClientData clientData, Tcl_Interp *interp, int objc, T
     sprintf(buff, "Invalid return type: %d", cif->rtype->typecode);
     Tcl_AppendResult(interp, buff, NULL);
     goto cleanup;
-  }    
+  }
   /* done */
   return TCL_OK;
   /* blew it */
@@ -3694,10 +3694,10 @@ static int tcl_ffidl_stubsymbol(ClientData clientData, Tcl_Interp *interp, int o
     nargs
   };
 
-  int library, stubstable, symbolnumber; 
+  int library, stubstable, symbolnumber;
   void **stubs = NULL, *address;
   static const char *library_names[] = {
-    "tcl", 
+    "tcl",
 #if defined(LOOKUP_TK_STUBS)
     "tk",
 #endif
@@ -3861,12 +3861,12 @@ MyTkInitStubs(interp, version, exact)
 		TCL_STATIC);
 	return NULL;
     }
-    
+
     tkPlatStubsPtr =    ((MyTkStubs*)tkStubsPtr)->hooks->tkPlatStubs;
     tkIntStubsPtr =     ((MyTkStubs*)tkStubsPtr)->hooks->tkIntStubs;
     tkIntPlatStubsPtr = ((MyTkStubs*)tkStubsPtr)->hooks->tkIntPlatStubs;
     tkIntXlibStubsPtr = ((MyTkStubs*)tkStubsPtr)->hooks->tkIntXlibStubs;
-    
+
     return actualVersion;
 }
 #endif

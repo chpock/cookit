@@ -150,7 +150,7 @@ Installkit_Startup( Tcl_Interp *interp )
 #ifdef __WIN32__
     int argc;
     PWCHAR *argv;
-    char name[MAX_PATH + TCL_UTF_MAX];
+    char name[UNICODE_STRING_MAX_CHARS * TCL_UTF_MAX];
 
     argv = wsetargv(&argc);
 

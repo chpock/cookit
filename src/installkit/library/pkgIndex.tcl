@@ -1,4 +1,4 @@
-package ifneeded installkit 1.1 ";\
+package ifneeded installkit @@KIT_VERSION@@ ";\
     load {} installkit;\
     source [file join $dir installkit.tcl];\
 "

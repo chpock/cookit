@@ -13,17 +13,22 @@ vfsdir:
 	$(TCLSH) `$(CYGPATH) $(BUILDVFS)` $(BUILD) `$(CYGPATH) $(TOP_SRCDIR)` `$(CYGPATH) $(TCL_PREFIX)/lib` \
 	    $(TOP)/vfsdir/lib
 	@find vfsdir -type f | sed 's/vfsdir\///g' > $(WRAP_MANIFEST)
+	sed -i -e 's/@@KIT_VERSION@@/$(KIT_VERSION)/' $(TOP)/vfsdir/lib/installkit/installkit.tcl
+	sed -i -e 's/@@KIT_VERSION@@/$(KIT_VERSION)/' $(TOP)/vfsdir/lib/installkit/pkgIndex.tcl
 
 $(PROG)_bare: $(OBJS)
-	$(CC) $(IK_CFLAGS) -o $(PROG)_bare $(OBJS) $(LIBS) $(DYNAMIC_LIBS) $(DYNAMIC_LFLAGS)
+	$(CC) $(LDFLAGS) $(IK_CFLAGS) -o $(PROG)_bare $(OBJS) $(LIBS) $(DYNAMIC_LIBS) $(DYNAMIC_LFLAGS)
+	$(STRIP) $(STRIP_ARGS) "$@"
 
 $(PROG)_bare.exe: $(OBJS) installkit.user.res.o
-	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare.exe $(OBJS) \
+	$(CC) $(LDFLAGS) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare.exe $(OBJS) \
 	    installkit.user.res.o $(LIBS) $(DYNAMIC_LIBS)
+	$(STRIP) $(STRIP_ARGS) "$@"
 
 $(PROG)A_bare.exe: $(OBJS) installkit.admin.res.o
-	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)A_bare.exe $(OBJS) \
+	$(CC) $(LDFLAGS) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)A_bare.exe $(OBJS) \
 	    installkit.admin.res.o $(LIBS) $(DYNAMIC_LIBS)
+	$(STRIP) $(STRIP_ARGS) "$@"
 
 $(PROG)$(EXE): $(PROG)_bare$(EXE)
 	$(RM) $(PROG)$(EXE)

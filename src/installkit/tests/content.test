@@ -1,0 +1,69 @@
+# installkit tests - content
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# These tests check the expected content in installkit vfs
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+test get-ij-version {} -body {
+    set fp [open [file join [file dir [info script]] .. .. .. version] r]
+    set ij_ver [gets $fp]
+    close $fp
+} -result * -match glob
+
+test package-installkit [list package require installkit $ij_ver] \
+    -body [list package require installkit $ij_ver] \
+    -result $ij_ver -cleanup { unset ij_ver }
+
+foreach { pkgName pkgVersion constraints } {
+    Tcl                 8.6b1.2  {}
+    Tk                  8.6b1.2  {}
+    Ttk                 8.6b1.2  {}
+    http                2.8.2    {}
+    ttk::theme::jammer  0.1      {}
+    miniarc             0.1      {}
+    installkit::Windows 1.1      {win}
+    Thread              2.6.6    {win}
+    msgcat              1.4.2    {}
+    registry            1.2.1    {win}
+} {
+    test package-$pkgName [list package require $pkgName $pkgVersion] \
+        -constraints $constraints \
+        -body [list package require $pkgName $pkgVersion] \
+        -returnCodes ok -match glob -result *
+}
+
+# installkit removed encoding files lager than 4096 bytes.
+# Here we check that vfs contains expected set of encodings.
+
+test encodings {
+    available encodings
+} -body {
+    set encs [list]
+    foreach enc [lsort [glob -directory /installkitvfs/lib/tcl/encoding -type f -tails "*.enc"]] {
+        lappend encs [file rootname $enc]
+    }
+    set encs
+} -result [list {*}{ascii cp1250 cp1251 cp1252 cp1253 cp1254 cp1255
+cp1256 cp1257 cp1258 cp437 cp737 cp775 cp850 cp852 cp855 cp857 cp860
+cp861 cp862 cp863 cp864 cp865 cp866 cp869 cp874 dingbats ebcdic gb1988
+iso2022-jp iso2022-kr iso2022 iso8859-1 iso8859-10 iso8859-13 iso8859-14
+iso8859-15 iso8859-16 iso8859-2 iso8859-3 iso8859-4 iso8859-5 iso8859-6
+iso8859-7 iso8859-8 iso8859-9 jis0201 koi8-r koi8-u macCentEuro macCroatian
+macCyrillic macDingbats macGreek macIceland macRoman macRomania
+macThai macTurkish macUkraine symbol tis-620}] -cleanup {
+    unset encs enc
+}
+
+# cleanup
+::tcltest::cleanupTests
+return

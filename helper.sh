@@ -114,4 +114,48 @@ case $1 in
         mv $PLATFORM.zip $TOP/work
         echo "File is in work/$PLATFORM.zip"
         ;;
+
+    environment)
+        echo "# Build environment:"
+        echo "# Generated at: `date --iso-8601=seconds`"
+        echo
+        if command -v cygcheck >/dev/null 2>&1; then
+            echo "\$ cygcheck --version"
+            cygcheck --version
+            echo
+            echo "\$ cmd /c ver"
+            cmd /c "ver" | tr -d '\r'
+            echo
+        elif command -v sw_vers >/dev/null 2>&1; then
+            echo "\$ sw_vers -productName"
+            sw_vers -productName
+            echo
+            echo "\$ sw_vers -productVersion"
+            sw_vers -productVersion
+            echo
+        elif [ -e /etc/redhat-release ]; then
+            echo "\$ cat /etc/redhat-release"
+            cat /etc/redhat-release
+            echo
+        elif [ -e /etc/lsb-release ]; then
+            echo "\$ cat /etc/lsb-release"
+            cat /etc/lsb-release
+            echo
+        fi
+        echo "\$ uname -a"
+        uname -a
+        echo
+        echo "\$ $CC --version"
+        "$CC" --version
+        echo
+        echo "\$ $CPP --version"
+        "$CPP" --version
+        echo
+        if command -v ldd >/dev/null 2>&1; then
+            echo "\$ ldd --version"
+            ldd --version
+        fi
+        echo
+        ;;
+
 esac

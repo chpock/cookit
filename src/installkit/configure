@@ -38,11 +38,13 @@ MINIARC_SRCDIR=/no-miniarc-src
 TKDIR=../../lib
 TCLDIR=../../lib
 ZLIBDIR=../..
+KIT_VERSION=1.0.0
 
 for i in $@
 do
   case $i in
   --help) help ;;
+  --version=*)     KIT_VERSION=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --prefix=*)      PREFIX=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --without-upx)   WITH_UPX=no ;;
   --with-lzma-src=*) LZMA_SRCDIR=`echo $i | sed -e 's/^[^=]*=//g'` ;;
@@ -142,6 +144,8 @@ TARGETS="\$(PROG)"
 
 ## Setup dynamic options.
 DYNAMIC_LFLAGS="-lc -lm -L/usr/X11/lib -L/usr/X11R6/lib"
+DYNAMIC_CFLAGS="$CFLAGS"
+STRIP_ARGS="--strip-all"
 
 CYGPATH="echo"
 
@@ -185,10 +189,10 @@ case $PLATFORM in
         # Disable UPX on MacOS due unstable work:
         # https://github.com/upx/upx/issues/777
         UPX="echo"
-        DYNAMIC_CFLAGS="$CFLAGS"
         DYNAMIC_LFLAGS="-lc -lm"
         DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework CoreFoundation"
         DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS $DYNAMIC_CFLAGS"
+        STRIP_ARGS="-Sx"
         ;;
 
   *)
@@ -198,21 +202,16 @@ esac
 sed -e s/\'//g $TCLCONFIG > tclConfig.sh
 sed -e s/\'//g $TKCONFIG > tkConfig.sh
 
-cat > Makefile << EOF
-##
-## Makefile
-##
+cat > environment.conf << EOF
+## installkit build configuration
 ## Created with $0 $@
-##
 
-TOP_SRCDIR = $ABS_TOP_SRCDIR
+KIT_VERSION = $KIT_VERSION
 
-PREFIX = $PREFIX
 EXE    = $EXE
 
 RC     = ${RC-windres}
-
-IK_CFLAGS = -O2
+STRIP  = ${STRIP-strip}
 
 ## The package versions we are using.
 TKVERSION_DIR=$TKVERSION_DIR
@@ -234,6 +233,8 @@ ZLIB_PREFIX=$ZLIBDIR
 
 CYGPATH = $CYGPATH
 
+STRIP_ARGS = $STRIP_ARGS
+
 ## Name of the UPX binary
 UPX = $UPX
 
@@ -254,7 +255,20 @@ OBJS           = $OBJS
 
 EXTRA_LIBS     = $EXTRA_LIBS
 EXTRA_INCLUDES = $EXTRA_INCLUDES
+
 EOF
 
+cat > Makefile << EOF
+##
+## Makefile
+##
+
+TOP_SRCDIR = $ABS_TOP_SRCDIR
+
+PREFIX = $PREFIX
+
+EOF
+
+cat environment.conf >> Makefile
 cat "$TOP_SRCDIR/$MAKEFILE" >> Makefile
 cat "$TOP_SRCDIR/Makefile.in" >> Makefile

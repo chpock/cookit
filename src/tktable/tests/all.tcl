@@ -9,7 +9,7 @@
 #
 # See the file "license.txt" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
+#
 # RCS: @(#) $Id: all.tcl,v 1.2 2002/06/21 18:16:39 hobbs Exp $
 
 package require tcltest
@@ -22,6 +22,8 @@ set ::tcltest::testsDirectory [file dir [info script]]
 catch {::tcltest::normalizePath ::tcltest::testsDirectory}
 
 set chan $::tcltest::outputChannel
+
+package require Tk
 
 puts $chan "Tk $tk_patchLevel tests running in interp: [info nameofexecutable]"
 puts $chan "Tests running with pwd:           [pwd]"

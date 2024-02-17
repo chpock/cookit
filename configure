@@ -41,6 +41,8 @@ AQUA_FLAG=
 SHARED_FLAG="--enable-shared"
 THREADS_FLAG="--disable-threads"
 CYGPATH="echo"
+KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
+CC_TKDND="\$(CC)"
 
 case "$IJ_PLATFORM" in
   Windows)
@@ -51,6 +53,18 @@ case "$IJ_PLATFORM" in
     THREADS_FLAG="--enable-threads"
     CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
     CYGPATH="cygpath -m"
+    # TkDND must be compiled using C++
+    CC_TKDND="\$(CPP)"
+    ;;
+
+  Linux-x86)
+    CFLAGS="-m32"
+    LDFLAGS="-m32"
+    ;;
+
+  Linux-x86_64)
+    CFLAGS="-m64"
+    LDFLAGS="-m64"
     ;;
 
   MacOS-X)
@@ -73,8 +87,12 @@ esac
 TARGETS="$TARGETS tk zlib miniarc installkit"
 
 case "$IJ_PLATFORM" in
-  Windows|MacOS-X*)
+  MacOS-X*)
     TARGETS="$TARGETS tktable"
+    ;;
+
+  Windows)
+    TARGETS="$TARGETS tkdnd tktable ffidl twapi"
     ;;
 
   *)
@@ -82,19 +100,25 @@ case "$IJ_PLATFORM" in
     ;;
 esac
 
-cat > Makefile << EOF
-##
-## Makefile
-##
+CC=${CC-gcc} CPP=${CPP-g++} "$TOP_SRCDIR/helper.sh" environment > build.conf
+
+cat > environment.conf << EOF
+## General build configuration
 ## Created with $0 $@
-##
 
 TOP_SRCDIR      = $ABS_TOP_SRCDIR
 TOP_BUILDDIR    = $ABS_TOP_BUILDDIR
 
-CC              = ${CC-gcc}
-RC              = ${RC-windres}
+KIT_VERSION     = $KIT_VERSION
+
+CC              = ${CC-${ARCH_TOOLS_PREFIX}gcc}
+CPP             = ${CPP-${ARCH_TOOLS_PREFIX}g++}
+PKG_CONFIG      = ${PKG_CONFIG-${ARCH_TOOLS_PREFIX}pkg-config}
+STRIP           = ${STRIP-${ARCH_TOOLS_PREFIX}strip}
+RC              = ${RC-${ARCH_TOOLS_PREFIX}windres}
+
 CFLAGS          = $CFLAGS
+LDFLAGS         = $LDFLAGS
 AQUA_FLAG       = $AQUA_FLAG
 SHARED_FLAG     = $SHARED_FLAG
 THREADS_FLAG    = $THREADS_FLAG
@@ -104,13 +128,25 @@ IJ_PLATFORM     = $IJ_PLATFORM
 TCLSH           = $TCLSH
 CYGPATH         = $CYGPATH
 
-PREFIX          = \$(TOP_BUILDDIR)/out
-KIT_PREFIX      = \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
+CC_TKDND        = $CC_TKDND
 
 TARGETS         = $TARGETS
 
 EOF
 
+cat > Makefile << EOF
+##
+## Makefile
+##
+## Created with $0 $@
+##
+
+PREFIX          = \$(TOP_BUILDDIR)/out
+KIT_PREFIX      = \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
+
+EOF
+
+cat >> Makefile < environment.conf
 cat >> Makefile < "$TOP_SRCDIR/Makefile.in"
 
 echo "Now type: make"

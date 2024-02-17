@@ -116,7 +116,7 @@ proc ::installkit::makestub { args } {
     close $ifp
     close $ofp
 
-    if {$::tcl_platform(platform) eq "windows"} { 
+    if {$::tcl_platform(platform) eq "windows"} {
         file attributes $executable -readonly 0
     } else {
         file attributes $executable -permissions 00755
@@ -182,7 +182,7 @@ proc ::installkit::wrap { args } {
     if {[string length $installkit(stubfile)]} {
         file copy -force $installkit(stubfile) $installkit(executable)
 
-        if {$::tcl_platform(platform) eq "windows"} { 
+        if {$::tcl_platform(platform) eq "windows"} {
             file attributes $installkit(executable) -readonly 0
         } else {
             file attributes $installkit(executable) -permissions 00755
@@ -192,7 +192,7 @@ proc ::installkit::wrap { args } {
     }
 
     ::installkit::UpdateWindowsResources $installkit(executable) installkit
-    
+
     set opts [list]
 
     if {$installkit(method) eq "zlib"} {
@@ -235,7 +235,7 @@ proc ::installkit::wrap { args } {
 
     miniarc::close $fp
 
-    if {$::tcl_platform(platform) eq "windows"} { 
+    if {$::tcl_platform(platform) eq "windows"} {
         file attributes $installkit(executable) -readonly 0
     } else {
         file attributes $installkit(executable) -permissions 00755
@@ -561,7 +561,7 @@ proc ::installkit::ExitCleanup { args } {
     }
 }
 
-package provide installkit 1.1
+package provide installkit @@KIT_VERSION@@
 
 if {$::tcl_platform(platform) eq "windows"} {
     source [file join [file dirname [info script]] wintcl.tcl]

@@ -1338,7 +1338,7 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CYGPATH="cygpath -w"
+    ac_cv_prog_CYGPATH="cygpath -m"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -6402,8 +6402,8 @@ echo "$as_me: error: could not find source file '$i'" >&2;}
 
 
 
-    vars="gdi32.lib user32.lib winspool.lib comdlg32.lib
-		  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib"
+    vars="-lgdi32 -luser32 -lwinspool -lcomdlg32
+		  -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid"
     for i in $vars; do
 	PKG_LIBS="$PKG_LIBS $i"
     done
@@ -8551,7 +8551,7 @@ echo "$as_me: WARNING: 64bit mode not supported by gcc" >&2;}
 		SHLIB_LD="${CC} -shared"
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS="-ldl"
-		LDFLAGS="-rdynamic"
+		LDFLAGS="$LDFLAGS -rdynamic"
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 	    else
 		if test "${ac_cv_header_dld_h+set}" = set; then
