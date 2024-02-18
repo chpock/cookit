@@ -6,14 +6,20 @@ SELF_HOME="$(cd "$(dirname "$0")"; pwd)"
 
 BUILD_HOME="$(pwd)"
 
-COLORS="32 33 34 35 36 92 93 94 95 96"
+COLORS="33 34 35 36 92 93 94 95 96"
 
 progress() {
     LABEL="$1"
     COLOR="$2"
     while IFS= read -r line; do
         case "$line" in
-            make[*|[*|mkdir\ *)
+            \[OK\]*)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[32m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            \[ERROR\]*)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            make\[*|\[*|mkdir\ *)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m %s\n' "$COLOR" "$LABEL" "$line"
                 ;;
         esac
@@ -31,7 +37,11 @@ getcolor() {
 
 if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
 
-    [ "$1" != "all" ] || set -- Windows MacOS-X Linux-x86 Linux-x86_64
+    BUILD_ALL="$BUILD_HOME/build-all"
+
+    rm -rf "$BUILD_ALL" "$BUILD_HOME/installkit"-*
+
+    [ "$1" != "all" ] && unset BUILD_ALL || set -- Windows MacOS-X Linux-x86 Linux-x86_64
 
     for PLATFORM; do
         rm -f "$BUILD_HOME/$PLATFORM".*
@@ -47,12 +57,44 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
 
     wait
 
+    # Check that build is successful
+    for PLATFORM; do
+        if [ ! -e "$BUILD_HOME/$PLATFORM.zip" ]; then
+            echo "Error: platform '$PLATFORM' failed."
+            BUILD_FAILED=1
+        fi
+    done
+
+    [ -z "$BUILD_FAILED" ] || exit 1
+
+    echo
+    if [ -n "$BUILD_ALL" ]; then
+        mkdir -p "$BUILD_ALL"
+        for PLATFORM; do
+            cp -r "$BUILD_HOME/build-$PLATFORM/kit"/* "$BUILD_ALL"
+        done
+        VERSION="$(cat "$SELF_HOME"/version)"
+        PACKAGE="$BUILD_HOME/installkit-$VERSION.tar.gz"
+        echo "Create package: $PACKAGE"
+        ( cd "$BUILD_ALL" && tar czf "$PACKAGE" * )
+    else
+        echo "Build has been launched for specific platforms. Installkit package will not be built."
+    fi
+
     exit 0
 
 fi
 
 log() {
     echo "[INFO] $1"
+}
+
+ok() {
+    echo "[OK] $1"
+}
+
+error() {
+    echo "[ERROR] $1"
 }
 
 logcmd() {
@@ -84,8 +126,8 @@ if [ -n "$PLATFORM" ]; then
                 if [ "$(cygcheck -c -n "$DEP" 2>/dev/null)" = "$DEP" ]; then
                     log "dependency '$DEP' - OK"
                 else
-                    log "Error: dependency '$DEP' - not installed"
-                    log "Please run: setup-x86_64.exe -q -P $DEP"
+                    error "Error: dependency '$DEP' - not installed"
+                    error "Please run: setup-x86_64.exe -q -P $DEP"
                     exit 1
                 fi
             done
@@ -115,9 +157,11 @@ if [ -n "$PLATFORM" ]; then
 
     if [ "$PLATFORM" = "Windows" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
         mv "$BUILD_DIR/$PLATFORM.zip" "$BUILD_DIR/.."
+        ok "Done."
+    else
+        echo "Done."
     fi
 
-    log "Done."
     exit 0
 
 fi
@@ -177,7 +221,7 @@ vagrant_lock() {
             COUNT=$(( COUNT + 1 ))
         done
         if [ $COUNT -eq $TIMEOUT ]; then
-            log "Error: Timeout reached."
+            error "Error: Timeout reached."
             exit 1
         fi
     fi
@@ -220,7 +264,7 @@ while [ "$STATE" != "running" ]; do
         log "Start the VM..."
         vagrant up | grep -E '^ui (output|info),' | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
     elif [ "$STATE" != "running" ]; then
-        log "Error: unexpected VM state."
+        error "Error: unexpected VM state."
         exit 1
     fi
 done
@@ -252,5 +296,10 @@ if [ "$R" -eq 0 ]; then
     fi
 fi
 
-log "Done. Exit code: $R"
+if [ $R -eq 0 ]; then
+    ok "Done. Exit code: $R"
+else
+    error "Done. Exit code: $R"
+fi
+
 exit $R
