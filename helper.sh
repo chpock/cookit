@@ -133,6 +133,12 @@ case $1 in
             echo "\$ sw_vers -productVersion"
             sw_vers -productVersion
             echo
+            if command -v pkgutil >/dev/null 2>&1; then
+                echo
+                echo "\$ pkgutil --pkg-info=com.apple.pkg.CLTools_Executables"
+                pkgutil --pkg-info=com.apple.pkg.CLTools_Executables
+                echo
+            fi
         elif [ -e /etc/redhat-release ]; then
             echo "\$ cat /etc/redhat-release"
             cat /etc/redhat-release

@@ -168,6 +168,7 @@ work/stamp-ffidl:
 		--enable-libffi_static \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/ffidl && $(MAKE) all install-binaries
+	mv $(KIT_PREFIX)/lib/Ffidl* $(KIT_PREFIX)/lib/ffidl
 	touch $@
 
 twapi: work/stamp-twapi

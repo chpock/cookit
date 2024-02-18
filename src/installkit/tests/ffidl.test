@@ -1,0 +1,39 @@
+# installkit tests - ffidl
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# These tests check the expected content in installkit vfs
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+package require Ffidl
+
+# installkit uses only one function from ffidl - send notification about
+# association changes
+
+test SHChangeNotify {} -body {
+
+    if {[info commands ffidl::SHChangeNotify] eq ""} {
+        set symbol [ffidl::symbol shell32 SHChangeNotify]
+        ffidl::callout ffidl::SHChangeNotify \
+            {long unsigned pointer pointer} void $symbol
+    }
+
+    set SHCNE_ASSOCCHANGED 0x08000000
+    set SHCNF_FLUSH        0x1000
+
+    ffidl::SHChangeNotify $SHCNE_ASSOCCHANGED $SHCNF_FLUSH 0 0
+
+} -returnCodes ok -result {}
+
+# cleanup
+::tcltest::cleanupTests
+return
