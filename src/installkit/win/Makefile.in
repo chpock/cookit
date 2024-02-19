@@ -63,8 +63,8 @@ INCLUDES	= -I$(TOP_SRCDIR)/generic -I$(MINIARC_SRCDIR)/generic \
 ## All library options to the linker
 LIBS = \
   $(LIB_TK) \
-  $(LIB_TK_STUB) \
   $(LIB_TCL) \
   $(LIB_TCL_STUB) \
   $(LIB_Z) \
+  $(TK_LIBS) \
   $(EXTRA_LIBS)
