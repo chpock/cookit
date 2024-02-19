@@ -1,4 +1,7 @@
-/* ffidlConfig.h.in.  Generated from configure.in by autoheader.  */
+/* ffidlConfig.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
 
 /* The normal alignment of `char', in bytes. */
 #undef ALIGNOF_CHAR
@@ -33,18 +36,66 @@
 /* Canonical host name */
 #undef CANONICAL_HOST
 
+/* Defined when cygwin/mingw does not support EXCEPTION DISPOSITION */
+#undef EXCEPTION_DISPOSITION
+
+/* Defined when compiler supports casting to union type. */
+#undef HAVE_CAST_TO_UNION
+
+/* libffi supports FFI_EFI64 on this platform. */
+#undef HAVE_FFI_EFI64
+
+/* libffi supports FFI_FASTCALL on this platform. */
+#undef HAVE_FFI_FASTCALL
+
+/* libffi supports FFI_GNUW64 on this platform. */
+#undef HAVE_FFI_GNUW64
+
+/* libffi supports FFI_MS_CDECL on this platform. */
+#undef HAVE_FFI_MS_CDECL
+
+/* libffi supports FFI_PASCAL on this platform. */
+#undef HAVE_FFI_PASCAL
+
+/* libffi supports FFI_REGISTER on this platform. */
+#undef HAVE_FFI_REGISTER
+
+/* libffi supports FFI_STDCALL on this platform. */
+#undef HAVE_FFI_STDCALL
+
+/* libffi supports FFI_SYSV on this platform. */
+#undef HAVE_FFI_SYSV
+
+/* libffi supports FFI_THISCALL on this platform. */
+#undef HAVE_FFI_THISCALL
+
+/* libffi supports FFI_UNIX64 on this platform. */
+#undef HAVE_FFI_UNIX64
+
+/* libffi supports FFI_WIN64 on this platform. */
+#undef HAVE_FFI_WIN64
+
+/* Compiler support for module scope symbols */
+#undef HAVE_HIDDEN
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
 /* Do we have <limits.h>? */
 #undef HAVE_LIMITS_H
 
-/* Define to 1 if long double works and has more range or precision than
-   double. */
+/* Define to 1 if the system has the type `long double'. */
 #undef HAVE_LONG_DOUBLE
+
+/* Define to 1 if the type `long double' works and has more range or precision
+   than `double'. */
+#undef HAVE_LONG_DOUBLE_WIDER
 
 /* Define to 1 if the system has the type `long long'. */
 #undef HAVE_LONG_LONG
+
+/* Define to 1 if you have the `lseek64' function. */
+#undef HAVE_LSEEK64
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -52,11 +103,11 @@
 /* Do we have <net/errno.h>? */
 #undef HAVE_NET_ERRNO_H
 
-/* Define to 1 if you have the `pthread_attr_setstacksize' function. */
-#undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+/* Defined when mingw does not support SEH */
+#undef HAVE_NO_SEH
 
-/* Define to 1 if you have the `readdir_r' function. */
-#undef HAVE_READDIR_R
+/* Define to 1 if you have the `open64' function. */
+#undef HAVE_OPEN64
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -91,8 +142,14 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Defined when cygwin/mingw ignores VOID define in winnt.h */
+#undef HAVE_WINNT_IGNORE_VOID
+
 /* ffidl::stubsymbol can lookup in Tk stubs tables */
 #undef LOOKUP_TK_STUBS
+
+/* No Compiler support for module scope symbols */
+#undef MODULE_SCOPE
 
 /* Do we have <dirent.h>? */
 #undef NO_DIRENT_H
@@ -102,9 +159,6 @@
 
 /* Do we have <errno.h>? */
 #undef NO_ERRNO_H
-
-/* Do we have <float.h>? */
-#undef NO_FLOAT_H
 
 /* Do we have <limits.h>? */
 #undef NO_LIMITS_H
@@ -132,6 +186,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
@@ -163,7 +220,7 @@
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
-/* Is this a static build? */
+/* This a static build */
 #undef STATIC_BUILD
 
 /* Define to 1 if you have the ANSI C header files. */
@@ -181,35 +238,26 @@
 /* What type should be used to define wide integers? */
 #undef TCL_WIDE_INT_TYPE
 
-/* Rename TclGuessPackageName symbol to avoid clash with Tcl */
-#undef TclGuessPackageName
-
 /* UNDER_CE version */
 #undef UNDER_CE
-
-/* Should we use <a.out.h> when doing dynamic loading? */
-#undef USE_A_OUT_H
 
 /* Implement callbacks */
 #undef USE_CALLBACKS
 
-/* Do we need a special AIX hack for timezones? */
-#undef USE_DELTA_FOR_TZ
-
-/* Use ffcall for foreign function calls */
-#undef USE_FFCALL
+/* Use libffcall for foreign function calls */
+#undef USE_LIBFFCALL
 
 /* Use libffi for foreign function calls */
 #undef USE_LIBFFI
 
-/* Should we use <sys/exec_aout.h> when doing dynamic loading? */
-#undef USE_SYS_EXEC_AOUT_H
+/* Use TclOO stubs */
+#undef USE_TCLOO_STUBS
 
-/* Should we use <sys/exec.h> when doing dynamic loading? */
-#undef USE_SYS_EXEC_H
-
-/* Use TclpDlopen() API to load code */
+/* Use Tcl*Dlopen() API to load code */
 #undef USE_TCL_DLOPEN
+
+/* Use Tcl_LoadFile() API to load code */
+#undef USE_TCL_LOADFILE
 
 /* Use Tcl stubs */
 #undef USE_TCL_STUBS
@@ -217,15 +265,29 @@
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-#undef WORDS_BIGENDIAN
+/* Use Tk stubs */
+#undef USE_TK_STUBS
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
 
 /* Add the _ISOC99_SOURCE flag when building */
 #undef _ISOC99_SOURCE
 
 /* Add the _LARGEFILE64_SOURCE flag when building */
 #undef _LARGEFILE64_SOURCE
+
+/* Add the _LARGEFILE_SOURCE64 flag when building */
+#undef _LARGEFILE_SOURCE64
 
 /* # needed in sys/socket.h Should OS/390 do the right thing with sockets? */
 #undef _OE_SOCKETS
@@ -245,7 +307,8 @@
 /* Do we want to use the XOPEN network library? */
 #undef _XOPEN_SOURCE_EXTENDED
 
-/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
-#ifndef __CHAR_UNSIGNED__
-# undef __CHAR_UNSIGNED__
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
 #endif

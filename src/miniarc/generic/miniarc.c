@@ -60,7 +60,7 @@ rc4_init( Tcl_Obj *keyObj, RC4_CTX *ctx )
         swap(&ctx->s[n], &ctx->s[j]);
         i = (i + 1) % keylen;
     }
-    
+
     return TCL_OK;
 }
 
@@ -406,7 +406,7 @@ MiniarcTarAddFileObjCmd(
     long chksum = 0;
     struct TarHeader header;
     const unsigned char *headerP = (const unsigned char *)&header;
-    
+
     unsigned int uid;
     unsigned int gid;
     mode_t mode;
@@ -416,6 +416,7 @@ MiniarcTarAddFileObjCmd(
     char *uname = NULL, *gname = NULL;
     Tcl_Channel chan;
     Tcl_StatBuf statBuf;
+    unsigned int statBufMode;
 
     const char *switches[] = {
         "-gid", "-gname", "-mtime", "-name",
@@ -445,10 +446,10 @@ MiniarcTarAddFileObjCmd(
         return TCL_ERROR;
     }
 
-    mode  = statBuf.st_mode;
-    uid   = statBuf.st_uid;
-    gid   = statBuf.st_gid;
-    mtime = statBuf.st_mtime;
+    mode  = Tcl_GetModeFromStat(&statBuf);
+    uid   = Tcl_GetUserIdFromStat(&statBuf);
+    gid   = Tcl_GetGroupIdFromStat(&statBuf);
+    mtime = Tcl_GetModificationTimeFromStat(&statBuf);
 
     if( objc > 4 ) {
 	int optc;
@@ -531,10 +532,10 @@ MiniarcTarAddFileObjCmd(
             if( *p == '/' ) break;
         }
 
-        strncpy( header.name, ++p, n + 1 ); 
-        strncpy( header.prefix, storeName, n ); 
+        strncpy( header.name, ++p, n + 1 );
+        strncpy( header.prefix, storeName, n );
     } else {
-        strncpy( header.name, storeName, sizeof(header.name) ); 
+        strncpy( header.name, storeName, sizeof(header.name) );
     }
 
     CopyOctal( interp, header.mode, mode, sizeof(header.mode) );
@@ -554,7 +555,7 @@ MiniarcTarAddFileObjCmd(
         strcpy( header.uname, "root" );
 #else
         struct passwd *passwd;
-        if( (passwd = getpwuid(statBuf.st_uid)) ) {
+        if( (passwd = getpwuid(Tcl_GetUserIdFromStat(&statBuf))) ) {
             strncpy( header.uname, passwd->pw_name, sizeof(header.uname) );
         }
 #endif
@@ -567,32 +568,34 @@ MiniarcTarAddFileObjCmd(
         strcpy( header.gname, "root" );
 #else
         struct group *grp;
-        if( (grp = getgrgid(statBuf.st_gid)) ) {
+        if( (grp = getgrgid(Tcl_GetGroupIdFromStat(&statBuf))) ) {
             strncpy( header.gname, grp->gr_name, sizeof(header.gname) );
         }
 #endif
     }
 
-    if( S_ISREG(statBuf.st_mode) ) {
+    statBufMode = Tcl_GetModeFromStat(&statBuf);
+
+    if( S_ISREG(statBufMode) ) {
         /* Regular file */
         header.typeflag  = TAR_REGTYPE;
-        CopyOctal( interp, header.size, statBuf.st_size, sizeof(header.size) );
-    } else if( S_ISDIR(statBuf.st_mode) ) {
+        CopyOctal( interp, header.size, Tcl_GetSizeFromStat(&statBuf), sizeof(header.size) );
+    } else if( S_ISDIR(statBufMode) ) {
         /* Directory */
         header.typeflag  = TAR_DIRTYPE;
-        strncat( header.name, "/", sizeof(header.name) ); 
-    } else if( S_ISLNK(statBuf.st_mode) ) {
+        strncat( header.name, "/", sizeof(header.name) );
+    } else if( S_ISLNK(statBufMode) ) {
         Tcl_Obj *linkObj;
         header.typeflag  = TAR_SYMTYPE;
         if( !(linkObj = Tcl_FSLink( objv[3], NULL, 0 )) ) {
             return TCL_ERROR;
         }
         strncpy(header.linkname,Tcl_GetString(linkObj),sizeof(header.linkname));
-    } else if( S_ISCHR(statBuf.st_mode) ) {
+    } else if( S_ISCHR(statBufMode) ) {
         /* Not handled */
-    } else if( S_ISBLK(statBuf.st_mode) ) {
+    } else if( S_ISBLK(statBufMode) ) {
         /* Not handled */
-    } else if( S_ISFIFO(statBuf.st_mode) ) {
+    } else if( S_ISFIFO(statBufMode) ) {
         /* Not handled */
     } else {
         Tcl_SetStringObj( Tcl_GetObjResult(interp), "bad file type", -1 );
@@ -609,7 +612,7 @@ MiniarcTarAddFileObjCmd(
         chksum += *headerP++;
     }
     CopyOctal( interp, header.chksum, chksum, 7 );
-    
+
     /* Now write the header out to disk */
     Tcl_Write( chan, (char *)&header, TAR_BLOCK_SIZE );
 
@@ -735,7 +738,7 @@ MiniarcZipAddFileObjCmd(
         return TCL_ERROR;
     }
 
-    mtime = statBuf.st_mtime;
+    mtime = Tcl_GetModificationTimeFromStat(&statBuf);
 
     if( objc > 4 ) {
 	int i, optc;
@@ -802,7 +805,7 @@ MiniarcZipAddFileObjCmd(
     SetByte( fileheader+10, mtime, 4 ); /* date time */
     SetByte( fileheader+14, 0, 4 ); /* crc */
     SetByte( fileheader+18, 0, 4 ); /* compressed size */
-    SetByte( fileheader+22, statBuf.st_size, 4 ); /* uncompressed size */
+    SetByte( fileheader+22, Tcl_GetSizeFromStat(&statBuf), 4 ); /* uncompressed size */
     SetByte( fileheader+26, nameLen, 2 ); /* name length */
     SetByte( fileheader+28, 0, 2 ); /* extra length */
 
@@ -814,7 +817,7 @@ MiniarcZipAddFileObjCmd(
     SetByte( centralheader+12, mtime, 4 ); /* date time */
     SetByte( centralheader+16, 0, 4 ); /* crc */
     SetByte( centralheader+20, 0, 4 ); /* compressed size */
-    SetByte( centralheader+24, statBuf.st_size, 4 ); /* uncompressed size */
+    SetByte( centralheader+24, Tcl_GetSizeFromStat(&statBuf), 4 ); /* uncompressed size */
     SetByte( centralheader+28, nameLen, 2 ); /* name length */
     SetByte( centralheader+30, 0, 2 ); /* extra length */
     SetByte( centralheader+32, 0, 2 ); /* comment length */
@@ -881,7 +884,7 @@ MiniarcZipAddFileObjCmd(
                 z.next_out  = outbuf;
             }
         }
-        
+
         do {
             unsigned count = 0;
             err = deflate( &z, Z_FINISH );
@@ -964,7 +967,7 @@ MiniarcCrapAddObjCmd(
     Tcl_Obj *CONST objv[])
 {
     struct CrapFileHeader header;
-    
+
     time_t mtime;
     int i, encrypt = 0, corefile = 0, nameLen, index;
     int level = Z_DEFAULT_COMPRESSION;
@@ -1006,8 +1009,8 @@ MiniarcCrapAddObjCmd(
         return TCL_ERROR;
     }
 
-    mtime = statBuf.st_mtime;
-    totalSize = statBuf.st_size;
+    mtime = Tcl_GetModificationTimeFromStat(&statBuf);
+    totalSize = Tcl_GetSizeFromStat(&statBuf);
 
     if( objc > 4 ) {
 	int optc;
@@ -1154,7 +1157,7 @@ MiniarcCrapAddObjCmd(
                 z.next_out  = outbuf;
             }
         }
-        
+
         do {
             unsigned count = 0;
             err = deflate( &z, Z_FINISH );
@@ -1329,7 +1332,7 @@ MiniarcCrapCryptFileObjCmd(
 
         Tcl_Seek(chan, iPos, SEEK_SET);
     }
-    
+
     strncpy(central.password, Tcl_GetString(objv[3]), sizeof(central.password));
 
     Tcl_Write( chan, (char *)&central, CRAP_CENTRAL_HEADER_SIZE );

@@ -27,7 +27,7 @@ do
   -h|--help)       help ;;
   --debug)         SYMBOLS_FLAG=--enable-symbols
                    echo "Extra debugging features enabled"
-		   ;;
+                   ;;
   *) echo "Invalid configure option $i" ; help ; exit 1 ;;
   esac
 done
@@ -40,6 +40,9 @@ TCLSH="\$(PREFIX)/bin/tclsh8.6"
 AQUA_FLAG=
 SHARED_FLAG="--enable-shared"
 THREADS_FLAG="--disable-threads"
+CYGPATH="echo"
+KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
+SO_EXT="so"
 
 case "$IJ_PLATFORM" in
   Windows)
@@ -48,30 +51,92 @@ case "$IJ_PLATFORM" in
     TARGETS="tcl-static thread"
     SHARED_FLAG="--disable-shared"
     THREADS_FLAG="--enable-threads"
+    CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
+    CYGPATH="cygpath -m"
+    SO_EXT="dll"
+    ;;
+
+  Linux-x86)
+    CFLAGS="-m32"
+    LDFLAGS="-m32"
+    ;;
+
+  Linux-x86_64)
+    CFLAGS="-m64"
+    LDFLAGS="-m64"
     ;;
 
   MacOS-X)
-    CFLAGS="-arch i386 -mmacosx-version-min=10.4 $CFLAGS"
-    AQUA_FLAG="--enable-aqua=carbon"
+    CFLAGS="-arch i386 -mmacosx-version-min=10.5 $CFLAGS"
+    AQUA_FLAG="--enable-aqua"
+    SO_EXT="dylib"
+    ;;
+
+  MacOS-X-arm64)
+    CFLAGS="-arch arm64 -mmacosx-version-min=10.5 $CFLAGS"
+    CFLAGS="-DSTDC_HEADERS $CFLAGS"
+    AQUA_FLAG="--enable-aqua"
+    SO_EXT="dylib"
     ;;
 
   MacOS-X-ppc)
-    CFLAGS="-arch ppc -mmacosx-version-min=10.2 $CFLAGS"
-    AQUA_FLAG="--enable-aqua=carbon"
+    CFLAGS="-arch ppc -mmacosx-version-min=10.5 $CFLAGS"
+    AQUA_FLAG="--enable-aqua"
     ;;
 esac
 
-TARGETS="$TARGETS tk zlib miniarc installkit"
+TARGETS="$TARGETS tk zlib miniarc installkit tktable"
 
 case "$IJ_PLATFORM" in
-  Windows|MacOS-X)
-    TARGETS="$TARGETS tktable"
+  MacOS-X*)
+    : no-op
     ;;
-
+  Windows)
+    TARGETS="$TARGETS tkdnd ffidl twapi"
+    ;;
   *)
-    TARGETS="$TARGETS tkdnd tktable"
+    TARGETS="$TARGETS tkdnd"
     ;;
 esac
+
+: ${CC:=${ARCH_TOOLS_PREFIX}gcc}
+: ${CXX:=${ARCH_TOOLS_PREFIX}g++}
+: ${PKG_CONFIG:=${ARCH_TOOLS_PREFIX}pkg-config}
+: ${STRIP:=${ARCH_TOOLS_PREFIX}strip}
+: ${RC:=${ARCH_TOOLS_PREFIX}windres}
+
+CC="${CC}" CXX="${CXX}" "$TOP_SRCDIR/helper.sh" environment > build.conf
+
+cat > environment.conf << EOF
+## General build configuration
+## Created with $0 $@
+
+TOP_SRCDIR      = $ABS_TOP_SRCDIR
+TOP_BUILDDIR    = $ABS_TOP_BUILDDIR
+
+KIT_VERSION     = $KIT_VERSION
+
+CC              = $CC
+CXX             = $CXX
+PKG_CONFIG      = $PKG_CONFIG
+STRIP           = $STRIP
+RC              = $RC
+
+CFLAGS          = $CFLAGS
+LDFLAGS         = $LDFLAGS
+AQUA_FLAG       = $AQUA_FLAG
+SHARED_FLAG     = $SHARED_FLAG
+THREADS_FLAG    = $THREADS_FLAG
+SYMBOLS_FLAG    = $SYMBOLS_FLAG
+
+TCL_SYSTEM      = $TCL_SYSTEM
+IJ_PLATFORM     = $IJ_PLATFORM
+TCLSH           = $TCLSH
+CYGPATH         = $CYGPATH
+
+TARGETS         = $TARGETS
+
+EOF
 
 cat > Makefile << EOF
 ##
@@ -80,26 +145,14 @@ cat > Makefile << EOF
 ## Created with $0 $@
 ##
 
-TOP_SRCDIR	= $ABS_TOP_SRCDIR
-TOP_BUILDDIR	= $ABS_TOP_BUILDDIR
+PREFIX          = \$(TOP_BUILDDIR)/out
+KIT_PREFIX      = \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
 
-CC		= ${CC-gcc}
-CFLAGS          = $CFLAGS
-AQUA_FLAG	= $AQUA_FLAG
-SHARED_FLAG	= $SHARED_FLAG
-THREADS_FLAG	= $THREADS_FLAG
-SYMBOLS_FLAG	= $SYMBOLS_FLAG
-TCL_SYSTEM	= $TCL_SYSTEM
-IJ_PLATFORM	= $IJ_PLATFORM
-TCLSH           = $TCLSH
-
-PREFIX		= \$(TOP_BUILDDIR)/out
-KIT_PREFIX	= \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
-
-TARGETS		= $TARGETS
+SO_EXT          = $SO_EXT
 
 EOF
 
+cat >> Makefile < environment.conf
 cat >> Makefile < "$TOP_SRCDIR/Makefile.in"
 
 echo "Now type: make"

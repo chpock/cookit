@@ -803,12 +803,12 @@ TclX_WrongArgs (interp, commandNameObj, string)
     commandName = Tcl_GetStringFromObj (commandNameObj, &commandLength);
 
     Tcl_AppendStringsToObj (resultPtr,
-			    tclXWrongArgs,
-			    commandName,
-			    (char *)NULL);
+                            tclXWrongArgs,
+                            commandName,
+                            (char *)NULL);
 
     if (*string != '\0') {
-	Tcl_AppendStringsToObj (resultPtr, " ", string, (char *)NULL);
+        Tcl_AppendStringsToObj (resultPtr, " ", string, (char *)NULL);
     }
     return TCL_ERROR;
 }
@@ -916,7 +916,7 @@ TclX_SaveResultErrorInfo (interp)
     Tcl_Obj *listObj;
 
     long flags = ((Interp *)interp)->flags &
-	(ERR_ALREADY_LOGGED | ERR_IN_PROGRESS | ERROR_CODE_SET);
+        (ERR_ALREADY_LOGGED | ERR_IN_PROGRESS | ERROR_CODE_SET);
 
     saveObjv [0] = Tcl_DuplicateObj (Tcl_GetObjResult (interp));
     
@@ -962,9 +962,9 @@ TclX_RestoreResultErrorInfo (interp, saveObjPtr)
                                  &saveObjv) != TCL_OK) ||
         (saveObjc != 4) ||
         (Tcl_GetLongFromObj (NULL, saveObjv[3], &flags) != TCL_OK)) {
-	/*
-	 * This should never happen
-	 */
+        /*
+         * This should never happen
+         */
         panic ("invalid TclX result save object");
     }
 
@@ -1007,15 +1007,15 @@ TclX_CreateObjCommand (interp, cmdName, proc, clientData, deleteProc, flags)
     gTblPtr = (Tcl_HashTable *) TclX_StructOffset(globalNsPtr, offset, 0);
     cTblPtr = (Tcl_HashTable *) TclX_StructOffset(currNsPtr, offset, 0);
     if ((flags & TCLX_CMD_REDEFINE) ||
-	    !(Tcl_FindHashEntry(gTblPtr, cmdName) ||
-		    Tcl_FindHashEntry(cTblPtr, cmdName))) {
-	Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc);
+            !(Tcl_FindHashEntry(gTblPtr, cmdName) ||
+                    Tcl_FindHashEntry(cTblPtr, cmdName))) {
+        Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc);
     }
     if (!(cmdName[0] == 't' && cmdName[1] == 'c' && cmdName[2] == 'l' &&
-	    cmdName[3] == 'x') && !(flags & TCLX_CMD_NOPREFIX)) {
-	char cmdnamebuf[80];
-	sprintf(cmdnamebuf, "tclx_%s", cmdName);
-	Tcl_CreateObjCommand(interp, cmdnamebuf, proc, clientData, deleteProc);
+            cmdName[3] == 'x') && !(flags & TCLX_CMD_NOPREFIX)) {
+        char cmdnamebuf[80];
+        sprintf(cmdnamebuf, "tclx_%s", cmdName);
+        Tcl_CreateObjCommand(interp, cmdnamebuf, proc, clientData, deleteProc);
     }
 
     return TCL_OK;
@@ -1041,10 +1041,10 @@ TclX_StructOffset(nsPtr, offset, offType)
      * shift in size and the size by which it will shift.
      */
     static size_t nsOffs[] = {
-	TclX_Offset(Namespace, varTable), sizeof(void *),
-	TclX_Offset(Namespace, cmdTable), sizeof(void *),
-	TclX_Offset(Namespace, childTable), sizeof(void *),
-	0, 0
+        TclX_Offset(Namespace, varTable), sizeof(void *),
+        TclX_Offset(Namespace, cmdTable), sizeof(void *),
+        TclX_Offset(Namespace, childTable), sizeof(void *),
+        0, 0
     };
 
     /*
@@ -1059,11 +1059,11 @@ TclX_StructOffset(nsPtr, offset, offType)
      * adjust for 8.4+ interpreters.
      */
     if ((major > 8) || (minor > 3)) {
-	for (i = 0; nsOffs[i] != 0; i += 2) {
-	    if (offset > nsOffs[i]) {
-		offset += nsOffs[i+1];
-	    }
-	}
+        for (i = 0; nsOffs[i] != 0; i += 2) {
+            if (offset > nsOffs[i]) {
+                offset += nsOffs[i+1];
+            }
+        }
     }
 #else
     /*
@@ -1071,11 +1071,11 @@ TclX_StructOffset(nsPtr, offset, offType)
      * adjust for 8.3- interpreters.
      */
     if ((major == 8) && (minor < 4)) {
-	for (i = 0; nsOffs[i] != 0; i += 2) {
-	    if (offset > nsOffs[i]) {
-		offset -= nsOffs[i+1];
-	    }
-	}
+        for (i = 0; nsOffs[i] != 0; i += 2) {
+            if (offset > nsOffs[i]) {
+                offset -= nsOffs[i+1];
+            }
+        }
     }
 #endif
     return (void *)((size_t) nsPtr + offset);

@@ -27,8 +27,8 @@ BUILDKIT = $(TOP_SRCDIR)/tools/buildkit.tcl
 CC = $(TCL_CC) -DSTATIC_BUILD=1
 
 #### Select standard command-line options for the C compiler.
-CFLAGS = $(TCL_DEFS) $(TCL_CFLAGS_OPTIMIZE) $(HDR_TCL) $(HDR_ZLIB)
-#CFLAGS = $(TCL_DEFS) $(TCL_CFLAGS_DEBUG) $(HDR_TCL) $(HDR_ZLIB)
+IK_CFLAGS = $(TCL_DEFS) $(TCL_CFLAGS_OPTIMIZE) $(HDR_TCL) $(HDR_ZLIB)
+#IK_CFLAGS = $(TCL_DEFS) $(TCL_CFLAGS_DEBUG) $(HDR_TCL) $(HDR_ZLIB)
 
 #### Tcl configuration.
 HDR_TCL		= $(TCL_INCLUDE_SPEC) -I$(TCL_SRC_DIR)/generic -I$(TCL_SRC_DIR)/unix -I$(TCL_SRC_DIR)/win

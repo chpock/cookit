@@ -10,42 +10,47 @@ vfsdir:
 	@if test -f $(WRAP_MAIN); then $(CP) $(WRAP_MAIN) vfsdir/main.tcl; fi
 	@if test ! -z "$(EXE)"; then $(CP) $(TOP_SRCDIR)/win/rc/installkit.ico vfsdir; fi
 
-	$(TCLSH) $(BUILDVFS) $(BUILD) $(TOP_SRCDIR) $(TCL_PREFIX)/lib \
+	$(TCLSH) `$(CYGPATH) $(BUILDVFS)` $(BUILD) `$(CYGPATH) $(TOP_SRCDIR)` `$(CYGPATH) $(TCL_PREFIX)/lib` \
 	    $(TOP)/vfsdir/lib
 	@find vfsdir -type f | sed 's/vfsdir\///g' > $(WRAP_MANIFEST)
+	sed -i -e 's/@@KIT_VERSION@@/$(KIT_VERSION)/' $(TOP)/vfsdir/lib/installkit/installkit.tcl
+	sed -i -e 's/@@KIT_VERSION@@/$(KIT_VERSION)/' $(TOP)/vfsdir/lib/installkit/pkgIndex.tcl
 
 $(PROG)_bare: $(OBJS)
-	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare $(OBJS) $(LIBS) $(DYNAMIC_LIBS)
+	$(CC) $(LDFLAGS) $(IK_CFLAGS) -o $(PROG)_bare $(OBJS) $(LIBS) $(DYNAMIC_LIBS) $(DYNAMIC_LFLAGS)
+	$(STRIP) $(STRIP_ARGS) "$@"
 
 $(PROG)_bare.exe: $(OBJS) installkit.user.res.o
-	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare.exe $(OBJS) \
+	$(CC) $(LDFLAGS) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare.exe $(OBJS) \
 	    installkit.user.res.o $(LIBS) $(DYNAMIC_LIBS)
+	$(STRIP) $(STRIP_ARGS) "$@"
 
 $(PROG)A_bare.exe: $(OBJS) installkit.admin.res.o
-	$(CC) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)A_bare.exe $(OBJS) \
+	$(CC) $(LDFLAGS) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)A_bare.exe $(OBJS) \
 	    installkit.admin.res.o $(LIBS) $(DYNAMIC_LIBS)
+	$(STRIP) $(STRIP_ARGS) "$@"
 
 $(PROG)$(EXE): $(PROG)_bare$(EXE)
 	$(RM) $(PROG)$(EXE)
 	$(CP) $(PROG)_bare$(EXE) $(PROG)$(EXE)
 	$(UPX) $(PROG)$(EXE)
-	$(TCLSH) $(BUILDKIT) $(PROG)$(EXE) $(TOP)/vfsdir
+	$(TCLSH) `$(CYGPATH) $(BUILDKIT)` $(PROG)$(EXE) $(TOP)/vfsdir
 
 $(PROG)U$(EXE): $(PROG)_bare$(EXE)
 	$(RM) $(PROG)U$(EXE)
 	$(CP) $(PROG)_bare$(EXE) $(PROG)U$(EXE)
-	$(TCLSH) $(BUILDKIT) $(PROG)U$(EXE) $(TOP)/vfsdir
+	$(TCLSH) `$(CYGPATH) $(BUILDKIT)` $(PROG)U$(EXE) $(TOP)/vfsdir
 
 $(PROG)A.exe: $(PROG)A_bare.exe
 	$(RM) $(PROG)A.exe
 	$(CP) $(PROG)A_bare.exe $(PROG)A.exe
 	$(UPX) $(PROG)A.exe
-	$(TCLSH) $(BUILDKIT) $(PROG)A.exe $(TOP)/vfsdir
+	$(TCLSH) `$(CYGPATH) $(BUILDKIT)` $(PROG)A.exe $(TOP)/vfsdir
 
 $(PROG)UA.exe: $(PROG)A_bare.exe
 	$(RM) $(PROG)UA.exe
 	$(CP) $(PROG)A_bare.exe $(PROG)UA.exe
-	$(TCLSH) $(BUILDKIT) $(PROG)UA.exe $(TOP)/vfsdir
+	$(TCLSH) `$(CYGPATH) $(BUILDKIT)` $(PROG)UA.exe $(TOP)/vfsdir
 
 $(PROG).com: $(PROG).exe
 	$(RM) $(PROG).com
@@ -104,10 +109,10 @@ LzmaEnc.o: $(LZMA_SRCDIR)/LzmaEnc.c
 	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(LZMA_SRCDIR)/LzmaEnc.c" -o $@
 
 installkit.user.res.o: $(TOP_SRCDIR)/win/rc/installkit.user.rc
-	windres -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.user.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
+	$(RC) -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.user.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
 
 installkit.admin.res.o: $(TOP_SRCDIR)/win/rc/installkit.admin.rc
-	windres -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.admin.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
+	$(RC) -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.admin.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
 
 install:
 	mkdir -p $(PREFIX)/bin

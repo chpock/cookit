@@ -38,11 +38,13 @@ MINIARC_SRCDIR=/no-miniarc-src
 TKDIR=../../lib
 TCLDIR=../../lib
 ZLIBDIR=../..
+KIT_VERSION=1.0.0
 
 for i in $@
 do
   case $i in
   --help) help ;;
+  --version=*)     KIT_VERSION=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --prefix=*)      PREFIX=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --without-upx)   WITH_UPX=no ;;
   --with-lzma-src=*) LZMA_SRCDIR=`echo $i | sed -e 's/^[^=]*=//g'` ;;
@@ -103,9 +105,11 @@ case $PLATFORM in
 
         MAKEFILE=win/Makefile.in
 
+        LIB_PREFIX="lib"
+
         TKVERSION_LIB=$TKVERSION_NODOT
         TCLVERSION_LIB=$TCLVERSION_NODOT
-        THREADVERSION_LIB=$THREADVERSION_NODOT
+        #THREADVERSION_LIB=$THREADVERSION_NODOT
         MINIARCVERSION_LIB=$MINIARCVERSION_NODOT
         ;;
   *)
@@ -113,7 +117,7 @@ case $PLATFORM in
 
         MAKEFILE=unix/Makefile.in
 
-	LIB_PREFIX="lib"
+        LIB_PREFIX="lib"
 
         if test "x${TCL_LIB_VERSIONS_OK}" = "xnodots"; then
           TKVERSION_LIB=$TKVERSION_NODOT
@@ -128,7 +132,7 @@ esac
 OBJS="crap.o crapvfs.o miniarc.o sha1.o LZMADecode.o installkit.o main.o zlib.o zvfs.o Alloc.o LzFind.o LzmaEnc.o"
 
 case $PLATFORM in
-  MINGW*)
+  MINGW*|CYGWIN_NT*)
         OBJS="$OBJS tclXcmds.o tclXutil.o tclXwinOS.o"
         ;;
   *)
@@ -140,6 +144,10 @@ TARGETS="\$(PROG)"
 
 ## Setup dynamic options.
 DYNAMIC_LFLAGS="-lc -lm -L/usr/X11/lib -L/usr/X11R6/lib"
+DYNAMIC_CFLAGS="$CFLAGS"
+STRIP_ARGS="--strip-all"
+
+CYGPATH="echo"
 
 case $PLATFORM in
   CYGWIN_NT*|MINGW*)
@@ -149,37 +157,42 @@ case $PLATFORM in
 
         TARGETS="\$(PROG).exe \$(PROG)U.exe \$(PROG)A.exe \$(PROG)UA.exe"
 
-	DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13.a \$(TK_LIBS)\
+        DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13.a \$(TK_LIBS)\
             -luuid -lrpcrt4 -mwindows"
-	DYNAMIC_LFLAGS=""
+        DYNAMIC_LFLAGS=""
 
-	EXE=".exe"
+        EXE=".exe"
 
         if test -f /c/Progra~1/Bitsum~1/Pecomp~1/PEC2.exe; then
             UPX="/c/Progra~1/Bitsum~1/Pecomp~1/PEC2.exe /NoBackup /Ko:N /Ri:No"
         fi
 
-	EXTRA_LIBS="\$(LIB_THREAD)"
-	EXTRA_INCLUDES="-DTCL_THREADS"
-	;;
+        EXTRA_LIBS="\$(LIB_THREAD)"
+        EXTRA_INCLUDES="-DTCL_THREADS"
+
+        CYGPATH="cygpath -m"
+        ;;
 
   Linux)
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -rdynamic -ldl"
-	;;
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -rdynamic -ldl"
+        ;;
 
   *BSD)
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -rdynamic"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -rdynamic"
         ;;
 
   SunOS)
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -ldl -lsocket -lnsl -lresolv"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -ldl -lsocket -lnsl -lresolv"
         ;;
 
   Darwin)
-	DYNAMIC_CFLAGS="$CFLAGS"
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework CoreFoundation"
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework Carbon"
-	DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS $DYNAMIC_CFLAGS"
+        # Disable UPX on MacOS due unstable work:
+        # https://github.com/upx/upx/issues/777
+        UPX="echo"
+        DYNAMIC_LFLAGS="-lc -lm"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework CoreFoundation"
+        DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS $DYNAMIC_CFLAGS"
+        STRIP_ARGS="-Sx"
         ;;
 
   *)
@@ -189,17 +202,16 @@ esac
 sed -e s/\'//g $TCLCONFIG > tclConfig.sh
 sed -e s/\'//g $TKCONFIG > tkConfig.sh
 
-cat > Makefile << EOF
-##
-## Makefile
-##
+cat > environment.conf << EOF
+## installkit build configuration
 ## Created with $0 $@
-##
 
-TOP_SRCDIR = $ABS_TOP_SRCDIR
+KIT_VERSION = $KIT_VERSION
 
-PREFIX = $PREFIX
 EXE    = $EXE
+
+RC     = ${RC-windres}
+STRIP  = ${STRIP-strip}
 
 ## The package versions we are using.
 TKVERSION_DIR=$TKVERSION_DIR
@@ -219,6 +231,9 @@ MINIARC_SRCDIR=$MINIARC_SRCDIR
 
 ZLIB_PREFIX=$ZLIBDIR
 
+CYGPATH = $CYGPATH
+
+STRIP_ARGS = $STRIP_ARGS
 
 ## Name of the UPX binary
 UPX = $UPX
@@ -240,7 +255,20 @@ OBJS           = $OBJS
 
 EXTRA_LIBS     = $EXTRA_LIBS
 EXTRA_INCLUDES = $EXTRA_INCLUDES
+
 EOF
 
+cat > Makefile << EOF
+##
+## Makefile
+##
+
+TOP_SRCDIR = $ABS_TOP_SRCDIR
+
+PREFIX = $PREFIX
+
+EOF
+
+cat environment.conf >> Makefile
 cat "$TOP_SRCDIR/$MAKEFILE" >> Makefile
 cat "$TOP_SRCDIR/Makefile.in" >> Makefile

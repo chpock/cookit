@@ -10,12 +10,17 @@
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #include <Shlwapi.h>
+#include <shlobj.h>
+#include <shellapi.h>
 #endif /* __WIN32__ */
 
 #include "crap.h"
 
 #define streq(a,b) (a[0] == b[0] && strcmp(a,b) == 0)
 #define tstreq(a,b) (a[0] == b[0] && wcscmp(a,b) == 0)
+
+extern Tcl_AppInitProc Thread_Init;
+extern Tcl_AppInitProc Miniarc_Init;
 
 static int
 LibraryPathObjCmd(
@@ -25,7 +30,7 @@ LibraryPathObjCmd(
     Tcl_Obj *CONST objv[]
 ) {
     if( objc == 1 ) {
-	Tcl_SetObjResult( interp, (Tcl_Obj *)TclGetLibraryPath() );
+        Tcl_SetObjResult( interp, (Tcl_Obj *)TclGetLibraryPath() );
     } else {
         Tcl_Obj *path = Tcl_DuplicateObj(objv[1]);
         TclSetLibraryPath( Tcl_NewListObj( 1, &path ) );
@@ -44,7 +49,7 @@ LoadTkObjCmd(
     Tcl_Obj *CONST objv[])
 {
     if( Tk_Init(interp) == TCL_ERROR ) {
-	return TCL_ERROR;
+        return TCL_ERROR;
     }
     Tcl_StaticPackage( interp, "tk", Tk_Init, 0 );
 
@@ -63,7 +68,7 @@ LoadThreadObjCmd(
         return TCL_ERROR;
     }
     Tcl_StaticPackage( interp, "thread", Thread_Init, 0 );
-    
+
     return TCL_OK;
 }
 #endif /* TCL_THREADS */
@@ -80,7 +85,7 @@ LoadMiniarcObjCmd(
         return TCL_ERROR;
     }
     Tcl_StaticPackage( interp, "miniarc", Miniarc_Init, 0 );
-    
+
     return TCL_OK;
 }
 
@@ -92,7 +97,7 @@ WindowsCreateShortcutObjCmd(
     int objc,
     Tcl_Obj *CONST objv[])
 {
-    HRESULT hres; 
+    HRESULT hres;
     int error = 1;
     int i, len, index, iconIdx, showCommand;
     char *opt, *val;
@@ -101,7 +106,7 @@ WindowsCreateShortcutObjCmd(
     Tcl_DString dsArgs, dsDesc, dsIcon;
     Tcl_DString dsPath, dsTarget, dsWork;
 
-    IShellLinkW  *psl = NULL; 
+    IShellLinkW  *psl = NULL;
     IPersistFile *ppf = NULL;
     Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
 
@@ -129,9 +134,9 @@ WindowsCreateShortcutObjCmd(
     }
 
     CoInitialize(NULL);
- 
-    hres = CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, 
-                            &IID_IShellLinkW, (LPVOID*)&psl); 
+
+    hres = CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
+                            &IID_IShellLinkW, (LPVOID*)&psl);
 
     if( FAILED(hres) ) {
         Tcl_SetStringObj( resultObj, "failed to create COM instance", -1 );
@@ -141,22 +146,22 @@ WindowsCreateShortcutObjCmd(
     for(i = 2; i < objc; ++i) {
         opt = Tcl_GetString(objv[i]);
 
-	if( Tcl_GetIndexFromObj( interp, objv[i], switches,
+        if( Tcl_GetIndexFromObj( interp, objv[i], switches,
             "option", 0, &index ) != TCL_OK ) { goto error; }
 
-	/*
-	 * If there's no argument after the switch, give them some help
-	 * and return an error.
-	 */
-	if( ++i == objc ) {
+        /*
+         * If there's no argument after the switch, give them some help
+         * and return an error.
+         */
+        if( ++i == objc ) {
             Tcl_AppendStringsToObj( resultObj, opt,
                 " option must be followed by an argument", (char *)NULL );
             goto error;
-	}
+        }
 
         val = Tcl_GetString(objv[i]);
 
-	switch(index) {
+        switch(index) {
         case OPT_ARGUMENTS:
             hres = psl->lpVtbl->SetArguments(psl,
                 Tcl_WinUtfToTChar(val, -1, &dsArgs));
@@ -179,10 +184,10 @@ WindowsCreateShortcutObjCmd(
             hres = psl->lpVtbl->SetIconLocation(psl,
                 Tcl_WinUtfToTChar(val, -1, &dsIcon),iconIdx);
             break;
-	case OPT_OBJECTPATH:
+        case OPT_OBJECTPATH:
             hres = psl->lpVtbl->SetPath(psl,
                 Tcl_WinUtfToTChar(val, -1, &dsTarget));
-	    break;
+            break;
         case OPT_SHOWCOMMAND:
             if( Tcl_GetIndexFromObj( interp, objv[i], showcommands,
                 "showcommand", 0, &index ) != TCL_OK ) { goto error; }
@@ -208,7 +213,7 @@ WindowsCreateShortcutObjCmd(
             hres = psl->lpVtbl->SetWorkingDirectory(psl,
                 Tcl_WinUtfToTChar(val, -1, &dsWork));
             break;
-	}
+        }
 
         if (FAILED(hres)) {
             Tcl_AppendStringsToObj( resultObj, "failed to set ", opt,
@@ -217,23 +222,23 @@ WindowsCreateShortcutObjCmd(
         }
     }
 
-    hres = psl->lpVtbl->QueryInterface(psl, &IID_IPersistFile, (LPVOID*)&ppf); 
+    hres = psl->lpVtbl->QueryInterface(psl, &IID_IPersistFile, (LPVOID*)&ppf);
 
     if (FAILED(hres)) {
         Tcl_SetStringObj( resultObj, "failed to query file interface", -1 );
         goto error;
     }
- 
+
     /* Save the link  */
     linkPath = Tcl_WinUtfToTChar(Tcl_GetString(objv[1]), -1, &dsPath);
-    hres = ppf->lpVtbl->Save(ppf, linkPath, TRUE); 
-    ppf->lpVtbl->Release(ppf); 
+    hres = ppf->lpVtbl->Save(ppf, linkPath, TRUE);
+    ppf->lpVtbl->Release(ppf);
 
     error = 0;
 
 error:
     if (psl) {
-        psl->lpVtbl->Release(psl); 
+        psl->lpVtbl->Release(psl);
     }
 
     Tcl_DStringFree(&dsArgs);
@@ -265,8 +270,8 @@ WindowsGetFolderObjCmd(
     Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "folder");
-	return TCL_ERROR;
+        Tcl_WrongNumArgs(interp, 1, objv, "folder");
+        return TCL_ERROR;
     }
 
     const char *folders[] = {
@@ -421,7 +426,7 @@ WindowsDriveObjCmd(
     int idx;
     Tcl_Obj *resultObj = Tcl_GetObjResult( interp );
     const char *subCommands[] = {
-	"list", "type", "size", "freespace", (char *)NULL
+        "list", "type", "size", "freespace", (char *)NULL
     };
 
     enum {
@@ -429,186 +434,186 @@ WindowsDriveObjCmd(
     };
 
     if( objc < 2 ) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ..?");
-	return TCL_ERROR;
+        Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ..?");
+        return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], subCommands, "option", 0, &idx) 
+    if (Tcl_GetIndexFromObj(interp, objv[1], subCommands, "option", 0, &idx)
         != TCL_OK) return TCL_ERROR;
 
     switch( idx ) {
     case CMD_LIST:
     {
-	Tcl_Obj *listObj = Tcl_NewListObj( 0, NULL );
-	DWORD len;
-	DWORD dslen;
-	LPTSTR driveStrings;
-	TCHAR *pDriveString;
+        Tcl_Obj *listObj = Tcl_NewListObj( 0, NULL );
+        DWORD len;
+        DWORD dslen;
+        LPTSTR driveStrings;
+        TCHAR *pDriveString;
 
-	/* Find out how big this string will be. */
-	len = GetLogicalDriveStrings( 0, NULL ) + 2;
+        /* Find out how big this string will be. */
+        len = GetLogicalDriveStrings( 0, NULL ) + 2;
 
-	/* Allocate the memory. */
-	driveStrings = (TCHAR *)Tcl_Alloc( len );
+        /* Allocate the memory. */
+        driveStrings = (TCHAR *)Tcl_Alloc( len );
 
-	GetLogicalDriveStrings( len, driveStrings );
+        GetLogicalDriveStrings( len, driveStrings );
 
-	pDriveString = driveStrings;
-	dslen = wcslen( pDriveString );
+        pDriveString = driveStrings;
+        dslen = wcslen( pDriveString );
 
-	while( dslen > 0 ) {
+        while( dslen > 0 ) {
             Tcl_DString ds;
             char *driveName = Tcl_WinTCharToUtf(pDriveString, -1, &ds);
-	    Tcl_Obj *drive = Tcl_NewStringObj( driveName, -1 );
-	    Tcl_ListObjAppendElement( interp, listObj, drive );
+            Tcl_Obj *drive = Tcl_NewStringObj( driveName, -1 );
+            Tcl_ListObjAppendElement( interp, listObj, drive );
             Tcl_DStringFree(&ds);
 
-	    pDriveString += dslen + 1;
-	    dslen = wcslen( pDriveString );
-	}
+            pDriveString += dslen + 1;
+            dslen = wcslen( pDriveString );
+        }
 
-	Tcl_Free( (char *)driveStrings );
-	Tcl_SetObjResult( interp, listObj );
-	break;
+        Tcl_Free( (char *)driveStrings );
+        Tcl_SetObjResult( interp, listObj );
+        break;
     }
 
     case CMD_TYPE:
     {
-	int size;
-	unsigned int type;
-	char *drive;
-	Tcl_Obj *string;
+        int size;
+        unsigned int type;
+        char *drive;
+        Tcl_Obj *string;
         Tcl_DString ds;
 
-	if( objc < 3 ) {
-	    Tcl_WrongNumArgs( interp, 1, objv, "type drive" );
-	    return TCL_ERROR;
-	}
+        if( objc < 3 ) {
+            Tcl_WrongNumArgs( interp, 1, objv, "type drive" );
+            return TCL_ERROR;
+        }
 
-	drive  = Tcl_GetStringFromObj( objv[2], &size );
-	string = Tcl_NewStringObj( drive, -1 );
+        drive  = Tcl_GetStringFromObj( objv[2], &size );
+        string = Tcl_NewStringObj( drive, -1 );
 
-	if( drive[size - 1] != '\\' ) {
-	    Tcl_AppendToObj( string, "\\", 1 );
-	}
-	type = GetDriveType(Tcl_WinUtfToTChar(Tcl_GetString(string), -1, &ds) );
+        if( drive[size - 1] != '\\' ) {
+            Tcl_AppendToObj( string, "\\", 1 );
+        }
+        type = GetDriveType(Tcl_WinUtfToTChar(Tcl_GetString(string), -1, &ds) );
         Tcl_DStringFree(&ds);
 
-	switch( type ) {
-	case DRIVE_UNKNOWN:
-	    string = Tcl_NewStringObj( "unknown", -1 );
-	    break;
-	case DRIVE_NO_ROOT_DIR:
-	    string = Tcl_NewStringObj( "no root dir", -1 );
-	    break;
-	case DRIVE_REMOVABLE:
-	    string = Tcl_NewStringObj( "removable", -1 );
-	    break;
-	case DRIVE_FIXED:
-	    string = Tcl_NewStringObj( "fixed", -1 );
-	    break;
-	case DRIVE_REMOTE:
-	    string = Tcl_NewStringObj( "remote", -1 );
-	    break;
-	case DRIVE_CDROM:
-	    string = Tcl_NewStringObj( "cdrom", -1 );
-	    break;
-	case DRIVE_RAMDISK:
-	    string = Tcl_NewStringObj( "ramdisk", -1 );
-	    break;
-	}
+        switch( type ) {
+        case DRIVE_UNKNOWN:
+            string = Tcl_NewStringObj( "unknown", -1 );
+            break;
+        case DRIVE_NO_ROOT_DIR:
+            string = Tcl_NewStringObj( "no root dir", -1 );
+            break;
+        case DRIVE_REMOVABLE:
+            string = Tcl_NewStringObj( "removable", -1 );
+            break;
+        case DRIVE_FIXED:
+            string = Tcl_NewStringObj( "fixed", -1 );
+            break;
+        case DRIVE_REMOTE:
+            string = Tcl_NewStringObj( "remote", -1 );
+            break;
+        case DRIVE_CDROM:
+            string = Tcl_NewStringObj( "cdrom", -1 );
+            break;
+        case DRIVE_RAMDISK:
+            string = Tcl_NewStringObj( "ramdisk", -1 );
+            break;
+        }
 
-	Tcl_SetObjResult( interp, string );
-	break;
+        Tcl_SetObjResult( interp, string );
+        break;
     }
 
     case CMD_SIZE:
     {
-	int size;
-	char *drive;
-	Tcl_Obj *string;
+        int size;
+        char *drive;
+        Tcl_Obj *string;
         Tcl_DString ds;
-	ULONGLONG value = 0;
-	ULARGE_INTEGER freeBytes;
-	ULARGE_INTEGER totalBytes;
-	ULARGE_INTEGER totalFreeBytes;
+        ULONGLONG value = 0;
+        ULARGE_INTEGER freeBytes;
+        ULARGE_INTEGER totalBytes;
+        ULARGE_INTEGER totalFreeBytes;
 
-	if( objc < 3 ) {
-	    Tcl_WrongNumArgs( interp, 1, objv, "size drive" );
-	    return TCL_ERROR;
-	}
+        if( objc < 3 ) {
+            Tcl_WrongNumArgs( interp, 1, objv, "size drive" );
+            return TCL_ERROR;
+        }
 
-	drive  = Tcl_GetStringFromObj( objv[2], &size );
-	string = Tcl_NewStringObj( drive, -1 );
+        drive  = Tcl_GetStringFromObj( objv[2], &size );
+        string = Tcl_NewStringObj( drive, -1 );
 
-	if( drive[size - 1] != '\\' ) {
-	    Tcl_AppendToObj( string, "\\", 1 );
-	}
+        if( drive[size - 1] != '\\' ) {
+            Tcl_AppendToObj( string, "\\", 1 );
+        }
 
-	if( GetDiskFreeSpaceEx(
-	    Tcl_WinUtfToTChar(Tcl_GetString(string), -1, &ds),
-	    &freeBytes,
-	    &totalBytes,
-	    &totalFreeBytes) ) {
+        if( GetDiskFreeSpaceEx(
+            Tcl_WinUtfToTChar(Tcl_GetString(string), -1, &ds),
+            &freeBytes,
+            &totalBytes,
+            &totalFreeBytes) ) {
 
-	    value = totalBytes.QuadPart;
-	}
+            value = totalBytes.QuadPart;
+        }
         Tcl_DStringFree(&ds);
 
-	Tcl_SetObjResult( interp, Tcl_NewWideIntObj(value) );
-	break;
+        Tcl_SetObjResult( interp, Tcl_NewWideIntObj(value) );
+        break;
     }
 
     case CMD_FREESPACE:
     {
-	int size;
-	int userFree = 0;
-	char *drive;
-	Tcl_Obj *string;
+        int size;
+        int userFree = 0;
+        char *drive;
+        Tcl_Obj *string;
         Tcl_DString ds;
-	ULONGLONG value = 0;
-	ULARGE_INTEGER freeBytes;
-	ULARGE_INTEGER totalBytes;
-	ULARGE_INTEGER totalFreeBytes;
+        ULONGLONG value = 0;
+        ULARGE_INTEGER freeBytes;
+        ULARGE_INTEGER totalBytes;
+        ULARGE_INTEGER totalFreeBytes;
 
-	if( objc < 3 || objc > 4 ) {
-	    Tcl_WrongNumArgs( interp, 1, objv, "freespace ?-user? drive" );
-	    return TCL_ERROR;
-	}
+        if( objc < 3 || objc > 4 ) {
+            Tcl_WrongNumArgs( interp, 1, objv, "freespace ?-user? drive" );
+            return TCL_ERROR;
+        }
 
-	drive  = Tcl_GetStringFromObj( objv[2], &size );
-	
-	if( objc == 4 ) {
-	    if( !Tcl_StringMatch( Tcl_GetString(objv[2]), "-user" ) ) {
-		Tcl_WrongNumArgs( interp, 1, objv, "freespace ?-user? drive" );
-		return TCL_ERROR;
-	    }
-	    userFree = 1;
-	    drive = Tcl_GetStringFromObj( objv[3], &size );
-	}
+        drive  = Tcl_GetStringFromObj( objv[2], &size );
 
-	string = Tcl_NewStringObj( drive, -1 );
+        if( objc == 4 ) {
+            if( !Tcl_StringMatch( Tcl_GetString(objv[2]), "-user" ) ) {
+                Tcl_WrongNumArgs( interp, 1, objv, "freespace ?-user? drive" );
+                return TCL_ERROR;
+            }
+            userFree = 1;
+            drive = Tcl_GetStringFromObj( objv[3], &size );
+        }
 
-	if( drive[size - 1] != '\\' ) {
-	    Tcl_AppendToObj( string, "\\", 1 );
-	}
+        string = Tcl_NewStringObj( drive, -1 );
 
-	if( GetDiskFreeSpaceEx(
-	    Tcl_WinUtfToTChar(Tcl_GetString(string), -1, &ds),
-	    &freeBytes,
-	    &totalBytes,
-	    &totalFreeBytes) ) {
+        if( drive[size - 1] != '\\' ) {
+            Tcl_AppendToObj( string, "\\", 1 );
+        }
 
-	    if( userFree ) {
-		value = freeBytes.QuadPart;
-	    } else {
-		value = totalFreeBytes.QuadPart;
-	    }
-	}
+        if( GetDiskFreeSpaceEx(
+            Tcl_WinUtfToTChar(Tcl_GetString(string), -1, &ds),
+            &freeBytes,
+            &totalBytes,
+            &totalFreeBytes) ) {
+
+            if( userFree ) {
+                value = freeBytes.QuadPart;
+            } else {
+                value = totalFreeBytes.QuadPart;
+            }
+        }
         Tcl_DStringFree(&ds);
 
-	Tcl_SetObjResult( interp, Tcl_NewWideIntObj(value) );
-	break;
+        Tcl_SetObjResult( interp, Tcl_NewWideIntObj(value) );
+        break;
     }
 
     }
@@ -626,9 +631,9 @@ WindowsGuidObjCmd(
     GUID guid;
 
     if( FAILED( CoCreateGuid(&guid) ) ) {
-	Tcl_SetStringObj( Tcl_GetObjResult(interp),
+        Tcl_SetStringObj( Tcl_GetObjResult(interp),
                 "could not generate GUID", -1 );
-	return TCL_ERROR;
+        return TCL_ERROR;
     } else {
         char *str;
         TCHAR *tstr;
@@ -669,8 +674,8 @@ WindowsTrashObjCmd(
     };
 
     if( objc < 2 ) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?options? file ?file ...?");
-	return TCL_ERROR;
+        Tcl_WrongNumArgs(interp, 1, objv, "?options? file ?file ...?");
+        return TCL_ERROR;
     }
 
     memset(&s, 0, sizeof(SHFILEOPSTRUCT));
@@ -681,7 +686,7 @@ WindowsTrashObjCmd(
 
         if (opt[0] != '-') break;
 
-        if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &idx) 
+        if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &idx)
             != TCL_OK) return TCL_ERROR;
 
         switch (idx) {
@@ -701,8 +706,8 @@ WindowsTrashObjCmd(
     }
 
     if (i >= objc) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?options? file ?file ...?");
-	return TCL_ERROR;
+        Tcl_WrongNumArgs(interp, 1, objv, "?options? file ?file ...?");
+        return TCL_ERROR;
     }
 
     for (; i < objc; ++i) {
@@ -758,8 +763,8 @@ WindowsShellExecuteObjCmd(
     };
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?options? command file ?arguments?");
-	return TCL_ERROR;
+        Tcl_WrongNumArgs(interp, 1, objv, "?options? command file ?arguments?");
+        return TCL_ERROR;
     }
 
     for (i = 1; i < objc; ++i) {
@@ -799,8 +804,8 @@ WindowsShellExecuteObjCmd(
     }
 
     if (((objc - i) < 2) || ((objc - i) > 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?options? command file ?arguments?");
-	return TCL_ERROR;
+        Tcl_WrongNumArgs(interp, 1, objv, "?options? command file ?arguments?");
+        return TCL_ERROR;
     }
 
     if (Tcl_GetIndexFromObj(interp, objv[i], subcmds, "command", TCL_EXACT,
@@ -918,19 +923,19 @@ Installkit_Init( Tcl_Interp *interp )
     Tcl_StaticPackage( interp, "installkit", Installkit_Init, 0 );
 
     Tcl_CreateObjCommand( interp, "installkit::librarypath", LibraryPathObjCmd,
-	0, 0 );
+        0, 0 );
 
 #ifdef STATIC_BUILD
     Tcl_CreateObjCommand( interp, "installkit::loadTk",
-	LoadTkObjCmd, 0, 0 );
+        LoadTkObjCmd, 0, 0 );
 #ifdef TCL_THREADS
     Tcl_CreateObjCommand( interp, "installkit::loadThread",
-	LoadThreadObjCmd, 0, 0 );
+        LoadThreadObjCmd, 0, 0 );
 #endif /* TCL_THREADS */
 #endif /* STATIC_BUILD */
 
     Tcl_CreateObjCommand( interp, "installkit::loadMiniarc",
-	LoadMiniarcObjCmd, 0, 0 );
+        LoadMiniarcObjCmd, 0, 0 );
 
 #ifdef __WIN32__
     Tcl_CreateObjCommand( interp, "installkit::Windows::guid",
@@ -951,7 +956,7 @@ Installkit_Init( Tcl_Interp *interp )
     Tcl_CreateObjCommand( interp,
             "installkit::Windows::revertWow64FsRedirection",
             WindowsRevertWow64FsRedirection, 0, 0);
-    
+
 #else
     /* Add the "id" command from TclX on UNIX. */
     TclX_IdInit(interp);

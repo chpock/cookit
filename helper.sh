@@ -7,7 +7,7 @@ case $OS in
         PLATFORM=AIX-ppc
         ;;
     Darwin)
-        PLATFORM=MacOS-X
+        OS=MacOS-X
         ;;
     FreeBSD)
         VERSION=`uname -r | cut -f 1 -d .`
@@ -43,7 +43,7 @@ if test -z "$PLATFORM"; then
         MACHINE=`uname -m`
 
         case $MACHINE in
-	    *86_64*)
+            *86_64*)
                 MACHINE=x86_64
                 ;;
             *86*)
@@ -55,13 +55,24 @@ if test -z "$PLATFORM"; then
             Power*)
                 MACHINE=ppc
                 ;;
+            arm64)
+                MACHINE=arm64
+                ;;
         esac
     fi
 
-    if test -n "$VERSION"; then
-        PLATFORM=$OS-$VERSION-$MACHINE
-    else
-        PLATFORM=$OS-$MACHINE
+    if [ "$PLATFORM" = "MacOS-X" ] || [ "$PLATFORM" = "Windows" ]; then
+        if [ "$MACHINE" = "x86" ]; then
+            unset MACHINE
+        fi
+    fi
+
+    if [ -n "$MACHINE" ]; then
+        if test -n "$VERSION"; then
+            PLATFORM=$OS-$VERSION-$MACHINE
+        else
+            PLATFORM=$OS-$MACHINE
+        fi
     fi
 fi
 
@@ -75,8 +86,8 @@ case $1 in
 
     makedist)
         echo "Don't forget to update the version file before distributing"
-	rm -rf $PREFIX/$PLATFORM
-	mkdir $PREFIX/$PLATFORM
+        rm -rf $PREFIX/$PLATFORM
+        mkdir $PREFIX/$PLATFORM
         cp version $PREFIX/$PLATFORM
 
         for i in installkit installkit.exe installkitA.exe \
@@ -99,8 +110,58 @@ case $1 in
         rm -f $PLATFORM.zip
         FILES=`find $PLATFORM -type f`
         $PREFIX/bin/tclsh8.5 $TOP/src/tools/makezip.tcl $PLATFORM.zip $FILES
-	rm -rf $PREFIX/$PLATFORM
+        rm -rf $PREFIX/$PLATFORM
         mv $PLATFORM.zip $TOP/work
         echo "File is in work/$PLATFORM.zip"
         ;;
+
+    environment)
+        echo "# Build environment:"
+        echo "# Generated at: `date --iso-8601=seconds`"
+        echo
+        if command -v cygcheck >/dev/null 2>&1; then
+            echo "\$ cygcheck --version"
+            cygcheck --version
+            echo
+            echo "\$ cmd /c ver"
+            cmd /c "ver" | tr -d '\r'
+            echo
+        elif command -v sw_vers >/dev/null 2>&1; then
+            echo "\$ sw_vers -productName"
+            sw_vers -productName
+            echo
+            echo "\$ sw_vers -productVersion"
+            sw_vers -productVersion
+            echo
+            if command -v pkgutil >/dev/null 2>&1; then
+                echo
+                echo "\$ pkgutil --pkg-info=com.apple.pkg.CLTools_Executables"
+                pkgutil --pkg-info=com.apple.pkg.CLTools_Executables
+                echo
+            fi
+        elif [ -e /etc/redhat-release ]; then
+            echo "\$ cat /etc/redhat-release"
+            cat /etc/redhat-release
+            echo
+        elif [ -e /etc/lsb-release ]; then
+            echo "\$ cat /etc/lsb-release"
+            cat /etc/lsb-release
+            echo
+        fi
+        echo "\$ uname -a"
+        uname -a
+        echo
+        echo "\$ $CC --version"
+        "$CC" --version
+        echo
+        echo "\$ $CXX --version"
+        "$CXX" --version
+        echo
+        if command -v ldd >/dev/null 2>&1; then
+            echo "\$ ldd --version"
+            ldd --version
+        fi
+        echo
+        ;;
+
 esac

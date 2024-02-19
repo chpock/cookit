@@ -77,7 +77,7 @@ typedef struct ZvfsFile {
     int iOffset;              /* Offset into the ZIP archive of the data */
     int nByte;                /* Uncompressed size of the virtual file */
     int nByteCompr;           /* Compressed size of the virtual file */
-    int isdir;		      /* Set to 1 if directory */
+    int isdir;                /* Set to 1 if directory */
     int timestamp;            /* Modification time */
     int iCRC;                 /* Cyclic Redundancy Check of the data */
     struct ZvfsFile *parent;  /* Parent directory. */
@@ -120,9 +120,9 @@ enum {
 /* Forward declarations for the callbacks to the Tcl filesystem. */
 
 static Tcl_FSPathInFilesystemProc       PathInFilesystem;
-static Tcl_FSDupInternalRepProc		DupInternalRep;
-static Tcl_FSFreeInternalRepProc	FreeInternalRep;
-static Tcl_FSInternalToNormalizedProc	InternalToNormalized;
+static Tcl_FSDupInternalRepProc         DupInternalRep;
+static Tcl_FSFreeInternalRepProc        FreeInternalRep;
+static Tcl_FSInternalToNormalizedProc   InternalToNormalized;
 static Tcl_FSFilesystemPathTypeProc     FilesystemPathType;
 static Tcl_FSFilesystemSeparatorProc    FilesystemSeparator;
 static Tcl_FSStatProc                   Stat;
@@ -143,7 +143,7 @@ static Tcl_Filesystem zvfsFilesystem = {
     &DupInternalRep,
     &FreeInternalRep,
     &InternalToNormalized,
-    NULL,			/* &CreateInternalRep, */
+    NULL,                       /* &CreateInternalRep, */
     NULL,                       /* &NormalizePath, */
     &FilesystemPathType,
     &FilesystemSeparator,
@@ -157,15 +157,15 @@ static Tcl_Filesystem zvfsFilesystem = {
     &FileAttrStrings,
     &FileAttrsGet,
     &FileAttrsSet,
-    NULL,			/* &CreateDirectory, */
-    NULL,			/* &RemoveDirectory, */
-    NULL,			/* &DeleteFile, */
-    NULL,			/* &CopyFile, */
-    NULL,			/* &RenameFile, */
-    NULL,			/* &CopyDirectory, */
+    NULL,                       /* &CreateDirectory, */
+    NULL,                       /* &RemoveDirectory, */
+    NULL,                       /* &DeleteFile, */
+    NULL,                       /* &CopyFile, */
+    NULL,                       /* &RenameFile, */
+    NULL,                       /* &CopyDirectory, */
     NULL,                       /* &Lstat, */
-    NULL,			/* &LoadFile, */
-    NULL,			/* &GetCwd, */
+    NULL,                       /* &LoadFile, */
+    NULL,                       /* &GetCwd, */
     &Chdir
 };
 
@@ -209,10 +209,10 @@ static Tcl_ChannelType vfsChannelType = {
  *
  * DosTimeDate --
  *
- * 	Convert DOS date and time from a zip archive into clock seconds.
+ *      Convert DOS date and time from a zip archive into clock seconds.
  *
  * Results:
- * 	Clock seconds
+ *      Clock seconds
  *
  *----------------------------------------------------------------------
  */
@@ -238,12 +238,12 @@ DosTimeDate( int dosDate, int dosTime )
  *
  * StrDup --
  *
- * 	Create a copy of the given string and lower it if necessary.
+ *      Create a copy of the given string and lower it if necessary.
  *
  * Results:
- * 	Pointer to the new string.  Space to hold the returned
- * 	string is obtained from Tcl_Alloc() and should be freed
- * 	by the calling function.
+ *      Pointer to the new string.  Space to hold the returned
+ *      string is obtained from Tcl_Alloc() and should be freed
+ *      by the calling function.
  *
  *----------------------------------------------------------------------
  */
@@ -277,14 +277,14 @@ StrDup( char *str, int lower )
  *
  * CanonicalPath --
  *
- * 	Concatenate zTail onto zRoot to form a pathname.  After
- * 	concatenation, simplify the pathname by removing ".." and
- * 	"." directories.
+ *      Concatenate zTail onto zRoot to form a pathname.  After
+ *      concatenation, simplify the pathname by removing ".." and
+ *      "." directories.
  *
  * Results:
- * 	Pointer to the new pathname.  Space to hold the returned
- * 	path is obtained from Tcl_Alloc() and should be freed by
- * 	the calling function.
+ *      Pointer to the new pathname.  Space to hold the returned
+ *      path is obtained from Tcl_Alloc() and should be freed by
+ *      the calling function.
  *
  *----------------------------------------------------------------------
  */
@@ -348,16 +348,16 @@ CanonicalPath( const char *zRoot, const char *zTail )
  *
  * AbsolutePath --
  *
- * 	Construct an absolute pathname from the given pathname.  On
- * 	Windows, all backslash (\) characters are converted to
- * 	forward slash (/), and if NOCASE_PATHS is true, all letters
- * 	are converted to lowercase.  The drive letter, if present, is
- * 	preserved.
+ *      Construct an absolute pathname from the given pathname.  On
+ *      Windows, all backslash (\) characters are converted to
+ *      forward slash (/), and if NOCASE_PATHS is true, all letters
+ *      are converted to lowercase.  The drive letter, if present, is
+ *      preserved.
  *
  * Results:
- * 	Pointer to the new pathname.  Space to hold the returned
- * 	path is obtained from Tcl_Alloc() and should be freed by
- * 	the calling function.
+ *      Pointer to the new pathname.  Space to hold the returned
+ *      path is obtained from Tcl_Alloc() and should be freed by
+ *      the calling function.
  *
  *----------------------------------------------------------------------
  */
@@ -423,18 +423,18 @@ AbsolutePath( const char *z )
  *
  * AddPathToArchive --
  *
- * 	Add the given pathname to the given archive.  zName is usually
- * 	the pathname pulled from the file header in a zip archive.  We
- * 	concatenate it onto the archive's mount point to obtain a full
- * 	path before adding it to our hash table.
+ *      Add the given pathname to the given archive.  zName is usually
+ *      the pathname pulled from the file header in a zip archive.  We
+ *      concatenate it onto the archive's mount point to obtain a full
+ *      path before adding it to our hash table.
  *
- * 	All parent directories of the given path will be created and
- * 	added to the hash table.
+ *      All parent directories of the given path will be created and
+ *      added to the hash table.
  *
  * Results:
- * 	Pointer to the new file structure or to the old file structure
- * 	if it already existed.  newPath will be true if this path is
- * 	new to this archive or false if we already had it.
+ *      Pointer to the new file structure or to the old file structure
+ *      if it already existed.  newPath will be true if this path is
+ *      new to this archive or false if we already had it.
  *
  *----------------------------------------------------------------------
  */
@@ -557,12 +557,12 @@ AddPathToArchive( ZvfsArchive *pArchive, char *zName, int *newPath )
  *
  * Zvfs_Mount --
  *
- * 	Read a zip archive and make entries in the file hash table for
- * 	all of the files in the archive.  If Zvfs has not been initialized,
- * 	it will be initialized here before mounting the archive.
+ *      Read a zip archive and make entries in the file hash table for
+ *      all of the files in the archive.  If Zvfs has not been initialized,
+ *      it will be initialized here before mounting the archive.
  *
  * Results:
- * 	Standard Tcl result.
+ *      Standard Tcl result.
  *
  *----------------------------------------------------------------------
  */
@@ -800,14 +800,14 @@ done:
  *
  * Zvfs_Unmount --
  *
- * 	Unmount all the files in the given zip archive.  All the
- * 	entries in the file hash table for the archive are deleted
- * 	as well as the entry in the archive hash table.
+ *      Unmount all the files in the given zip archive.  All the
+ *      entries in the file hash table for the archive are deleted
+ *      as well as the entry in the archive hash table.
  *
- * 	Any memory associated with the entries will be freed as well.
+ *      Any memory associated with the entries will be freed as well.
  *
  * Results:
- * 	Standard Tcl result.
+ *      Standard Tcl result.
  *
  *----------------------------------------------------------------------
  */
@@ -866,12 +866,12 @@ Zvfs_Unmount( Tcl_Interp *interp, CONST char *zMountPoint )
  *
  * ZvfsLookup --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Look into the file hash table for a given path and see if
- * 	it belongs to our filesystem.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Look into the file hash table for a given path and see if
+ *      it belongs to our filesystem.
  *
  * Results:
- * 	Pointer to the file structure or NULL if it was not found.
+ *      Pointer to the file structure or NULL if it was not found.
  *
  *----------------------------------------------------------------------
  */
@@ -894,12 +894,12 @@ ZvfsLookup( Tcl_Obj *pathPtr )
  *
  * GetZvfsFile --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	For a given pathPtr, return the internal representation
- * 	of the path for our filesystem.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      For a given pathPtr, return the internal representation
+ *      of the path for our filesystem.
  *
  * Results:
- * 	Pointer to the file structure or NULL if it was not found.
+ *      Pointer to the file structure or NULL if it was not found.
  *
  *----------------------------------------------------------------------
  */
@@ -916,11 +916,11 @@ GetZvfsFile( Tcl_Obj *pathPtr )
  *
  * ZvfsFileMatchesType --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	See if the given ZvfsFile matches the type data given.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      See if the given ZvfsFile matches the type data given.
  *
  * Results:
- * 	1 if true, 0 if false
+ *      1 if true, 0 if false
  *
  *----------------------------------------------------------------------
  */
@@ -951,13 +951,13 @@ ZvfsFileMatchesType( ZvfsFile *pFile, Tcl_GlobTypeData *types )
  *
  * DriverExit --
  *
- * 	This function is called as an exit handler for the channel
- * 	driver.  If we do not set pInfo.chan to NULL, Tcl_Close()
- * 	will be called twice on that channel when Tcl_Exit runs.
- * 	This will lead to a core dump
+ *      This function is called as an exit handler for the channel
+ *      driver.  If we do not set pInfo.chan to NULL, Tcl_Close()
+ *      will be called twice on that channel when Tcl_Exit runs.
+ *      This will lead to a core dump
  *
  * Results:
- * 	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -975,10 +975,10 @@ DriverExit( void *pArg )
  *
  * DriverClose --
  *
- * 	Called when a channel is closed.
+ *      Called when a channel is closed.
  *
  * Results:
- * 	Returns TCL_OK.
+ *      Returns TCL_OK.
  *
  *----------------------------------------------------------------------
  */
@@ -1010,13 +1010,13 @@ DriverClose(
  *
  * DriverInput --
  *
- * 	The Tcl channel system calls this function on each read
- * 	from a channel.  The channel is opened into the actual
- * 	archive file, but the data is read from the individual
- * 	file entry inside the zip archive.
+ *      The Tcl channel system calls this function on each read
+ *      from a channel.  The channel is opened into the actual
+ *      archive file, but the data is read from the individual
+ *      file entry inside the zip archive.
  *
  * Results:
- * 	Number of bytes read.
+ *      Number of bytes read.
  *
  *----------------------------------------------------------------------
  */
@@ -1084,11 +1084,11 @@ DriverInput (
  *
  * DriverOutput --
  *
- * 	Called to write to a file.  Since this is a read-only file
- * 	system, this function will always return an error.
+ *      Called to write to a file.  Since this is a read-only file
+ *      system, this function will always return an error.
  *
  * Results:
- * 	Returns -1.
+ *      Returns -1.
  *
  *----------------------------------------------------------------------
  */
@@ -1109,10 +1109,10 @@ DriverOutput(
  *
  * DriverSeek --
  *
- * 	Seek along the open channel to another point.
+ *      Seek along the open channel to another point.
  *
  * Results:
- * 	Offset into the file.
+ *      Offset into the file.
  *
  *----------------------------------------------------------------------
  */
@@ -1140,19 +1140,19 @@ DriverSeek(
 
     if( !pInfo->isCompressed ){
         /* dont seek behind end of data */
-	if (pInfo->nData < (unsigned long)offset) {
-	    return -1;
+        if (pInfo->nData < (unsigned long)offset) {
+            return -1;
         }
 
-	/* do the job, save and check the result */
-	offset = Tcl_Seek(pInfo->chan, offset + pInfo->startOfData, SEEK_SET);
-	if (offset == -1) {
-	    return -1;
+        /* do the job, save and check the result */
+        offset = Tcl_Seek(pInfo->chan, offset + pInfo->startOfData, SEEK_SET);
+        if (offset == -1) {
+            return -1;
         }
 
-	 /* adjust the counters (use real offset) */
-	pInfo->readSoFar = offset - pInfo->startOfData;
-	pInfo->nByte = pInfo->nData - pInfo->readSoFar; 
+         /* adjust the counters (use real offset) */
+        pInfo->readSoFar = offset - pInfo->startOfData;
+        pInfo->nByte = pInfo->nData - pInfo->readSoFar; 
     } else {
         if( offset<pInfo->readSoFar ) {
             z_stream *stream = &pInfo->stream;
@@ -1189,11 +1189,11 @@ DriverSeek(
  *
  * DriverWatch --
  *
- * 	Called to handle events on the channel.  Since zvfs files
- * 	don't generate events, this is a no-op.
+ *      Called to handle events on the channel.  Since zvfs files
+ *      don't generate events, this is a no-op.
  *
  * Results:
- * 	None
+ *      None
  *
  *----------------------------------------------------------------------
  */
@@ -1211,11 +1211,11 @@ DriverWatch(
  *
  * DriverGetHandle --
  *
- * 	Retrieve a device-specific handle from the given channel.
- * 	Since we don't have a device-specific handle, this is a no-op.
+ *      Retrieve a device-specific handle from the given channel.
+ *      Since we don't have a device-specific handle, this is a no-op.
  *
  * Results:
- * 	Returns TCL_ERROR.
+ *      Returns TCL_ERROR.
  *
  *----------------------------------------------------------------------
  */
@@ -1234,14 +1234,14 @@ DriverGetHandle(
  *
  * PathInFilesystem --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Check to see if the given path is part of our filesystem.
- * 	We check the file hash table for the path, and if we find
- * 	it, set clientDataPtr to the ZvfsFile pointer so that Tcl
- * 	will cache it for later.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Check to see if the given path is part of our filesystem.
+ *      We check the file hash table for the path, and if we find
+ *      it, set clientDataPtr to the ZvfsFile pointer so that Tcl
+ *      will cache it for later.
  *
  * Results:
- * 	TCL_OK on success, or -1 on failure
+ *      TCL_OK on success, or -1 on failure
  *
  *----------------------------------------------------------------------
  */
@@ -1263,11 +1263,11 @@ PathInFilesystem( Tcl_Obj *pathPtr, ClientData *clientDataPtr )
  *
  * DupInternalRep --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Duplicate the ZvfsFile "native" rep of a path.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Duplicate the ZvfsFile "native" rep of a path.
  *
  * Results:
- * 	Returns clientData, with refcount incremented.
+ *      Returns clientData, with refcount incremented.
  *
  *----------------------------------------------------------------------
  */
@@ -1285,12 +1285,12 @@ DupInternalRep( ClientData clientData )
  *
  * FreeInternalRep --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Free one reference to the ZvfsFile "native" rep of a path.
- * 	When all references are gone, free the struct.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Free one reference to the ZvfsFile "native" rep of a path.
+ *      When all references are gone, free the struct.
  *
  * Side effects:
- * 	May free memory.
+ *      May free memory.
  *
  *----------------------------------------------------------------------
  */
@@ -1320,11 +1320,11 @@ FreeInternalRep( ClientData clientData )
  *
  * InternalToNormalized --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	From a ZvfsFile representation, produce the path string rep.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      From a ZvfsFile representation, produce the path string rep.
  *
  * Results:
- * 	Returns a Tcl_Obj holding the string rep.
+ *      Returns a Tcl_Obj holding the string rep.
  *
  *----------------------------------------------------------------------
  */
@@ -1345,13 +1345,13 @@ InternalToNormalized( ClientData clientData )
  *
  * FilesystemPathType --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Used for informational purposes only.  Return a Tcl_Obj
- * 	which describes the "type" of path this is.  For our
- * 	little filesystem, they're all "zip".
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Used for informational purposes only.  Return a Tcl_Obj
+ *      which describes the "type" of path this is.  For our
+ *      little filesystem, they're all "zip".
  *
  * Results:
- * 	Tcl_Obj with 0 refCount
+ *      Tcl_Obj with 0 refCount
  *
  *----------------------------------------------------------------------
  */
@@ -1367,13 +1367,13 @@ FilesystemPathType( Tcl_Obj *pathPtr )
  *
  * FileSystemSeparator --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Return a Tcl_Obj describing the separator character for
- * 	our filesystem.  We like things the old-fashioned way,
- * 	so we'll just use /.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Return a Tcl_Obj describing the separator character for
+ *      our filesystem.  We like things the old-fashioned way,
+ *      so we'll just use /.
  *
  * Results:
- * 	Tcl_Obj with 0 refCount
+ *      Tcl_Obj with 0 refCount
  *
  *----------------------------------------------------------------------
  */
@@ -1389,12 +1389,12 @@ FilesystemSeparator( Tcl_Obj *pathPtr )
  *
  * Stat --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Does a stat() system call for a zvfs file.  Fill the stat
- * 	buf with as much information as we have.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Does a stat() system call for a zvfs file.  Fill the stat
+ *      buf with as much information as we have.
  *
  * Results:
- * 	0 on success, -1 on failure.
+ *      0 on success, -1 on failure.
  *
  *----------------------------------------------------------------------
  */
@@ -1428,11 +1428,11 @@ Stat( Tcl_Obj *pathPtr, Tcl_StatBuf *buf )
  *
  * Access --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Does an access() system call for a zvfs file.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Does an access() system call for a zvfs file.
  *
  * Results:
- * 	0 on success, -1 on failure.
+ *      0 on success, -1 on failure.
  *
  *----------------------------------------------------------------------
  */
@@ -1449,14 +1449,14 @@ Access( Tcl_Obj *pathPtr, int mode )
  *
  * OpenFileChannel --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Called when Tcl wants to open a file inside a zvfs file system.
- * 	We actually open the zip file back up and seek to the offset
- * 	of the given file.  The channel driver will take care of the
- * 	rest.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Called when Tcl wants to open a file inside a zvfs file system.
+ *      We actually open the zip file back up and seek to the offset
+ *      of the given file.  The channel driver will take care of the
+ *      rest.
  *
  * Results:
- * 	New channel on success, NULL on failure.
+ *      New channel on success, NULL on failure.
  *
  *----------------------------------------------------------------------
  */
@@ -1535,17 +1535,17 @@ OpenFileChannel( Tcl_Interp *interp, Tcl_Obj *pathPtr,
  *
  * MatchInDirectory --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Called when Tcl is globbing around through the filesystem.
- * 	This function can be called when Tcl is looking for mount
- * 	points or when it is looking for files within a mount point
- * 	that it has already determined belongs to us.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Called when Tcl is globbing around through the filesystem.
+ *      This function can be called when Tcl is looking for mount
+ *      points or when it is looking for files within a mount point
+ *      that it has already determined belongs to us.
  *
- * 	Any matching file in our filesystem is appended to the
- * 	result pointer.
+ *      Any matching file in our filesystem is appended to the
+ *      result pointer.
  *
  * Results:
- * 	Standard Tcl result
+ *      Standard Tcl result
  *
  *----------------------------------------------------------------------
  */
@@ -1642,13 +1642,13 @@ MatchInDirectory(
  *
  * ListVolumes --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Called when Tcl is looking for a list of open volumes
- * 	for our filesystem.  The mountpoint for each open archive
- * 	is appended to a list object.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Called when Tcl is looking for a list of open volumes
+ *      for our filesystem.  The mountpoint for each open archive
+ *      is appended to a list object.
  *
  * Results:
- * 	A Tcl_Obj with 0 refCount
+ *      A Tcl_Obj with 0 refCount
  *
  *----------------------------------------------------------------------
  */
@@ -1678,12 +1678,12 @@ ListVolumes(void)
  *
  * FileAttrStrings --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Return an array of strings for all of the possible
- * 	attributes for a file in zvfs.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Return an array of strings for all of the possible
+ *      attributes for a file in zvfs.
  *
  * Results:
- * 	Pointer to ZvfsAttrs
+ *      Pointer to ZvfsAttrs
  *
  *----------------------------------------------------------------------
  */
@@ -1699,14 +1699,14 @@ FileAttrStrings( Tcl_Obj *pathPtr, Tcl_Obj** objPtrRef )
  *
  * FileAttrsGet --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Called for a "file attributes" command from Tcl
- * 	to return the attributes for a file in our filesystem.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Called for a "file attributes" command from Tcl
+ *      to return the attributes for a file in our filesystem.
  *
- * 	objPtrRef will point to a 0 refCount Tcl_Obj on success.
+ *      objPtrRef will point to a 0 refCount Tcl_Obj on success.
  *
  * Results:
- * 	Standard Tcl result
+ *      Standard Tcl result
  *
  *----------------------------------------------------------------------
  */
@@ -1754,13 +1754,13 @@ FileAttrsGet( Tcl_Interp *interp, int index,
  *
  * FileAttrsSet --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Called to set the value of an attribute for the
- * 	given file.  Since we're a read-only filesystem, this
- * 	always returns an error.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Called to set the value of an attribute for the
+ *      given file.  Since we're a read-only filesystem, this
+ *      always returns an error.
  *
  * Results:
- * 	Returns TCL_ERROR
+ *      Returns TCL_ERROR
  *
  *----------------------------------------------------------------------
  */
@@ -1777,15 +1777,15 @@ FileAttrsSet( Tcl_Interp *interp, int index,
  *
  * Chdir --
  *
- * 	Part of the "zvfs" Tcl_Filesystem.
- * 	Handles a chdir() call for the filesystem.  Tcl has
- * 	already determined that the directory belongs to us,
- * 	so we just need to check and make sure that the path
- * 	is actually a directory in our filesystem and not a
- * 	regular file.
+ *      Part of the "zvfs" Tcl_Filesystem.
+ *      Handles a chdir() call for the filesystem.  Tcl has
+ *      already determined that the directory belongs to us,
+ *      so we just need to check and make sure that the path
+ *      is actually a directory in our filesystem and not a
+ *      regular file.
  *
  * Results:
- * 	0 on success, -1 on failure.
+ *      0 on success, -1 on failure.
  *
  *----------------------------------------------------------------------
  */
@@ -1803,17 +1803,17 @@ Chdir( Tcl_Obj *pathPtr )
  *
  * MountObjCmd --
  *
- * 	This function implements the [zvfs::mount] command.
+ *      This function implements the [zvfs::mount] command.
  *
- * 	zvfs::mount ?zipFile? ?mountPoint?
+ *      zvfs::mount ?zipFile? ?mountPoint?
  *
- * 	Creates a new mount point to the given zip archive.
- * 	All files in the zip archive will be added to the
- * 	virtual filesystem and be available to Tcl as regular
- * 	files and directories.
+ *      Creates a new mount point to the given zip archive.
+ *      All files in the zip archive will be added to the
+ *      virtual filesystem and be available to Tcl as regular
+ *      files and directories.
  *
  * Results:
- * 	Standard Tcl result
+ *      Standard Tcl result
  *
  *----------------------------------------------------------------------
  */
@@ -1848,15 +1848,15 @@ MountObjCmd(
  *
  * UnmountObjCmd --
  *
- * 	This function implements the [zvfs::unmount] command.
+ *      This function implements the [zvfs::unmount] command.
  *
- * 	zvfs::unmount mountPoint
+ *      zvfs::unmount mountPoint
  *
- * 	Unmount the given mountPoint if it is mounted in our
- * 	filesystem.
+ *      Unmount the given mountPoint if it is mounted in our
+ *      filesystem.
  *
  * Results:
- * 	0 on success, -1 on failure.
+ *      0 on success, -1 on failure.
  *
  *----------------------------------------------------------------------
  */
@@ -1881,13 +1881,13 @@ UnmountObjCmd(
  *
  * Zvfs_Init, Zvfs_SafeInit --
  *
- * 	Initialize the zvfs package.
+ *      Initialize the zvfs package.
  *
- * 	Safe interpreters do not receive the ability to mount and
- * 	unmount zip files.
+ *      Safe interpreters do not receive the ability to mount and
+ *      unmount zip files.
  *
  * Results:
- * 	Standard Tcl result
+ *      Standard Tcl result
  *
  *----------------------------------------------------------------------
  */
@@ -1901,11 +1901,11 @@ Zvfs_SafeInit( Tcl_Interp *interp )
 
     if( !local.isInit ) {
         /* Register the filesystem and initialize the hash tables. */
-	Tcl_FSRegister( 0, &zvfsFilesystem );
-	Tcl_InitHashTable( &local.fileHash, TCL_STRING_KEYS );
-	Tcl_InitHashTable( &local.archiveHash, TCL_STRING_KEYS );
+        Tcl_FSRegister( 0, &zvfsFilesystem );
+        Tcl_InitHashTable( &local.fileHash, TCL_STRING_KEYS );
+        Tcl_InitHashTable( &local.archiveHash, TCL_STRING_KEYS );
 
-	local.isInit = 1;
+        local.isInit = 1;
     }
 
     Tcl_PkgProvide( interp, "zvfs", "1.0" );

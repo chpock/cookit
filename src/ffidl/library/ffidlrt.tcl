@@ -3,7 +3,9 @@
 #
 # Run time support for Ffidl.
 #
-package provide Ffidlrt 0.1
+# NOTE: Remember to update FFIDLRT_VERSION in configure.ac when changing this
+#       version number.
+package provide Ffidlrt 0.4
 package require Ffidl
 
 namespace eval ::ffidl:: {}
@@ -71,10 +73,23 @@ namespace eval ::ffidl:: {
                             }                        
                         } else {
                             array set libs {
-                                c /lib64/libc.so.6
-                                m /lib64/libm.so.6
-                                gdbm /usr/lib64/libgdbm.so
-                                gmp {/usr/local/lib64/libgmp.so /usr/lib64/libgmp.so.2}
+                                c {
+				    /lib64/libc.so.6
+				    /lib/x86_64-linux-gnu/libc.so.6
+				}
+                                m {
+				    /lib64/libm.so.6
+				    /lib/x86_64-linux-gnu/libm.so.6
+				}
+                                gdbm {
+				    /usr/lib64/libgdbm.so
+				    /usr/lib/x86_64-linux-gnu/libgdbm.so
+				}
+                                gmp {
+				    /usr/lib/x86_64-linux-gnu/libgmp.so
+				    /usr/local/lib64/libgmp.so
+				    /usr/lib64/libgmp.so.2
+				}
                                 mathswig libmathswig0.5.so
                             }
                             array set types {
@@ -86,10 +101,23 @@ namespace eval ::ffidl:: {
                         }
                     } else {
                         array set libs {
-                            c /lib/libc.so.6
-                            m /lib/libm.so.6
-                            gdbm /usr/lib/libgdbm.so
-                            gmp {/usr/local/lib/libgmp.so /usr/lib/libgmp.so.2}
+                            c {
+                                    /lib/libc.so.6
+                                    /lib/i386-linux-gnu/libc.so.6
+                            }
+                            m {
+                                    /lib/libm.so.6
+                                    /lib/i386-linux-gnu/libm.so.6
+                            }
+                            gdbm {
+                                    /usr/lib/libgdbm.so
+                                    /usr/lib/i386-linux-gnu/libgdbm.so.3
+                            }
+                            gmp {
+                                   /usr/lib/i386-linux-gnu/libgmp.so.2
+                                   /usr/local/lib/libgmp.so
+                                   /usr/lib/libgmp.so.2
+                            }
                             mathswig libmathswig0.5.so
                         }
                         array set types {
@@ -252,13 +280,18 @@ proc ::ffidl::get-bytearray {obj} {
 ::ffidl::callout ::ffidl::new-unicode {pointer int} pointer-obj [::ffidl::stubsymbol tcl stubs 378]; #Tcl_NewUnicodeObj
 ::ffidl::callout ::ffidl::new-bytearray {pointer int} pointer-obj [::ffidl::stubsymbol tcl stubs 50]; #Tcl_NewByteArrayObj
 
-#
-# access the standard allocator, malloc, free, realloc
-#
 ::ffidl::find-type size_t
-::ffidl::callout ::ffidl::malloc {size_t} pointer [::ffidl::symbol [::ffidl::find-lib c] malloc]
-::ffidl::callout ::ffidl::realloc {pointer size_t} pointer [::ffidl::symbol [::ffidl::find-lib c] realloc]
-::ffidl::callout ::ffidl::free {pointer} void [::ffidl::symbol [::ffidl::find-lib c] free]
+if {1} {
+    # Tcl's allocator: malloc, free, realloc.
+    ::ffidl::callout ::ffidl::malloc {unsigned} pointer [::ffidl::stubsymbol tcl stubs 3]; #Tcl_Alloc
+    ::ffidl::callout ::ffidl::realloc {pointer unsigned} pointer [::ffidl::stubsymbol tcl stubs 5]; #Tcl_Realloc
+    ::ffidl::callout ::ffidl::free {pointer} void [::ffidl::stubsymbol tcl stubs 4]; #Tcl_Free
+} else {
+    # access the standard allocator: malloc, free, realloc.
+    ::ffidl::callout ::ffidl::malloc {size_t} pointer [::ffidl::symbol [::ffidl::find-lib c] malloc]
+    ::ffidl::callout ::ffidl::realloc {pointer size_t} pointer [::ffidl::symbol [::ffidl::find-lib c] realloc]
+    ::ffidl::callout ::ffidl::free {pointer} void [::ffidl::symbol [::ffidl::find-lib c] free]
+}
 
 #
 # Copy some memory at some location into a Tcl bytearray.
@@ -266,9 +299,16 @@ proc ::ffidl::get-bytearray {obj} {
 # Needless to say, this can be very hazardous to your
 # program's health if things aren't sized correctly.
 #
+::ffidl::callout ::ffidl::memcpy {pointer-var pointer size_t} pointer [::ffidl::symbol [::ffidl::find-lib ffidl] ffidl_copy_bytes];
 
-::ffidl::callout ::ffidl::memcpy {pointer-var pointer int} pointer [::ffidl::symbol [::ffidl::find-lib c] memcpy]
+#
+# Regular memcpy working on pointers.  ::ffidl::memcpy kept as is for compatibilitiy.
+#
+::ffidl::callout ::ffidl::memcpy2 {pointer pointer size_t} pointer [::ffidl::symbol [::ffidl::find-lib ffidl] ffidl_copy_bytes];
 
+#
+# Create a Tcl bytearray with a copy of the contents some memory location.
+#
 proc ::ffidl::peek {address nbytes} {
     set dst [binary format x$nbytes]
     ::ffidl::memcpy dst $address $nbytes
@@ -276,12 +316,18 @@ proc ::ffidl::peek {address nbytes} {
 }
 
 #
+# Copy the contents of a Tcl bytearray to some memory location.
+#
+proc ::ffidl::poke {dst src} {
+    set n [string length $bytes];
+    set src [::ffidl::get-bytearray $bytes];
+    ::ffidl::memcpy2 $dst $src $n;
+}
+
+#
 # convert raw pointers, as integers, into Tcl_Obj's
 #
 ::ffidl::callout ::ffidl::pointer-into-string {pointer} pointer-utf8 [::ffidl::symbol [::ffidl::find-lib ffidl] ffidl_pointer_pun]
 ::ffidl::callout ::ffidl::pointer-into-unicode {pointer} pointer-utf16 [::ffidl::symbol [::ffidl::find-lib ffidl] ffidl_pointer_pun]
-proc ::ffidl::pointer-into-bytearray {pointer length} {
-    set bytes [binary format x$length]
-    ::ffidl::memcpy [::ffidl::get-bytearray $bytes] $pointer $length
-    set bytes
-}
+# ::ffidl::pointer-into-bytearray is deprecated. Use ::ffidl::peek instead.
+interp alias {} ::ffidl::pointer-into-bytearray {} ::ffidl::peek;

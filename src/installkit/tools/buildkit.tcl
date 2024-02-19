@@ -29,8 +29,8 @@ proc main { installkitBin vfsDir } {
     close $fp
 
     foreach file [lsort -decreasing -dictionary $x] {
-	lappend files [file join $vfsDir $file]
-	lappend names $file
+        lappend files [file join $vfsDir $file]
+        lappend names $file
     }
 
     if {[catch { build $installkitBin lzma $files $names }]} {

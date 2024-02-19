@@ -6,7 +6,7 @@
 array set versions {
     tcl         {8.6 8.6b1.2}
     tk          {8.6 8.6b1.2}
-    thread      2.6.5
+    thread      2.6.6
     installkit  1.1
 }
 
@@ -68,38 +68,38 @@ proc dopackage { package inputdir outputdir } {
         "tcl" {
             set exclude [list "*reg*" "*dde*" "*opt*" "*encod*" \
                 "*http1.0*" "*ldAout.tcl" "*safe.tcl" "*tcltest*" \
-		"*tclAppInit.c" "*ldAix" "*msgs*" "*tzdata*"]
+                "*tclAppInit.c" "*ldAix" "*msgs*" "*tzdata*"]
 
-	    set dir [file join $inputdir encoding]
-	    foreach file [glob -nocomplain -type f -dir $dir *.enc] {
-		if {[file size $file] < 4096} { lappend newfiles $file }
-	    }
+            set dir [file join $inputdir encoding]
+            foreach file [glob -nocomplain -type f -dir $dir *.enc] {
+                if {[file size $file] < 4096} { lappend newfiles $file }
+            }
 
-	    set dir [file join [file dirname $inputdir] tcl8]
-	    foreach file [recursive_glob $dir *.tm] {
-	    	if {[string match "*http-*" $file]
-		    || [string match "*msgcat-*" $file]} {
-		    lappend newfiles $file
+            set dir [file join [file dirname $inputdir] tcl8]
+            foreach file [recursive_glob $dir *.tm] {
+                if {[string match "*http-*" $file]
+                    || [string match "*msgcat-*" $file]} {
+                    lappend newfiles $file
                     set dirname [file dirname $file]
                     if {$dirname ni $map} { lappend map $dirname/ "" }
-		}
-	    }
+                }
+            }
         }
 
         "tk" {
-	    set dir  [file dirname $inputdir]
-	    set file [glob -nocomplain -dir $dir libtk*[info sharedlibext]]
-	    set tail [file tail $file]
+            set dir  [file dirname $inputdir]
+            set file [glob -nocomplain -dir $dir libtk*[info sharedlibext]]
+            set tail [file tail $file]
 
             if {!$static} { file copy -force $file $outputdir }
 
             set exclude [list "*.c" "*images*" "*msgs*" \
-		"*choosedir.tcl" "*clrpick.tcl" "*dialog.tcl" \
+                "*choosedir.tcl" "*clrpick.tcl" "*dialog.tcl" \
                 "*mkpsenc.tcl" "*optMenu.tcl" "*prolog.ps" "*safetk.tcl" \
                 "*tkfbox.tcl" "*xmfbox.tcl"]
 
             if {$static} {
-		set script "installkit::loadTk"
+                set script "installkit::loadTk"
             } else {
                 set script "\[list load \[file join \$dir $tail\]\]"
             }
@@ -165,11 +165,11 @@ proc main { staticOrShared srcDir tclLibDir outputdir } {
 
     foreach package [array names versions] {
         set ver [lindex $versions($package) 0]
-	set dir [file join $tclLibDir $package$ver]
-	if {$package eq "installkit"} { set dir [file join $srcDir library] }
-	if {[file exists $dir]} {
-	    dopackage $package $dir [file join $outputdir $package]
-	}
+        set dir [file join $tclLibDir $package$ver]
+        if {$package eq "installkit"} { set dir [file join $srcDir library] }
+        if {[file exists $dir]} {
+            dopackage $package $dir [file join $outputdir $package]
+        }
     }
 }
 
