@@ -1,6 +1,8 @@
 # Installkit changelog
 
-## Unreleased (1.3.1)
+## Unreleased (1.3.2)
+
+## 1.3.1 - 2024-02-19
 
 ### Fixes
 - [Windows] Fix truncation of command line arguments
