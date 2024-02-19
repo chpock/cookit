@@ -294,7 +294,9 @@ vagrant_unlock
 if [ "$R" -eq 0 ]; then
     if [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
         mv "$BUILD_DIR/$PLATFORM.zip" "$BUILD_DIR/.."
-        if vagrant_unlocked; then
+        if [ -n "$KEEP_VM" ]; then
+            log "VM will not be shutdown."
+        elif vagrant_unlocked; then
             log "Shutdown VM after successful build..."
             vagrant halt | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
         else

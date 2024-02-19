@@ -24,7 +24,7 @@ ABS_TOP_SRCDIR=`cd "$TOP_SRCDIR" && /bin/pwd`
 
 ZIP=`which zip`
 PLATFORM=`uname`
-BUILD="shared"
+BUILD="static"
 UPX=`which upx`
 
 if test -f "$UPX"; then
@@ -153,11 +153,9 @@ case $PLATFORM in
   CYGWIN_NT*|MINGW*)
         MAIN="winMain"
 
-        BUILD="static"
-
         TARGETS="\$(PROG).exe \$(PROG)U.exe \$(PROG)A.exe \$(PROG)UA.exe"
 
-        DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13.a \$(TK_LIBS)\
+        DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13.a \
             -luuid -lrpcrt4 -mwindows"
         DYNAMIC_LFLAGS=""
 

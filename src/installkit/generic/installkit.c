@@ -21,6 +21,7 @@
 
 extern Tcl_AppInitProc Thread_Init;
 extern Tcl_AppInitProc Miniarc_Init;
+extern Tcl_AppInitProc Tk_Init;
 
 static int
 LibraryPathObjCmd(

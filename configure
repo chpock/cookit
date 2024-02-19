@@ -35,10 +35,10 @@ done
 echo
 
 TCL_SYSTEM=unix
-TARGETS="tcl-static tcl"
+TARGETS="tcl tk"
 TCLSH="\$(PREFIX)/bin/tclsh8.6"
 AQUA_FLAG=
-SHARED_FLAG="--enable-shared"
+SHARED_FLAG="--disable-shared --enable-static"
 THREADS_FLAG="--disable-threads"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
@@ -48,8 +48,7 @@ case "$IJ_PLATFORM" in
   Windows)
     TCL_SYSTEM=win
     TCLSH="\$(PREFIX)/bin/tclsh86s"
-    TARGETS="tcl-static thread"
-    SHARED_FLAG="--disable-shared"
+    TARGETS="$TARGETS thread"
     THREADS_FLAG="--enable-threads"
     CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
     CYGPATH="cygpath -m"
@@ -85,7 +84,7 @@ case "$IJ_PLATFORM" in
     ;;
 esac
 
-TARGETS="$TARGETS tk zlib miniarc installkit tktable"
+TARGETS="$TARGETS zlib miniarc installkit tktable"
 
 case "$IJ_PLATFORM" in
   MacOS-X*)
