@@ -14,18 +14,18 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
     namespace import -force ::tcltest::*
 }
 
-test get-ij-version {} -body {
+testConstraint darwin [expr {[testConstraint unix] && $tcl_platform(os) eq "Darwin"}]
+testConstraint notDarwin [expr {![testConstraint darwin]}]
+
+test content-1 {Get ij version} -body {
     set fp [open [file join [file dir [info script]] .. .. .. version] r]
     set ij_ver [gets $fp]
     close $fp
 } -result * -match glob
 
-test package-installkit [list package require installkit $ij_ver] \
+test content-2 [list package require installkit $ij_ver] \
     -body [list package require installkit $ij_ver] \
     -result $ij_ver -cleanup { unset ij_ver }
-
-# tkdnd is broken as for now
-#    tkdnd               1.0      {}
 
 foreach { pkgName pkgVersion constraints } {
     Tcl                 8.6b1.2  {}
@@ -41,16 +41,18 @@ foreach { pkgName pkgVersion constraints } {
     Tktable             2.10     {}
     twapi               1.1      {win}
     Ffidl               0.8      {win}
+    tkdnd               2.9.4    {notDarwin}
 } {
-    test package-$pkgName [list package require $pkgName $pkgVersion] \
+    test content-3.[incr count] [list package require $pkgName $pkgVersion] \
         -constraints $constraints \
         -body [list package require $pkgName $pkgVersion] \
         -returnCodes ok -match glob -result *
 }
+unset count
 
 # installkit expects twapi/ffidl packages in specific locations
 
-test pkg-location-twapi  {} -constraints win -setup {
+test content-4.1  {Check twapi package location} -constraints win -setup {
     set ij_libpath [file join [file dirname [interpreter]] .. lib]
 } -body {
     file exists [file join $ij_libpath twapi pkgIndex.tcl]
@@ -58,7 +60,7 @@ test pkg-location-twapi  {} -constraints win -setup {
     unset ij_libpath
 }
 
-test pkg-location-ffidl  {} -constraints win -setup {
+test content-4.2 {Check ffidl package location} -constraints win -setup {
     set ij_libpath [file join [file dirname [interpreter]] .. lib]
 } -body {
     file exists [file join $ij_libpath ffidl pkgIndex.tcl]
@@ -69,7 +71,7 @@ test pkg-location-ffidl  {} -constraints win -setup {
 # installkit removed encoding files lager than 4096 bytes.
 # Here we check that vfs contains expected set of encodings.
 
-test encodings {
+test content-5 {
     available encodings
 } -body {
     set encs [list]

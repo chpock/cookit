@@ -14,12 +14,12 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
     namespace import -force ::tcltest::*
 }
 
-package require Ffidl
+catch { package require Ffidl }
 
 # installkit uses only one function from ffidl - send notification about
 # association changes
 
-test SHChangeNotify {} -body {
+test ffidl-1 {SHChangeNotify} -constraints win -body {
 
     if {[info commands ffidl::SHChangeNotify] eq ""} {
         set symbol [ffidl::symbol shell32 SHChangeNotify]

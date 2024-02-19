@@ -138,12 +138,14 @@ if [ -n "$PLATFORM" ]; then
             ;;
         Linux-x86)
             # dependencies
-            sudo yum install -y libgcc.i686 glibc-devel.i686 libX11-devel.i686 libXext-devel.i686 libXt-devel.i686
+            # libXcursor-devel - for tkdnd
+            sudo yum install -y libgcc.i686 glibc-devel.i686 libX11-devel.i686 libXext-devel.i686 libXt-devel.i686 libXcursor-devel.i686
             PLATFORM="$PLATFORM" "$SELF_HOME/configure"
             ;;
         Linux-x86_64)
             # dependencies
-            sudo yum install -y libgcc.x86_64 glibc-devel.x86_64 libX11-devel.x86_64 libXext-devel.x86_64 libXt-devel.x86_64
+            # libXcursor-devel - for tkdnd
+            sudo yum install -y libgcc.x86_64 glibc-devel.x86_64 libX11-devel.x86_64 libXext-devel.x86_64 libXt-devel.x86_64 libXcursor-devel.x86_64
             PLATFORM="$PLATFORM" "$SELF_HOME/configure"
             ;;
         *)

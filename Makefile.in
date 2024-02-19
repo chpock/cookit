@@ -1,11 +1,6 @@
 BUILD_ENV = \
 	LDFLAGS="$(LDFLAGS)" CFLAGS="$(CFLAGS)" \
-	CC="$(CC)" RC="$(RC)" STRIP="$(STRIP)" \
-	PKG_CONFIG="$(PKG_CONFIG)"
-
-BUILD_ENV_TKDND = \
-	LDFLAGS="$(LDFLAGS)" CFLAGS="$(CFLAGS)" \
-	CC="$(CC_TKDND)" RC="$(RC)" STRIP="$(STRIP)" \
+	CC="$(CC)" CXX="$(CXX)" RC="$(RC)" STRIP="$(STRIP)" \
 	PKG_CONFIG="$(PKG_CONFIG)"
 
 # Path to UPX
@@ -148,12 +143,21 @@ work/stamp-tkdnd:
 	mkdir -p work/tkdnd
 	cd work/tkdnd || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV_TKDND) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tkdnd/configure \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tkdnd/configure \
 		--prefix=$(KIT_PREFIX) \
+		--exec-prefix=$(KIT_PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
 		--with-tk=$(PREFIX)/lib \
 		$(THREADS_FLAG)
+ifeq ($(IJ_PLATFORM),Windows)
+# Patch Makefile on Windows to disable libwinpthread-1.dll dependency. Setting
+# these parameters as LDFLAGS won't help because they must be at the end
+# of the linking command.
+	sed -i 's/^MAKE_LIB[[:space:]]*=.*/& -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic/' \
+		work/tkdnd/Makefile
+endif
 	cd work/tkdnd && $(MAKE) all install-binaries
+	chmod +x "$(KIT_PREFIX)"/lib/tkdnd*/*.$(SO_EXT)
 	touch $@
 
 ffidl: work/stamp-ffidl

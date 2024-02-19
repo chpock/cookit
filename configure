@@ -42,7 +42,7 @@ SHARED_FLAG="--enable-shared"
 THREADS_FLAG="--disable-threads"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
-CC_TKDND="\$(CC)"
+SO_EXT="so"
 
 case "$IJ_PLATFORM" in
   Windows)
@@ -53,8 +53,7 @@ case "$IJ_PLATFORM" in
     THREADS_FLAG="--enable-threads"
     CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
     CYGPATH="cygpath -m"
-    # TkDND must be compiled using C++
-    CC_TKDND="\$(CPP)"
+    SO_EXT="dll"
     ;;
 
   Linux-x86)
@@ -70,12 +69,14 @@ case "$IJ_PLATFORM" in
   MacOS-X)
     CFLAGS="-arch i386 -mmacosx-version-min=10.5 $CFLAGS"
     AQUA_FLAG="--enable-aqua"
+    SO_EXT="dylib"
     ;;
 
   MacOS-X-arm64)
     CFLAGS="-arch arm64 -mmacosx-version-min=10.5 $CFLAGS"
     CFLAGS="-DSTDC_HEADERS $CFLAGS"
     AQUA_FLAG="--enable-aqua"
+    SO_EXT="dylib"
     ;;
 
   MacOS-X-ppc)
@@ -84,23 +85,27 @@ case "$IJ_PLATFORM" in
     ;;
 esac
 
-TARGETS="$TARGETS tk zlib miniarc installkit"
+TARGETS="$TARGETS tk zlib miniarc installkit tktable"
 
 case "$IJ_PLATFORM" in
   MacOS-X*)
-    TARGETS="$TARGETS tktable"
+    : no-op
     ;;
-
   Windows)
-    TARGETS="$TARGETS tkdnd tktable ffidl twapi"
+    TARGETS="$TARGETS tkdnd ffidl twapi"
     ;;
-
   *)
-    TARGETS="$TARGETS tkdnd tktable"
+    TARGETS="$TARGETS tkdnd"
     ;;
 esac
 
-CC=${CC-gcc} CPP=${CPP-g++} "$TOP_SRCDIR/helper.sh" environment > build.conf
+: ${CC:=${ARCH_TOOLS_PREFIX}gcc}
+: ${CXX:=${ARCH_TOOLS_PREFIX}g++}
+: ${PKG_CONFIG:=${ARCH_TOOLS_PREFIX}pkg-config}
+: ${STRIP:=${ARCH_TOOLS_PREFIX}strip}
+: ${RC:=${ARCH_TOOLS_PREFIX}windres}
+
+CC="${CC}" CXX="${CXX}" "$TOP_SRCDIR/helper.sh" environment > build.conf
 
 cat > environment.conf << EOF
 ## General build configuration
@@ -111,11 +116,11 @@ TOP_BUILDDIR    = $ABS_TOP_BUILDDIR
 
 KIT_VERSION     = $KIT_VERSION
 
-CC              = ${CC-${ARCH_TOOLS_PREFIX}gcc}
-CPP             = ${CPP-${ARCH_TOOLS_PREFIX}g++}
-PKG_CONFIG      = ${PKG_CONFIG-${ARCH_TOOLS_PREFIX}pkg-config}
-STRIP           = ${STRIP-${ARCH_TOOLS_PREFIX}strip}
-RC              = ${RC-${ARCH_TOOLS_PREFIX}windres}
+CC              = $CC
+CXX             = $CXX
+PKG_CONFIG      = $PKG_CONFIG
+STRIP           = $STRIP
+RC              = $RC
 
 CFLAGS          = $CFLAGS
 LDFLAGS         = $LDFLAGS
@@ -123,12 +128,11 @@ AQUA_FLAG       = $AQUA_FLAG
 SHARED_FLAG     = $SHARED_FLAG
 THREADS_FLAG    = $THREADS_FLAG
 SYMBOLS_FLAG    = $SYMBOLS_FLAG
+
 TCL_SYSTEM      = $TCL_SYSTEM
 IJ_PLATFORM     = $IJ_PLATFORM
 TCLSH           = $TCLSH
 CYGPATH         = $CYGPATH
-
-CC_TKDND        = $CC_TKDND
 
 TARGETS         = $TARGETS
 
@@ -143,6 +147,8 @@ cat > Makefile << EOF
 
 PREFIX          = \$(TOP_BUILDDIR)/out
 KIT_PREFIX      = \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
+
+SO_EXT          = $SO_EXT
 
 EOF
 

@@ -1,0 +1,3 @@
+[submodule "src/tkdnd"]
+	path = src/tkdnd
+	url = https://github.com/chpock/tkdnd

@@ -154,8 +154,8 @@ case $1 in
         echo "\$ $CC --version"
         "$CC" --version
         echo
-        echo "\$ $CPP --version"
-        "$CPP" --version
+        echo "\$ $CXX --version"
+        "$CXX" --version
         echo
         if command -v ldd >/dev/null 2>&1; then
             echo "\$ ldd --version"

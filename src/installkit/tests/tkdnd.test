@@ -1,0 +1,34 @@
+# installkit tests - tkdnd
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# These tests check the expected content in installkit vfs
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+testConstraint darwin [expr {[testConstraint unix] && $tcl_platform(os) eq "Darwin"}]
+testConstraint notDarwin [expr {![testConstraint darwin]}]
+
+catch {
+    package require Tk
+    package require tkdnd
+}
+
+# installkit uses legacy procedure (::dnd) for tkdnd. We need to make
+# sure that such a procedure exists.
+
+test dnd-1 {check for legacy ::dnd procedure} -constraints notDarwin -body {
+    info procs ::dnd
+} -result {::dnd}
+
+# cleanup
+::tcltest::cleanupTests
+return

@@ -21,6 +21,7 @@
 - [Solaris-i86pc] don't built
 - [Solaris-sparc] don't built
 - [Solaris-x86] don't built
+- [Linux-*,Windows] update tkdnd package from version 1.0.0 to 2.9.4. Now it's really working!
 
 ### Internal changes
 - Added a few make recipes for testing
