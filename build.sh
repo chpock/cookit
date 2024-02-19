@@ -3,8 +3,14 @@
 set -e
 
 SELF_HOME="$(cd "$(dirname "$0")"; pwd)"
-
+SELF_FILE="$SELF_HOME/$(basename "$0")"
 BUILD_HOME="$(pwd)"
+
+if [ "$SELF_HOME" = "$BUILD_HOME" ]; then
+    mkdir -p "$SELF_HOME"/build
+    cd "$SELF_HOME"/build
+    BUILD_HOME="$SELF_HOME"/build
+fi
 
 COLORS="33 34 35 36 92 93 94 95 96"
 
@@ -48,11 +54,11 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
         LOG_OUT="$BUILD_HOME/$PLATFORM.log"
         #{
         #    {
-        #        "$0" "$PLATFORM" | tee "$LOG_OUT" | progress out "$PLATFORM"
+        #        "$SELF_FILE" "$PLATFORM" | tee "$LOG_OUT" | progress out "$PLATFORM"
         #    } 2>&1 1>&3 | tee "$LOG_ERR" | progress err "$PLATFORM"
         #} 3>&1 1>&2 &
         getcolor
-        "$0" build "$PLATFORM" 2>&1 | tee "$LOG_OUT" | progress "$PLATFORM" "$CURRENT_COLOR" &
+        "$SELF_FILE" build "$PLATFORM" 2>&1 | tee "$LOG_OUT" | progress "$PLATFORM" "$CURRENT_COLOR" &
     done
 
     wait
@@ -277,7 +283,7 @@ vagrant_lock soft
 log "Get SSH config..."
 vagrant_ssh
 log "Sync sources..."
-logcmd rsync -a --exclude '.git' --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$SELF_HOME"/* "$VAGRANT_HOST:installkit-source"
+logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$SELF_HOME"/* "$VAGRANT_HOST:installkit-source"
 log "Start build..."
 logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
 log "Sync build results..."
