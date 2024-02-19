@@ -70,20 +70,6 @@ work/stamp-miniarc:
 	cd work/miniarc && $(MAKE) all install
 	touch $@
 
-tkpng: work/stamp-tkpng
-work/stamp-tkpng:
-	mkdir -p work/tkpng
-	cd work/tkpng || exit; \
-	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tkpng/configure \
-		--prefix=$(PREFIX) \
-		--with-tcl=$(PREFIX)/lib \
-		--with-tk=$(PREFIX)/lib \
-		--with-zlib=$(PREFIX) \
-		$(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/tkpng && $(MAKE) all install
-	touch $@
-
 thread: work/stamp-thread
 work/stamp-thread:
 	mkdir -p work/thread
