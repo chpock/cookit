@@ -122,6 +122,7 @@ if [ -n "$PLATFORM" ]; then
     case "$PLATFORM" in
         Windows)
             # dependencies
+            # mingw64-i686-libffi - for ffidl
             for DEP in mingw64-i686-libffi mingw64-i686-gcc-core mingw64-i686-gcc-g++; do
                 if [ "$(cygcheck -c -n "$DEP" 2>/dev/null)" = "$DEP" ]; then
                     log "dependency '$DEP' - OK"
