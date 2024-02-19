@@ -1,3 +1,9 @@
 [submodule "src/tkdnd"]
 	path = src/tkdnd
 	url = https://github.com/chpock/tkdnd
+[submodule "src/tcl"]
+	path = src/tcl
+	url = https://github.com/tcltk/tcl.git
+[submodule "src/tk"]
+	path = src/tk
+	url = https://github.com/tcltk/tk.git

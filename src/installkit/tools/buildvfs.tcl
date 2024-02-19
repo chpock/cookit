@@ -4,8 +4,8 @@
 ##
 
 array set versions {
-    tcl         {8.6 8.6b1.2}
-    tk          {8.6 8.6b1.2}
+    tcl         {8.6 8.6.13}
+    tk          {8.6 8.6.13}
     thread      2.6.6
     installkit  1.1
 }
