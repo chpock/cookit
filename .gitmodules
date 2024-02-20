@@ -7,3 +7,6 @@
 [submodule "src/tk"]
 	path = src/tk
 	url = https://github.com/tcltk/tk.git
+[submodule "src/thread"]
+	path = src/thread
+	url = https://github.com/tcltk/thread.git

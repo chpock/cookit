@@ -6,7 +6,7 @@
 array set versions {
     tcl         {8.6 8.6.13}
     tk          {8.6 8.6.13}
-    thread      2.6.6
+    thread      2.8.8
     installkit  1.1
 }
 

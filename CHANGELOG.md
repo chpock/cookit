@@ -5,6 +5,7 @@
 ### Changes (potential incompatibilities)
 - Update Tcl/Tk from version 8.6b1.2 to 8.6.13 for all platforms
 - Remove Itcl package. It was broken in IJ 1.3.0. It is only used to convert projects of versions 1.1.0.0 and below.
+- Update thread package from 2.6.6 to 2.8.8
 
 ## 1.3.1 - 2024-02-19
 

@@ -79,7 +79,11 @@ work/stamp-thread:
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
 		$(SHARED_FLAG)
+# These files are necessary for installation. See:
+# https://github.com/tcltk/thread/blob/0b17425018a6cd3a0fdca30ce3c5fced28d25033/.travis.yml#L124-L127
+	cd "$(TOP_SRCDIR)"/src/thread && tar xzf ../thread.files.tar.gz
 	cd work/thread && $(MAKE) all install
+	rm -rf "$(TOP_SRCDIR)"/src/thread/tclconfig
 	touch $@
 
 # Note: We always build zlib as a static archive library (i.e. libz.a), but
