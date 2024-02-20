@@ -38,14 +38,13 @@ work/stamp-tk: tcl
 	touch $@
 
 miniarc: work/stamp-miniarc
-work/stamp-miniarc: tcl tk zlib
+work/stamp-miniarc: tcl zlib
 	mkdir -p work/miniarc
 	cd work/miniarc || exit; \
 	 test -f config.status \
 	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/miniarc/configure \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
-		--with-tk=$(PREFIX)/lib \
 		--with-zlib=$(PREFIX) \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/miniarc && $(MAKE) all install
