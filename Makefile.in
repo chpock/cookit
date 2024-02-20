@@ -25,7 +25,7 @@ work/stamp-tcl:
 	touch $@
 
 tk: work/stamp-tk
-work/stamp-tk:
+work/stamp-tk: tcl
 	mkdir -p work/tk
 	cd work/tk || exit; \
 	 test -f config.status \
@@ -38,7 +38,7 @@ work/stamp-tk:
 	touch $@
 
 miniarc: work/stamp-miniarc
-work/stamp-miniarc:
+work/stamp-miniarc: tcl tk zlib
 	mkdir -p work/miniarc
 	cd work/miniarc || exit; \
 	 test -f config.status \
@@ -52,7 +52,7 @@ work/stamp-miniarc:
 	touch $@
 
 thread: work/stamp-thread
-work/stamp-thread:
+work/stamp-thread: tcl
 	mkdir -p work/thread
 	cd work/thread || exit; \
 	 test -f config.status \
@@ -71,7 +71,7 @@ work/stamp-thread:
 # needed on pretty much every other architecture.
 #
 zlib: work/stamp-zlib
-work/stamp-zlib:
+work/stamp-zlib: tcl
 	rm -rf work/zlib
 	cp -r $(TOP_SRCDIR)/src/zlib work
 	. $(PREFIX)/lib/tclConfig.sh && \
@@ -83,7 +83,7 @@ work/stamp-zlib:
 	touch $@
 
 installkit: work/stamp-installkit
-work/stamp-installkit:
+work/stamp-installkit: tcl tk zlib miniarc
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
@@ -99,7 +99,7 @@ work/stamp-installkit:
 	touch $@
 
 tktable: work/stamp-tktable
-work/stamp-tktable:
+work/stamp-tktable: tcl tk
 	mkdir -p work/tktable
 	cd work/tktable || exit; \
 	 test -f config.status \
@@ -113,7 +113,7 @@ work/stamp-tktable:
 	touch $@
 
 tkdnd: work/stamp-tkdnd
-work/stamp-tkdnd:
+work/stamp-tkdnd: tcl tk
 	mkdir -p work/tkdnd
 	cd work/tkdnd || exit; \
 	 test -f config.status \
@@ -135,7 +135,7 @@ endif
 	touch $@
 
 ffidl: work/stamp-ffidl
-work/stamp-ffidl:
+work/stamp-ffidl: tcl
 	mkdir -p work/ffidl
 	cd work/ffidl || exit; \
 	 test -f config.status \
