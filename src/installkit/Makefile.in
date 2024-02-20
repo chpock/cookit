@@ -114,7 +114,7 @@ installkit.admin.res.o: $(TOP_SRCDIR)/win/rc/installkit.admin.rc installkit.admi
 %.manifest: $(TOP_SRCDIR)/win/rc/%.manifest.in
 	sed -e 's/@MANIFEST_VERSION@/$(MANIFEST_VERSION)/g' -e 's/@MANIFEST_MACHINE@/$(MANIFEST_MACHINE)/g' "$<" > "$@"
 
-install:
+install: vfsdir $(TARGETS)
 	mkdir -p $(PREFIX)/bin
 	$(CP) $(TARGETS) $(PREFIX)/bin
 

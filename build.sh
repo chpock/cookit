@@ -125,6 +125,8 @@ if [ -n "$PLATFORM" ]; then
 
     cd "$BUILD_DIR"
 
+    MAKE_PARALLEL="-j2"
+
     case "$PLATFORM" in
         Windows)
             # dependencies
@@ -139,6 +141,7 @@ if [ -n "$PLATFORM" ]; then
                 fi
             done
             ARCH_TOOLS_PREFIX="/usr/bin/i686-w64-mingw32-" "$SELF_HOME/configure"
+            MAKE_PARALLEL="-j8"
             ;;
         MacOS-X)
             PLATFORM="$PLATFORM" "$SELF_HOME/configure"
@@ -160,9 +163,9 @@ if [ -n "$PLATFORM" ]; then
             ;;
     esac
 
-    make
-    make check CHECK_SAFE=1
-    make dist
+    make $MAKE_PARALLEL
+    make $MAKE_PARALLEL check CHECK_SAFE=1
+    make $MAKE_PARALLEL dist
 
     if [ "$PLATFORM" = "Windows" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
         mv "$BUILD_DIR/$PLATFORM.zip" "$BUILD_DIR/.."

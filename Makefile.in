@@ -27,6 +27,10 @@ ifeq ($(IJ_PLATFORM),Windows)
 		-e 's#("\$$\(ROOT_DIR)(\)/library/(tzdata|msgs)")#\1_NATIVE\2#' \
 		work/tcl/Makefile
 endif
+# Match Makefile to avoid an error during parallel builds
+	sed -i -E \
+		-e 's/(install-msgs|install-tzdata):/& $$(TCLSH)/' \
+		work/tcl/Makefile
 	cd work/tcl \
 	 && $(BUILD_ENV) $(MAKE) all install-binaries install-libraries
 	touch $@
@@ -120,7 +124,7 @@ work/stamp-tktable: tcl tk
 		--with-tcl=$(PREFIX)/lib \
 		--with-tk=$(PREFIX)/lib \
 		$(THREADS_FLAG)
-	cd work/tktable && $(MAKE) all install-binaries
+	cd work/tktable && $(MAKE) -j1 all install-binaries
 	touch $@
 
 tkdnd: work/stamp-tkdnd
