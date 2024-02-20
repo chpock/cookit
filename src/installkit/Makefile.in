@@ -114,7 +114,7 @@ installkit.user.res.o: $(TOP_SRCDIR)/win/rc/installkit.user.rc
 installkit.admin.res.o: $(TOP_SRCDIR)/win/rc/installkit.admin.rc
 	$(RC) -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.admin.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
 
-install:
+install: vfsdir $(TARGETS)
 	mkdir -p $(PREFIX)/bin
 	$(CP) $(TARGETS) $(PREFIX)/bin
 

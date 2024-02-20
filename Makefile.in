@@ -109,7 +109,7 @@ work/stamp-tktable: tcl tk
 		--with-tcl=$(PREFIX)/lib \
 		--with-tk=$(PREFIX)/lib \
 		$(THREADS_FLAG)
-	cd work/tktable && $(MAKE) all install-binaries
+	cd work/tktable && $(MAKE) -j1 all install-binaries
 	touch $@
 
 tkdnd: work/stamp-tkdnd
