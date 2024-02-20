@@ -966,7 +966,6 @@ Installkit_Init( Tcl_Interp *interp )
     /* Add the "system" command from TclX. */
     TclX_InitCommands(interp);
 
-    Zlib_Init(interp);
     Zvfs_Init(interp);
 
     return TCL_OK;

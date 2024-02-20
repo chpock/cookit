@@ -129,7 +129,7 @@ case $PLATFORM in
         ;;
 esac
 
-OBJS="crap.o crapvfs.o miniarc.o sha1.o LZMADecode.o installkit.o main.o zlib.o zvfs.o Alloc.o LzFind.o LzmaEnc.o"
+OBJS="crap.o crapvfs.o miniarc.o sha1.o LZMADecode.o installkit.o main.o zvfs.o Alloc.o LzFind.o LzmaEnc.o"
 
 case $PLATFORM in
   MINGW*|CYGWIN_NT*)
@@ -155,8 +155,7 @@ case $PLATFORM in
 
         TARGETS="\$(PROG).exe \$(PROG)U.exe \$(PROG)A.exe \$(PROG)UA.exe"
 
-        DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13.a \
-            -luuid -lrpcrt4 -mwindows"
+        DYNAMIC_LIBS="-luuid -lrpcrt4 -mwindows"
         DYNAMIC_LFLAGS=""
 
         EXE=".exe"
@@ -169,6 +168,14 @@ case $PLATFORM in
         EXTRA_INCLUDES="-DTCL_THREADS"
 
         CYGPATH="cygpath -m"
+
+        MANIFEST_MACHINE="X86"
+
+        # Version in manifest must be in four-part version format 'mmmmm.nnnnn.ooooo.ppppp'
+        MANIFEST_VERSION="$KIT_VERSION"
+        while ! echo "$MANIFEST_VERSION" | grep '[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+'; do
+            MANIFEST_VERSION="$MANIFEST_VERSION.0"
+        done
         ;;
 
   Linux)
@@ -264,6 +271,9 @@ cat > Makefile << EOF
 TOP_SRCDIR = $ABS_TOP_SRCDIR
 
 PREFIX = $PREFIX
+
+MANIFEST_MACHINE = $MANIFEST_MACHINE
+MANIFEST_VERSION = $MANIFEST_VERSION
 
 EOF
 

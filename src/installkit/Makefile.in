@@ -78,9 +78,6 @@ sha1.o: $(MINIARC_SRCDIR)/generic/sha1.c
 LZMADecode.o: $(TOP_SRCDIR)/generic/LZMADecode.c
 	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/LZMADecode.c" -o $@
 
-zlib.o: $(TOP_SRCDIR)/generic/zlib.c
-	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/zlib.c" -o $@
-
 zvfs.o: $(TOP_SRCDIR)/generic/zvfs.c
 	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(TOP_SRCDIR)/generic/zvfs.c" -o $@
 
@@ -108,11 +105,14 @@ LzFind.o: $(LZMA_SRCDIR)/LzFind.c
 LzmaEnc.o: $(LZMA_SRCDIR)/LzmaEnc.c
 	$(CC) -c $(IK_CFLAGS) $(INCLUDES) "$(LZMA_SRCDIR)/LzmaEnc.c" -o $@
 
-installkit.user.res.o: $(TOP_SRCDIR)/win/rc/installkit.user.rc
-	$(RC) -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.user.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
+installkit.user.res.o: $(TOP_SRCDIR)/win/rc/installkit.user.rc installkit.user.manifest
+	$(RC) -o $@ --define STATIC_BUILD --define BASE_NO_TK_ICON "$<" --include $(TCL_PREFIX)/include --include $(TK_SRC_DIR)/win/rc --include $(TOP_SRCDIR)/win/rc
 
-installkit.admin.res.o: $(TOP_SRCDIR)/win/rc/installkit.admin.rc
-	$(RC) -o $@ --define STATIC_BUILD "$(TOP_SRCDIR)/win/rc/installkit.admin.rc" --include $(TCL_PREFIX)/include --include $(TOP_SRCDIR)/win/rc
+installkit.admin.res.o: $(TOP_SRCDIR)/win/rc/installkit.admin.rc installkit.admin.manifest
+	$(RC) -o $@ --define STATIC_BUILD --define BASE_NO_TK_ICON "$<" --include $(TCL_PREFIX)/include --include $(TK_SRC_DIR)/win/rc --include $(TOP_SRCDIR)/win/rc
+
+%.manifest: $(TOP_SRCDIR)/win/rc/%.manifest.in
+	sed -e 's/@MANIFEST_VERSION@/$(MANIFEST_VERSION)/g' -e 's/@MANIFEST_MACHINE@/$(MANIFEST_MACHINE)/g' "$<" > "$@"
 
 install:
 	mkdir -p $(PREFIX)/bin
