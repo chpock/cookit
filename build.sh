@@ -49,8 +49,12 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
 
     [ "$1" != "all" ] && unset BUILD_ALL || set -- Windows MacOS-X Linux-x86 Linux-x86_64
 
+    # Kill all child processes on ctrl-c or exit
+    trap "trap - SIGTERM && echo 'Caught SIGTERM, terminating child processes...' && kill -- -$$" SIGINT SIGTERM EXIT
+
     for PLATFORM; do
         rm -f "$BUILD_HOME/$PLATFORM".*
+        rm -rf "$BUILD_HOME/build-$PLATFORM"
         LOG_OUT="$BUILD_HOME/$PLATFORM.log"
         #{
         #    {
@@ -62,6 +66,8 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     done
 
     wait
+
+    trap - SIGINT SIGTERM EXIT
 
     # Check that build is successful
     for PLATFORM; do
@@ -183,11 +189,7 @@ log "Start remote build..."
 PLATFORM="$2"
 
 BUILD_DIR="$BUILD_HOME/build-$PLATFORM"
-if [ -d "$BUILD_DIR" ]; then
-    rm -rf "$BUILD_DIR"/*
-else
-    mkdir -p "$BUILD_DIR"
-fi
+rm -rf "$BUILD_DIR"
 
 vagrant() {
     PPWD="$PWD"
@@ -281,15 +283,17 @@ while [ "$STATE" != "running" ]; do
     fi
 done
 
-vagrant_lock soft
-
 log "Get SSH config..."
 vagrant_ssh
 log "Sync sources..."
 logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$SELF_HOME"/* "$VAGRANT_HOST:installkit-source"
+
+vagrant_lock soft
+
 log "Start build..."
 logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
 log "Sync build results..."
+[ -d "$BUILD_DIR" ] || mkdir -p "$BUILD_DIR"
 logcmd rsync -a --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$VAGRANT_HOST:/tmp/work/build-$PLATFORM/*" "$BUILD_DIR"
 
 vagrant_unlock
