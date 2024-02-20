@@ -200,7 +200,7 @@ CHECK_CMD = cd tests && \
     $(KIT_PREFIX)/bin/installkit
 
 define run-check
-    $(if $(if $(CHECK_SAFE),$(filter $1,1),1),mkdir -p tests && $(CHECK_CMD) `$(CYGPATH) $2` $(CHECK_VERBOSE) | tr -d '\r' | tee $@.output && grep -q 'Failed[[:space:]]\+0$$' $@.output,@echo Skipping unsafe check $@)
+    $(if $(if $(CHECK_UNSAFE),1,$(filter $1,1)),mkdir -p tests && $(CHECK_CMD) `$(CYGPATH) $2` $(CHECK_VERBOSE) | tr -d '\r' | tee $@.output && grep -q 'Failed[[:space:]]\+0$$' $@.output,@echo Skipping unsafe check $@)
 endef
 
 .PHONY: check $(patsubst %,check-%,$(TARGETS))
