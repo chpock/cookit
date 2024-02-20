@@ -269,7 +269,7 @@ while [ "$STATE" != "running" ]; do
     log "Check VM state..."
     STATE="$(vagrant status | grep '^state ' | awk '{print $2}')"
     log "The VM state is: '$STATE'"
-    if [ "$STATE" = "poweroff" ]; then
+    if [ "$STATE" = "poweroff" ] || [ "$STATE" = "saved" ]; then
         log "Start the VM..."
         vagrant up | grep -E '^ui (output|info),' | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
     elif [ "$STATE" != "running" ]; then
@@ -298,7 +298,7 @@ if [ "$R" -eq 0 ]; then
             log "VM will not be shutdown."
         elif vagrant_unlocked; then
             log "Shutdown VM after successful build..."
-            vagrant halt | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
+            vagrant suspend | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
         else
             log "VM is busy and will not be shutdown."
         fi
