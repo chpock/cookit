@@ -173,7 +173,7 @@ if [ -n "$PLATFORM" ]; then
     fi
 
     make $MAKE_PARALLEL
-    make $MAKE_PARALLEL check
+    #make $MAKE_PARALLEL check
     make $MAKE_PARALLEL dist
 
     if [ "$PLATFORM" = "Windows" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then

@@ -22,17 +22,21 @@ work/stamp-tcl:
 		$(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
 ifeq ($(IJ_PLATFORM),Windows)
 # Fix for the build with MinGW in Cygwin. Tclsh doesn't understand cygwin's paths.
-	sed -i -E \
+	$(SEDI) -E \
 		-e 's#(\$\(ROOT_DIR)(\)/tools/installData.tcl)#\1_NATIVE\2#' \
 		-e 's#("\$$\(ROOT_DIR)(\)/library/(tzdata|msgs)")#\1_NATIVE\2#' \
 		work/tcl/Makefile
 endif
 # Match Makefile to avoid an error during parallel builds
-	sed -i -E \
+	$(SEDI) -E \
 		-e 's/(install-msgs|install-tzdata):/& $$(TCLSH)/' \
 		work/tcl/Makefile
 	cd work/tcl \
 	 && $(BUILD_ENV) $(MAKE) all install-binaries install-libraries
+# Tcl installs headers on Windows in scope of the install-libraries target. But on other
+# platforms, there is a separate target 'install-headers'.
+	grep -q '^install-headers:' work/tcl/Makefile && \
+		cd work/tcl && $(BUILD_ENV) $(MAKE) install-headers || : no-op
 	touch $@
 
 tk: work/stamp-tk
@@ -46,6 +50,10 @@ work/stamp-tk: tcl
 		$(AQUA_FLAG) $(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/tk \
 	 && $(MAKE) all install-binaries install-libraries
+# Tk installs headers on Windows in scope of the install-libraries target. But on other
+# platforms, there is a separate target 'install-headers'.
+	grep -q '^install-headers:' work/tk/Makefile && \
+		cd work/tk && $(BUILD_ENV) $(MAKE) install-headers || : no-op
 	touch $@
 
 miniarc: work/stamp-miniarc
@@ -125,8 +133,8 @@ work/stamp-tktable: tcl tk
 		$(THREADS_FLAG)
 # Patch Makefile to enable parallel builds. See:
 # https://github.com/wjoye/tktable/pull/4
-	sed -i 's/^\(all:\).*/\1 tkTable.tcl.h\n\t\$$(MAKE) binaries libraries doc/' \
-	 work/tktable/Makefile
+	$(SEDI) -e 's/^\(all:\).*/\1 tkTable.tcl.h\'"`printf '\n\t'`"'\$$(MAKE) binaries libraries doc/' \
+		work/tktable/Makefile
 	cd work/tktable && $(MAKE) all
 	cd work/tktable && $(MAKE) install-binaries
 	touch $@
@@ -146,7 +154,7 @@ ifeq ($(IJ_PLATFORM),Windows)
 # Patch Makefile on Windows to disable libwinpthread-1.dll dependency. Setting
 # these parameters as LDFLAGS won't help because they must be at the end
 # of the linking command.
-	sed -i 's/^MAKE_LIB[[:space:]]*=.*/& -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic/' \
+	$(SEDI) -e 's/^MAKE_LIB[[:space:]]*=.*/& -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic/' \
 		work/tkdnd/Makefile
 endif
 	cd work/tkdnd && $(MAKE) all install-binaries
