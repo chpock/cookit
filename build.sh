@@ -131,8 +131,6 @@ if [ -n "$PLATFORM" ]; then
 
     cd "$BUILD_DIR"
 
-    [ -n "$MAKE_PARALLEL" ] || MAKE_PARALLEL="-j2"
-
     case "$PLATFORM" in
         Windows)
             # dependencies
@@ -147,7 +145,7 @@ if [ -n "$PLATFORM" ]; then
                 fi
             done
             ARCH_TOOLS_PREFIX="/usr/bin/i686-w64-mingw32-" "$SELF_HOME/configure"
-            [ "$MAKE_PARALLEL" = "none" ] || MAKE_PARALLEL="-j8"
+            [ "$MAKE_PARALLEL" != "true" ] || _MAKE_PARALLEL="-j8"
             ;;
         MacOS-X)
             PLATFORM="$PLATFORM" "$SELF_HOME/configure"
@@ -169,10 +167,8 @@ if [ -n "$PLATFORM" ]; then
             ;;
     esac
 
-    if [ "$MAKE_PARALLEL" = "none" ]; then
-        unset MAKE_PARALLEL
-        log "Run make in non-parallel mode."
-    else
+    if [ "$MAKE_PARALLEL" = "true" ]; then
+        [ -n "$_MAKE_PARALLEL" ] && MAKE_PARALLEL="$_MAKE_PARALLEL" || MAKE_PARALLEL="-j2"
         log "Run make with $MAKE_PARALLEL"
     fi
 
