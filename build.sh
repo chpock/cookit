@@ -131,7 +131,7 @@ if [ -n "$PLATFORM" ]; then
 
     cd "$BUILD_DIR"
 
-    MAKE_PARALLEL="-j2"
+    [ -n "$MAKE_PARALLEL" ] || MAKE_PARALLEL="-j2"
 
     case "$PLATFORM" in
         Windows)
@@ -147,7 +147,7 @@ if [ -n "$PLATFORM" ]; then
                 fi
             done
             ARCH_TOOLS_PREFIX="/usr/bin/i686-w64-mingw32-" "$SELF_HOME/configure"
-            MAKE_PARALLEL="-j8"
+            [ "$MAKE_PARALLEL" = "none" ] || MAKE_PARALLEL="-j8"
             ;;
         MacOS-X)
             PLATFORM="$PLATFORM" "$SELF_HOME/configure"
@@ -168,6 +168,13 @@ if [ -n "$PLATFORM" ]; then
             "$SELF_HOME/configure"
             ;;
     esac
+
+    if [ "$MAKE_PARALLEL" = "none" ]; then
+        unset MAKE_PARALLEL
+        log "Run make in non-parallel mode."
+    else
+        log "Run make with $MAKE_PARALLEL"
+    fi
 
     make $MAKE_PARALLEL
     make $MAKE_PARALLEL check
@@ -291,7 +298,7 @@ logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHos
 vagrant_lock soft
 
 log "Start build..."
-logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
+logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
 log "Sync build results..."
 [ -d "$BUILD_DIR" ] || mkdir -p "$BUILD_DIR"
 logcmd rsync -a --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$VAGRANT_HOST:/tmp/work/build-$PLATFORM/*" "$BUILD_DIR"
