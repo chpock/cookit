@@ -110,8 +110,8 @@ work/stamp-tktable: tcl tk
 		$(THREADS_FLAG)
 # Patch Makefile to enable parallel builds. See:
 # https://github.com/wjoye/tktable/pull/4
-	sed -i 's/^\(all:\).*/\1 tkTable.tcl.h\n\t\$$(MAKE) binaries libraries doc/' \
-	 work/tktable/Makefile
+	$(SEDI) -e 's/^\(all:\).*/\1 tkTable.tcl.h\'"`printf '\n\t'`"'\$$(MAKE) binaries libraries doc/' \
+		work/tktable/Makefile
 	cd work/tktable && $(MAKE) all
 	cd work/tktable && $(MAKE) install-binaries
 	touch $@
@@ -131,7 +131,7 @@ ifeq ($(IJ_PLATFORM),Windows)
 # Patch Makefile on Windows to disable libwinpthread-1.dll dependency. Setting
 # these parameters as LDFLAGS won't help because they must be at the end
 # of the linking command.
-	sed -i 's/^MAKE_LIB[[:space:]]*=.*/& -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic/' \
+	$(SEDI) 's/^MAKE_LIB[[:space:]]*=.*/& -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic/' \
 		work/tkdnd/Makefile
 endif
 	cd work/tkdnd && $(MAKE) all install-binaries

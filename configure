@@ -43,6 +43,7 @@ THREADS_FLAG="--disable-threads"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
 SO_EXT="so"
+SEDI="sed -i"
 
 case "$IJ_PLATFORM" in
   Windows)
@@ -69,6 +70,8 @@ case "$IJ_PLATFORM" in
     CFLAGS="-arch i386 -mmacosx-version-min=10.5 $CFLAGS"
     AQUA_FLAG="--enable-aqua"
     SO_EXT="dylib"
+    # on BSD sed the extension after -i is mandatory
+    SEDI="sed -i ''"
     ;;
 
   MacOS-X-arm64)
@@ -76,11 +79,15 @@ case "$IJ_PLATFORM" in
     CFLAGS="-DSTDC_HEADERS $CFLAGS"
     AQUA_FLAG="--enable-aqua"
     SO_EXT="dylib"
+    # on BSD sed the extension after -i is mandatory
+    SEDI="sed -i ''"
     ;;
 
   MacOS-X-ppc)
     CFLAGS="-arch ppc -mmacosx-version-min=10.5 $CFLAGS"
     AQUA_FLAG="--enable-aqua"
+    # on BSD sed the extension after -i is mandatory
+    SEDI="sed -i ''"
     ;;
 esac
 
@@ -148,6 +155,8 @@ PREFIX          = \$(TOP_BUILDDIR)/out
 KIT_PREFIX      = \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
 
 SO_EXT          = $SO_EXT
+
+SEDI            = $SEDI
 
 EOF
 
