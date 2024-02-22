@@ -112,6 +112,7 @@ work/stamp-installkit: tcl tk zlib miniarc
 	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/installkit/configure \
 		--version="$(KIT_VERSION)" \
 		--prefix=$(KIT_PREFIX) \
+		--debug=$(IK_DEBUG) \
 		--with-miniarc-src=$(TOP_SRCDIR)/src/miniarc \
 		--with-lzma-src=$(TOP_SRCDIR)/src/miniarc/generic/LzmaC \
 		--with-tcl=$(PREFIX)/lib \
@@ -186,7 +187,7 @@ work/stamp-twapi:
 dist:
 	cp -fp $(TOP_SRCDIR)/version kit/$(IJ_PLATFORM)
 	cat build.conf environment.conf work/installkit/environment.conf > kit/$(IJ_PLATFORM)/environment
-	cd kit && $(TCLSH) \
+	cd kit && "`echo "$(PREFIX)/bin/tclsh"*`" \
 		`$(CYGPATH) $(TOP_SRCDIR)/src/tools/makezip.tcl` \
 		../$(IJ_PLATFORM).zip \
 		`find $(IJ_PLATFORM) -type f | sort`

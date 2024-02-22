@@ -294,7 +294,7 @@ logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHos
 vagrant_lock soft
 
 log "Start build..."
-logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
+logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && IK_DEBUG=\"$IK_DEBUG\" MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
 log "Sync build results..."
 [ -d "$BUILD_DIR" ] || mkdir -p "$BUILD_DIR"
 logcmd rsync -a --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$VAGRANT_HOST:/tmp/work/build-$PLATFORM/*" "$BUILD_DIR"
