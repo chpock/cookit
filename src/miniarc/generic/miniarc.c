@@ -31,7 +31,7 @@ static void SzFree(void *p, void *address) {  p = p; free(address); }
 static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
 #ifdef __GNUC__
-inline
+static inline
 #endif
 void
 swap( unsigned char *lhs, unsigned char *rhs )
