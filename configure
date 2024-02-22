@@ -93,17 +93,11 @@ case "$IJ_PLATFORM" in
     ;;
 esac
 
-TARGETS="$TARGETS zlib miniarc installkit tktable"
+TARGETS="$TARGETS zlib miniarc installkit tktable tkdnd"
 
 case "$IJ_PLATFORM" in
-  MacOS-X*)
-    : no-op
-    ;;
   Windows)
-    TARGETS="$TARGETS tkdnd ffidl twapi"
-    ;;
-  *)
-    TARGETS="$TARGETS tkdnd"
+    TARGETS="$TARGETS ffidl twapi"
     ;;
 esac
 

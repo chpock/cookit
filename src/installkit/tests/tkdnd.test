@@ -25,7 +25,7 @@ catch {
 # installkit uses legacy procedure (::dnd) for tkdnd. We need to make
 # sure that such a procedure exists.
 
-test dnd-1 {check for legacy ::dnd procedure} -constraints notDarwin -body {
+test dnd-1 {check for legacy ::dnd procedure} -body {
     info procs ::dnd
 } -result {::dnd}
 

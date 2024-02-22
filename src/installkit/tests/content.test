@@ -41,7 +41,7 @@ foreach { pkgName pkgVersion constraints } {
     Tktable             2.10     {}
     twapi               1.1      {win}
     Ffidl               0.8      {win}
-    tkdnd               2.9.4    {notDarwin}
+    tkdnd               2.9.4    {}
 } {
     test content-3.[incr count] [list package require $pkgName $pkgVersion] \
         -constraints $constraints \

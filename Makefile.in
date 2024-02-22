@@ -159,6 +159,14 @@ work/stamp-tkdnd: tcl tk
 		--with-tcl=$(PREFIX)/lib \
 		--with-tk=$(PREFIX)/lib \
 		$(THREADS_FLAG)
+ifeq ($(IJ_PLATFORM),MacOS-X)
+# This patch is only required for MacOS X i386 platform
+	$(SEDI) -e 's/-fobjc-arc//g' work/tkdnd/Makefile
+# The macOS version on my build machine is 10.12, and the SDK doesn't have
+# definitions for 10.13 and above. However, tkdnd sources expect them.
+# Let's set it directly in Makefile.
+	$(SEDI) -e 's/^CFLAGS[[:space:]]*=/& -DMAC_OS_X_VERSION_10_13=101300/' work/tkdnd/Makefile
+endif
 ifeq ($(IJ_PLATFORM),Windows)
 # Patch Makefile on Windows to disable libwinpthread-1.dll dependency. Setting
 # these parameters as LDFLAGS won't help because they must be at the end
