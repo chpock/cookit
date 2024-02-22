@@ -117,7 +117,7 @@ case $1 in
 
     environment)
         echo "# Build environment:"
-        echo "# Generated at: `date --iso-8601=seconds`"
+        echo "# Generated at: `date --iso-8601=seconds 2>/dev/null || date +"%Y-%m-%dT%H:%M:%S%z"`"
         echo
         if command -v cygcheck >/dev/null 2>&1; then
             echo "\$ cygcheck --version"
@@ -128,15 +128,15 @@ case $1 in
             echo
         elif command -v sw_vers >/dev/null 2>&1; then
             echo "\$ sw_vers -productName"
-            sw_vers -productName
+            sw_vers -productName 2>&1
             echo
             echo "\$ sw_vers -productVersion"
-            sw_vers -productVersion
+            sw_vers -productVersion 2>&1
             echo
             if command -v pkgutil >/dev/null 2>&1; then
                 echo
                 echo "\$ pkgutil --pkg-info=com.apple.pkg.CLTools_Executables"
-                pkgutil --pkg-info=com.apple.pkg.CLTools_Executables
+                pkgutil --pkg-info=com.apple.pkg.CLTools_Executables 2>&1
                 echo
             fi
         elif [ -e /etc/redhat-release ]; then
@@ -152,16 +152,16 @@ case $1 in
         uname -a
         echo
         echo "\$ $CC --version"
-        "$CC" --version
+        "$CC" --version 2>&1
         echo
         echo "\$ $CXX --version"
-        "$CXX" --version
+        "$CXX" --version 2>&1
         echo
         if command -v ldd >/dev/null 2>&1; then
             echo "\$ ldd --version"
-            ldd --version
+            ldd --version 2>&1
+            echo
         fi
-        echo
         ;;
 
 esac
