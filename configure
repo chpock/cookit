@@ -25,7 +25,7 @@ for i in $@
 do
   case $i in
   -h|--help)       help ;;
-  --debug)         SYMBOLS_FLAG=--enable-symbols
+  --debug)         IK_DEBUG=1
                    echo "Extra debugging features enabled"
                    ;;
   *) echo "Invalid configure option $i" ; help ; exit 1 ;;
@@ -105,6 +105,11 @@ case "$IJ_PLATFORM" in
     ;;
 esac
 
+if [ -n "$IK_DEBUG" ]; then
+    SYMBOLS_FLAG="--enable-symbols"
+    STRIP="echo"
+fi
+
 : ${CC:=${ARCH_TOOLS_PREFIX}gcc}
 : ${CXX:=${ARCH_TOOLS_PREFIX}g++}
 : ${PKG_CONFIG:=${ARCH_TOOLS_PREFIX}pkg-config}
@@ -116,6 +121,8 @@ CC="${CC}" CXX="${CXX}" "$TOP_SRCDIR/helper.sh" environment > build.conf
 cat > environment.conf << EOF
 ## General build configuration
 ## Created with $0 $@
+
+IK_DEBUG        = $IK_DEBUG
 
 TOP_SRCDIR      = $ABS_TOP_SRCDIR
 TOP_BUILDDIR    = $ABS_TOP_BUILDDIR

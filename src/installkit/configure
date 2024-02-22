@@ -51,6 +51,7 @@ do
   --with-tcl=*)    TCLDIR=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --with-tk=*)     TKDIR=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --with-zlib=*)   ZLIBDIR=`echo $i | sed -e 's/^[^=]*=//g'` ;;
+  --debug=*)       IK_DEBUG=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   *) echo "Invalid configure option $i" ; help ; exit 1 ;;
   esac
 done
@@ -100,8 +101,6 @@ MINIARCVERSION_LIB=$MINIARCVERSION
 
 case $PLATFORM in
   CYGWIN_NT*|MINGW*)
-        TCLSH_NAME=tclsh${TCLVERSION_NODOT}s.exe
-
         MAKEFILE=win/Makefile.in
 
         LIB_PREFIX="lib"
@@ -112,8 +111,6 @@ case $PLATFORM in
         MINIARCVERSION_LIB=$MINIARCVERSION_NODOT
         ;;
   *)
-        TCLSH_NAME=tclsh$TCLVERSION
-
         MAKEFILE=unix/Makefile.in
 
         LIB_PREFIX="lib"
@@ -154,7 +151,7 @@ case $PLATFORM in
 
         TARGETS="\$(PROG).exe \$(PROG)U.exe \$(PROG)A.exe \$(PROG)UA.exe"
 
-        DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13.a \
+        DYNAMIC_LIBS="\$(TCL_PREFIX)/lib/reg1.3/libtclreg13\$(TCL_DBGX).a \
             -luuid -lrpcrt4 -mwindows"
         DYNAMIC_LFLAGS=""
 
@@ -196,6 +193,10 @@ case $PLATFORM in
         ;;
 esac
 
+if [ -n "$IK_DEBUG" ]; then
+    UPX="echo"
+fi
+
 sed -e s/\'//g $TCLCONFIG > tclConfig.sh
 sed -e s/\'//g $TKCONFIG > tkConfig.sh
 
@@ -234,9 +235,6 @@ STRIP_ARGS = $STRIP_ARGS
 
 ## Name of the UPX binary
 UPX = $UPX
-
-## Name of the tclsh binary
-TCLSH_NAME     = $TCLSH_NAME
 
 ## Dynamic configuration.
 LIB_PREFIX     = $LIB_PREFIX

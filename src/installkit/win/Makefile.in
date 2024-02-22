@@ -10,7 +10,7 @@ PROG            = installkit
 TOP = .
 
 #### Location of previously compiled TCLSH program
-TCLSH = $(TCL_PREFIX)/bin/$(TCLSH_NAME)
+TCLSH = `echo "$(TCL_PREFIX)/bin/tclsh"*`
 
 #### Some operating system specific commands
 CP      = cp
