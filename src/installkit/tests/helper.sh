@@ -24,7 +24,15 @@ notfile() {
 }
 
 case "$1" in
-    check-tcl|check-tcl-*)
+    check-thread)
+        case "$PLATFORM" in
+            Windows)
+                # This test generates an error that appears as a GUI message in Tk.
+                notfile tkt-84be1b5a73.test
+            ;;
+        esac
+        ;;
+    check-tcl)
         # installkit does not contain tzdata files and clock.test fails to
         # run with an error about the time zone ':America/Detroit' not being
         # available.

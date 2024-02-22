@@ -48,12 +48,20 @@ work/stamp-tk: tcl
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
 		$(AQUA_FLAG) $(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
+ifeq ($(IJ_PLATFORM),MacOS-X)
+# see details in the patch
+	patch -N -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
+endif
 	cd work/tk \
 	 && $(MAKE) all install-binaries install-libraries
 # Tk installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tk/Makefile && \
 		cd work/tk && $(BUILD_ENV) $(MAKE) install-headers || : no-op
+ifeq ($(IJ_PLATFORM),MacOS-X)
+# revert the patch to keep source tree clean
+	patch -R -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
+endif
 	touch $@
 
 miniarc: work/stamp-miniarc
