@@ -224,8 +224,6 @@ check-tk:
 	$(call run-check, 0, $(TOP_SRCDIR)/src/tk/tests/all.tcl)
 check-zlib:
 	@: no-op
-check-tkpng:
-	@: no-op
 check-miniarc:
 	@: no-op
 check-thread:
