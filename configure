@@ -42,7 +42,6 @@ SHARED_FLAG="--disable-shared --enable-static"
 THREADS_FLAG="--disable-threads"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
-SO_EXT="so"
 SEDI="sed -i"
 
 case "$IJ_PLATFORM" in
@@ -53,7 +52,6 @@ case "$IJ_PLATFORM" in
     THREADS_FLAG="--enable-threads"
     CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
     CYGPATH="cygpath -m"
-    SO_EXT="dll"
     ;;
 
   Linux-x86)
@@ -71,7 +69,6 @@ case "$IJ_PLATFORM" in
     # http://theocacao.com/document.page/552
     CFLAGS="-arch i386 -mmacosx-version-min=10.6 -DNS_BUILD_32_LIKE_64 $CFLAGS"
     AQUA_FLAG="--enable-aqua"
-    SO_EXT="dylib"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
     ;;
@@ -80,7 +77,6 @@ case "$IJ_PLATFORM" in
     CFLAGS="-arch arm64 -mmacosx-version-min=10.6 $CFLAGS"
     CFLAGS="-DSTDC_HEADERS $CFLAGS"
     AQUA_FLAG="--enable-aqua"
-    SO_EXT="dylib"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
     ;;
@@ -156,8 +152,6 @@ cat > Makefile << EOF
 
 PREFIX          = \$(TOP_BUILDDIR)/out
 KIT_PREFIX      = \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
-
-SO_EXT          = $SO_EXT
 
 SEDI            = $SEDI
 

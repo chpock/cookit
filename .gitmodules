@@ -10,3 +10,6 @@
 [submodule "src/thread"]
 	path = src/thread
 	url = https://github.com/tcltk/thread.git
+[submodule "src/tktable"]
+	path = src/tktable
+	url = https://github.com/chpock/tktable.git

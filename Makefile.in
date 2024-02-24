@@ -140,12 +140,11 @@ work/stamp-tktable: tcl tk
 		--with-tcl=$(PREFIX)/lib \
 		--with-tk=$(PREFIX)/lib \
 		$(THREADS_FLAG)
-# Patch Makefile to enable parallel builds. See:
-# https://github.com/wjoye/tktable/pull/4
-	$(SEDI) -e 's/^\(all:\).*/\1 tkTable.tcl.h\'"`printf '\n\t'`"'\$$(MAKE) binaries libraries doc/' \
-		work/tktable/Makefile
-	cd work/tktable && $(MAKE) all
-	cd work/tktable && $(MAKE) install-binaries
+# Make dll file executable on windows
+	$(if $(filter $(IJ_PLATFORM),Windows),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tktable/Makefile,@:)
+# Don't include python source code
+	$(SEDI) 's/[^[:space:]]*tktable.py//' work/tktable/Makefile
+	cd work/tktable && $(MAKE) all install-binaries
 	touch $@
 
 tkdnd: work/stamp-tkdnd
@@ -174,8 +173,9 @@ ifeq ($(IJ_PLATFORM),Windows)
 	$(SEDI) -e 's/^MAKE_LIB[[:space:]]*=.*/& -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic/' \
 		work/tkdnd/Makefile
 endif
+# Make dll file executable on windows
+	$(if $(filter Windows,$(IJ_PLATFORM)),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tkdnd/Makefile,@:)
 	cd work/tkdnd && $(MAKE) all install-binaries
-	chmod +x "$(KIT_PREFIX)"/lib/tkdnd*/*.$(SO_EXT)
 	touch $@
 
 ffidl: work/stamp-ffidl

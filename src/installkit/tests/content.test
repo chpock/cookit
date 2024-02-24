@@ -38,7 +38,7 @@ foreach { pkgName pkgVersion constraints } {
     Thread              2.6.6    {win}
     msgcat              1.4.2    {}
     registry            1.2.1    {win}
-    Tktable             2.10     {}
+    Tktable             2.11.1   {}
     twapi               1.1      {win}
     Ffidl               0.8      {win}
     tkdnd               2.9.4    {}
