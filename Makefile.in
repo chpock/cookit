@@ -151,6 +151,7 @@ work/stamp-tktable: work/stamp-tcl work/stamp-tk
 	$(if $(filter $(IJ_PLATFORM),Windows),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tktable/Makefile,@:)
 # Don't include python source code
 	$(SEDI) 's/[^[:space:]]*tktable.py//' work/tktable/Makefile
+	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/Tktable*
 	cd work/tktable && $(MAKE) all install-binaries
 	touch $@
 
@@ -183,6 +184,7 @@ endif
 # Make dll file executable on windows
 	$(if $(filter Windows,$(IJ_PLATFORM)),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tkdnd/Makefile,@:)
 	cd work/tkdnd && $(MAKE) all install-binaries
+	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/tkdnd*
 	touch $@
 
 ffidl: work/stamp-ffidl
@@ -198,6 +200,7 @@ work/stamp-ffidl: work/stamp-tcl
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/ffidl && $(MAKE) all install-binaries
 	mv $(KIT_PREFIX)/lib/Ffidl* $(KIT_PREFIX)/lib/ffidl
+	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/ffidl
 	touch $@
 
 twapi: work/stamp-twapi
