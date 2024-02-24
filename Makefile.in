@@ -3,6 +3,16 @@ BUILD_ENV = \
 	CC="$(CC)" CXX="$(CXX)" RC="$(RC)" STRIP="$(STRIP)" \
 	PKG_CONFIG="$(PKG_CONFIG)"
 
+ALL_TARGETS = tcl tk miniarc thread zlib installkit tktable tkdnd ffidl twapi
+
+.PHONY: $(ALL_TARGETS)
+
+.PHONY: $(patsubst %,check-%,$(ALL_TARGETS))
+
+.PHONY: $(patsubst %,clean-%,$(ALL_TARGETS))
+
+.PHONY: all clean check dist distclean
+
 # Path to UPX
 PATH := $(PATH):$(TOP_SRCDIR)/src/installkit/tools/$(IJ_PLATFORM)
 export PATH
@@ -40,7 +50,7 @@ endif
 	touch $@
 
 tk: work/stamp-tk
-work/stamp-tk: tcl
+work/stamp-tk: work/stamp-tcl
 	mkdir -p work/tk
 	cd work/tk || exit; \
 	 test -f config.status \
@@ -65,7 +75,7 @@ endif
 	touch $@
 
 miniarc: work/stamp-miniarc
-work/stamp-miniarc: tcl zlib
+work/stamp-miniarc: work/stamp-tcl work/stamp-zlib
 	mkdir -p work/miniarc
 	cd work/miniarc || exit; \
 	 test -f config.status \
@@ -78,7 +88,7 @@ work/stamp-miniarc: tcl zlib
 	touch $@
 
 thread: work/stamp-thread
-work/stamp-thread: tcl
+work/stamp-thread: work/stamp-tcl
 	mkdir -p work/thread
 	cd work/thread || exit; \
 	 test -f config.status \
@@ -101,7 +111,7 @@ work/stamp-thread: tcl
 # needed on pretty much every other architecture.
 #
 zlib: work/stamp-zlib
-work/stamp-zlib: tcl
+work/stamp-zlib: work/stamp-tcl
 	rm -rf work/zlib
 	cp -r $(TOP_SRCDIR)/src/zlib work
 	. $(PREFIX)/lib/tclConfig.sh && \
@@ -113,7 +123,7 @@ work/stamp-zlib: tcl
 	touch $@
 
 installkit: work/stamp-installkit
-work/stamp-installkit: tcl tk zlib miniarc
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-zlib work/stamp-miniarc
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
@@ -130,7 +140,7 @@ work/stamp-installkit: tcl tk zlib miniarc
 	touch $@
 
 tktable: work/stamp-tktable
-work/stamp-tktable: tcl tk
+work/stamp-tktable: work/stamp-tcl work/stamp-tk
 	mkdir -p work/tktable
 	cd work/tktable || exit; \
 	 test -f config.status \
@@ -148,7 +158,7 @@ work/stamp-tktable: tcl tk
 	touch $@
 
 tkdnd: work/stamp-tkdnd
-work/stamp-tkdnd: tcl tk
+work/stamp-tkdnd: work/stamp-tcl work/stamp-tk
 	mkdir -p work/tkdnd
 	cd work/tkdnd || exit; \
 	 test -f config.status \
@@ -179,7 +189,7 @@ endif
 	touch $@
 
 ffidl: work/stamp-ffidl
-work/stamp-ffidl: tcl
+work/stamp-ffidl: work/stamp-tcl
 	mkdir -p work/ffidl
 	cd work/ffidl || exit; \
 	 test -f config.status \
@@ -214,8 +224,6 @@ clean-tk:
 	rm -rf work/tk work/stamp-tk
 clean-zlib:
 	rm -rf work/zlib work/stamp-zlib
-clean-tkpng:
-	rm -rf work/tkpng work/stamp-tkpng
 clean-miniarc:
 	rm -rf work/miniarc work/stamp-miniarc
 clean-thread:
@@ -247,7 +255,6 @@ define run-check
     $(if $(if $(CHECK_UNSAFE),1,$(filter $1,1)),mkdir -p tests && $(CHECK_CMD) `$(CYGPATH) $2` $(CHECK_VERBOSE) | tr -d '\r' | tee $@.output && grep -q 'Failed[[:space:]]\+0$$' $@.output,@echo Skipping unsafe check $@)
 endef
 
-.PHONY: check $(patsubst %,check-%,$(TARGETS))
 check: $(patsubst %,check-%,$(TARGETS))
 
 check-tcl:
