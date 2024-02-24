@@ -25,16 +25,8 @@ case $OS in
     IRIX*)
         PLATFORM=IRIX-mips
         ;;
-    Linuxx)
-        if test -d /lib64; then
-            LIBC=`echo /lib64/libc-*|sed -e 's/.*-\([0-9]\)\.\([0-9]\).*/\1\2/'`
-        else
-            LIBC=`echo /lib/libc-*|sed -e 's/.*-\([0-9]\)\.\([0-9]\).*/\1\2/'`
-        fi
-
-        if test "$LIBC" -lt 23; then
-            OS=Linux-$LIBC
-        fi
+    *Linux)
+        STRIP_ARGS="$STRIP_ARGS --remove-section=.comment --remove-section=.note"
         ;;
     SunOS)
         OS=Solaris
