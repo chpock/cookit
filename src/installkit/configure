@@ -13,6 +13,7 @@ help ( ) {
   echo "--with-zlib=[DIR]      the directory where zlib is located"
   echo "--with-zip=[FILE]      the location of the zip program binary"
   echo "--without-upx          Do not compress installkit with UPX (Linux only)"
+  echo "--with-upx=[FILE]      the location of the UPX program binary"
   echo
   exit 0
 }
@@ -25,13 +26,6 @@ ABS_TOP_SRCDIR=`cd "$TOP_SRCDIR" && /bin/pwd`
 PLATFORM="`uname`"
 BUILD="static"
 UPX="`command -v upx 2>/dev/null`"
-
-if test -f "$UPX"; then
-  UPX="$UPX --lzma"
-else
-  UPX="echo"
-fi
-
 LZMA_SRCDIR=/no-lzma-src
 MINIARC_SRCDIR=/no-miniarc-src
 TKDIR=../../lib
@@ -46,6 +40,7 @@ do
   --version=*)     KIT_VERSION=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --prefix=*)      PREFIX=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --without-upx)   WITH_UPX=no ;;
+  --with-upx=*)    UPX=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --with-lzma-src=*) LZMA_SRCDIR=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --with-miniarc-src=*) MINIARC_SRCDIR=`echo $i | sed -e 's/^[^=]*=//g'` ;;
   --with-tcl=*)    TCLDIR=`echo $i | sed -e 's/^[^=]*=//g'` ;;
@@ -55,6 +50,12 @@ do
   *) echo "Invalid configure option $i" ; help ; exit 1 ;;
   esac
 done
+
+if test -f "$UPX"; then
+  UPX="$UPX --lzma"
+else
+  UPX="echo"
+fi
 
 if test -f $TCLDIR/tclConfig.sh; then
   TCLCONFIG=$TCLDIR/tclConfig.sh

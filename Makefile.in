@@ -13,10 +13,6 @@ ALL_TARGETS = tcl tk miniarc thread zlib installkit tktable tkdnd ffidl twapi
 
 .PHONY: all clean check dist distclean
 
-# Path to UPX
-PATH := $(PATH):$(TOP_SRCDIR)/src/installkit/tools/$(IJ_PLATFORM)
-export PATH
-
 all: $(TARGETS)
 	@echo
 	@echo "Now type: make dist"
@@ -100,6 +96,7 @@ work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-zlib work/stamp-m
 		--version="$(KIT_VERSION)" \
 		--prefix=$(KIT_PREFIX) \
 		--debug=$(IK_DEBUG) \
+		--with-upx=$(TOP_SRCDIR)/src/installkit/tools/$(IJ_PLATFORM)/upx \
 		--with-miniarc-src=$(TOP_SRCDIR)/src/miniarc \
 		--with-lzma-src=$(TOP_SRCDIR)/src/miniarc/generic/LzmaC \
 		--with-tcl=$(PREFIX)/lib \
