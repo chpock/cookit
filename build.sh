@@ -43,7 +43,7 @@ getcolor() {
 
 if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
 
-    BUILD_ALL="$BUILD_HOME/build-all"
+    BUILD_ALL="$BUILD_HOME/all"
 
     rm -rf "$BUILD_ALL" "$BUILD_HOME/installkit"-*
 
@@ -54,7 +54,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
 
     for PLATFORM; do
         rm -f "$BUILD_HOME/$PLATFORM".*
-        rm -rf "$BUILD_HOME/build-$PLATFORM"
+        rm -rf "$BUILD_HOME/$PLATFORM"
         LOG_OUT="$BUILD_HOME/$PLATFORM.log"
         #{
         #    {
@@ -83,7 +83,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     if [ -n "$BUILD_ALL" ]; then
         mkdir -p "$BUILD_ALL"
         for PLATFORM; do
-            cp -r "$BUILD_HOME/build-$PLATFORM/kit"/* "$BUILD_ALL"
+            cp -r "$BUILD_HOME/$PLATFORM/kit"/* "$BUILD_ALL"
         done
         VERSION="$(cat "$SELF_HOME"/version)"
         PACKAGE="$BUILD_HOME/installkit-$VERSION.tar.gz"
@@ -122,7 +122,7 @@ if [ -n "$PLATFORM" ]; then
 
     log "Start local build..."
 
-    BUILD_DIR="$BUILD_HOME/build-$PLATFORM"
+    BUILD_DIR="$BUILD_HOME/$PLATFORM"
     if [ -d "$BUILD_DIR" ]; then
         rm -rf "$BUILD_DIR"/*
     else
@@ -191,7 +191,7 @@ log "Start remote build..."
 
 PLATFORM="$2"
 
-BUILD_DIR="$BUILD_HOME/build-$PLATFORM"
+BUILD_DIR="$BUILD_HOME/$PLATFORM"
 rm -rf "$BUILD_DIR"
 
 vagrant() {
@@ -297,7 +297,7 @@ log "Start build..."
 logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && IK_DEBUG=\"$IK_DEBUG\" MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
 log "Sync build results..."
 [ -d "$BUILD_DIR" ] || mkdir -p "$BUILD_DIR"
-logcmd rsync -a --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$VAGRANT_HOST:/tmp/work/build-$PLATFORM/*" "$BUILD_DIR"
+logcmd rsync -a --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$VAGRANT_HOST:/tmp/work/$PLATFORM/*" "$BUILD_DIR"
 
 vagrant_unlock
 
