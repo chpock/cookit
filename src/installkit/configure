@@ -142,7 +142,6 @@ TARGETS="\$(PROG)"
 ## Setup dynamic options.
 DYNAMIC_LFLAGS="-lc -lm -L/usr/X11/lib -L/usr/X11R6/lib"
 DYNAMIC_CFLAGS="$CFLAGS"
-STRIP_ARGS="--strip-all"
 
 CYGPATH="echo"
 
@@ -187,7 +186,6 @@ case $PLATFORM in
         DYNAMIC_LFLAGS="-lc -lm"
         DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS -framework CoreFoundation"
         DYNAMIC_LFLAGS="$DYNAMIC_LFLAGS $DYNAMIC_CFLAGS"
-        STRIP_ARGS="-Sx"
         ;;
 
   *)
@@ -201,6 +199,9 @@ fi
 sed -e s/\'//g $TCLCONFIG > tclConfig.sh
 sed -e s/\'//g $TKCONFIG > tkConfig.sh
 
+: ${STRIP:=strip}
+: ${RC:=windres}
+
 cat > environment.conf << EOF
 ## installkit build configuration
 ## Created with $0 $@
@@ -209,8 +210,8 @@ KIT_VERSION = $KIT_VERSION
 
 EXE    = $EXE
 
-RC     = ${RC-windres}
-STRIP  = ${STRIP-strip}
+RC     = $RC
+STRIP  = $STRIP
 
 ## The package versions we are using.
 TKVERSION_DIR=$TKVERSION_DIR
@@ -231,8 +232,6 @@ MINIARC_SRCDIR=$MINIARC_SRCDIR
 ZLIB_PREFIX=$ZLIBDIR
 
 CYGPATH = $CYGPATH
-
-STRIP_ARGS = $STRIP_ARGS
 
 ## Name of the UPX binary
 UPX = $UPX

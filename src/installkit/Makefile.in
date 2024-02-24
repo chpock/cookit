@@ -18,17 +18,17 @@ vfsdir:
 
 $(PROG)_bare: $(OBJS)
 	$(CC) $(LDFLAGS) $(IK_CFLAGS) -o $(PROG)_bare $(OBJS) $(LIBS) $(DYNAMIC_LIBS) $(DYNAMIC_LFLAGS)
-	$(STRIP) $(STRIP_ARGS) "$@"
+	STRIP="$(STRIP)" $(TOP_SRCDIR)/../../helper.sh strip-file "$@"
 
 $(PROG)_bare.exe: $(OBJS) installkit.user.res.o
 	$(CC) $(LDFLAGS) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)_bare.exe $(OBJS) \
 	    installkit.user.res.o $(LIBS) $(DYNAMIC_LIBS)
-	$(STRIP) $(STRIP_ARGS) "$@"
+	STRIP="$(STRIP)" $(TOP_SRCDIR)/../../helper.sh strip-file "$@"
 
 $(PROG)A_bare.exe: $(OBJS) installkit.admin.res.o
 	$(CC) $(LDFLAGS) $(IK_CFLAGS) $(DYNAMIC_LFLAGS) -o $(PROG)A_bare.exe $(OBJS) \
 	    installkit.admin.res.o $(LIBS) $(DYNAMIC_LIBS)
-	$(STRIP) $(STRIP_ARGS) "$@"
+	STRIP="$(STRIP)" $(TOP_SRCDIR)/../../helper.sh strip-file "$@"
 
 $(PROG)$(EXE): $(PROG)_bare$(EXE)
 	$(RM) $(PROG)$(EXE)

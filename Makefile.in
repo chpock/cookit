@@ -122,6 +122,7 @@ work/stamp-tktable: work/stamp-tcl work/stamp-tk
 		work/tktable/Makefile
 	cd work/tktable && $(MAKE) all
 	cd work/tktable && $(MAKE) install-binaries
+	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/Tktable*
 	touch $@
 
 tkdnd: work/stamp-tkdnd
@@ -144,6 +145,7 @@ ifeq ($(IJ_PLATFORM),Windows)
 endif
 	cd work/tkdnd && $(MAKE) all install-binaries
 	chmod +x "$(KIT_PREFIX)"/lib/tkdnd*/*.$(SO_EXT)
+	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/tkdnd*
 	touch $@
 
 ffidl: work/stamp-ffidl
@@ -159,6 +161,7 @@ work/stamp-ffidl: work/stamp-tcl
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/ffidl && $(MAKE) all install-binaries
 	mv $(KIT_PREFIX)/lib/Ffidl* $(KIT_PREFIX)/lib/ffidl
+	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/ffidl
 	touch $@
 
 twapi: work/stamp-twapi
