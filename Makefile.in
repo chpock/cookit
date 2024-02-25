@@ -3,7 +3,7 @@ BUILD_ENV = \
 	CC="$(CC)" CXX="$(CXX)" RC="$(RC)" STRIP="$(STRIP)" \
 	PKG_CONFIG="$(PKG_CONFIG)"
 
-ALL_TARGETS = tcl tk miniarc thread zlib installkit tktable tkdnd ffidl twapi
+ALL_TARGETS = tcl tk miniarc thread installkit tktable tkdnd ffidl twapi
 
 .PHONY: $(ALL_TARGETS)
 
@@ -36,6 +36,9 @@ endif
 # Match Makefile to avoid an error during parallel builds
 	$(SEDI) -E \
 		-e 's/(install-msgs|install-tzdata):/& $$(TCLSH)/' \
+		work/tcl/Makefile
+# Use our zlib
+	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/src/zlib#' \
 		work/tcl/Makefile
 	cd work/tcl \
 	 && $(BUILD_ENV) $(MAKE) all install-binaries install-libraries
@@ -71,14 +74,13 @@ endif
 	touch $@
 
 miniarc: work/stamp-miniarc
-work/stamp-miniarc: work/stamp-tcl work/stamp-zlib
+work/stamp-miniarc: work/stamp-tcl
 	mkdir -p work/miniarc
 	cd work/miniarc || exit; \
 	 test -f config.status \
 	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/miniarc/configure \
 		--prefix=$(PREFIX) \
-		--with-tcl=$(PREFIX)/lib \
-		--with-zlib=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/miniarc && $(MAKE) all install
 	touch $@
@@ -99,27 +101,8 @@ work/stamp-thread: work/stamp-tcl
 	rm -rf "$(TOP_SRCDIR)"/src/thread/tclconfig
 	touch $@
 
-# Note: We always build zlib as a static archive library (i.e. libz.a), but
-# pass in shared-library flags so that it is compiled as PIC code, thereby
-# allowing it to be statically linked into shared libraries.
-#
-# Note: Yes, the shared library flags are not needed on x86. They _are_
-# needed on pretty much every other architecture.
-#
-zlib: work/stamp-zlib
-work/stamp-zlib: work/stamp-tcl
-	rm -rf work/zlib
-	cp -r $(TOP_SRCDIR)/src/zlib work
-	. $(PREFIX)/lib/tclConfig.sh && \
-	 cd work/zlib && \
-	 CC="$(CC)" \
-	 CFLAGS="$(CFLAGS) $$TCL_SHLIB_CFLAGS" \
-	 $(CONFIG_SHELL) ./configure --prefix=$(PREFIX)
-	cd work/zlib && $(MAKE) install
-	touch $@
-
 installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-zlib work/stamp-miniarc
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-miniarc
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
@@ -151,8 +134,8 @@ work/stamp-tktable: work/stamp-tcl work/stamp-tk
 	$(if $(filter $(IJ_PLATFORM),Windows),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tktable/Makefile,@:)
 # Don't include python source code
 	$(SEDI) 's/[^[:space:]]*tktable.py//' work/tktable/Makefile
-	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/Tktable*
 	cd work/tktable && $(MAKE) all install-binaries
+	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/Tktable*
 	touch $@
 
 tkdnd: work/stamp-tkdnd
@@ -222,8 +205,6 @@ clean-tcl:
 	rm -rf work/tcl work/stamp-tcl
 clean-tk:
 	rm -rf work/tk work/stamp-tk
-clean-zlib:
-	rm -rf work/zlib work/stamp-zlib
 clean-miniarc:
 	rm -rf work/miniarc work/stamp-miniarc
 clean-thread:
@@ -261,8 +242,6 @@ check-tcl:
 	$(call run-check, 0, $(TOP_SRCDIR)/src/tcl/tests/all.tcl)
 check-tk:
 	$(call run-check, 0, $(TOP_SRCDIR)/src/tk/tests/all.tcl)
-check-zlib:
-	@: no-op
 check-miniarc:
 	@: no-op
 check-thread:

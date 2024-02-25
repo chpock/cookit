@@ -9,6 +9,7 @@
 - [MacOS-X] the minimum version of MacOS is 10.6 because that is the minimum MacOS version for Tcl/Tk 8.6.8+. The previous minimum version of MacOS was 10.5.
 - [MacOS-X] add tkdnd package for this platform
 - Update Tktable package to version 2.11.1 (from 2.10.0)
+- Update zlib to version 1.3.1
 
 ## 1.3.1 - 2024-02-19
 

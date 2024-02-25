@@ -13,3 +13,6 @@
 [submodule "src/tktable"]
 	path = src/tktable
 	url = https://github.com/chpock/tktable.git
+[submodule "src/zlib"]
+	path = src/zlib
+	url = https://github.com/madler/zlib.git
