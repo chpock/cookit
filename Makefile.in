@@ -3,7 +3,11 @@ BUILD_ENV = \
 	CC="$(CC)" CXX="$(CXX)" RC="$(RC)" STRIP="$(STRIP)" \
 	PKG_CONFIG="$(PKG_CONFIG)"
 
-ALL_TARGETS = tcl tk miniarc thread installkit tktable tkdnd ffidl twapi
+ALL_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd ffidl twapi
+
+ifeq ($(IJ_PLATFORM),Windows)
+    ALL_TARGETS += thread
+endif
 
 .PHONY: $(ALL_TARGETS)
 
@@ -46,6 +50,10 @@ endif
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tcl/Makefile && \
 		cd work/tcl && $(BUILD_ENV) $(MAKE) install-headers || : no-op
+ifeq ($(IJ_PLATFORM),Windows)
+# Fix for the build with MinGW. Library is specified in wrong format.
+	$(SEDI) -e 's/ lib\(tcl[^.]\+\)\.a/ -l\1/g' $(PREFIX)/lib/tclConfig.sh
+endif
 	touch $@
 
 tk: work/stamp-tk
@@ -73,16 +81,33 @@ ifeq ($(IJ_PLATFORM),MacOS-X)
 endif
 	touch $@
 
-miniarc: work/stamp-miniarc
-work/stamp-miniarc: work/stamp-tcl
-	mkdir -p work/miniarc
-	cd work/miniarc || exit; \
+tclvfs: work/stamp-tclvfs
+work/stamp-tclvfs: work/stamp-tcl
+	mkdir -p work/tclvfs
+# These files are necessary for installation. See:
+	cd "$(TOP_SRCDIR)"/src/tclvfs && tar xzf ../thread.files.tar.gz
+	cd work/tclvfs || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/miniarc/configure \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tclvfs/configure \
 		--prefix=$(PREFIX) \
-		--with-tcl=$(PREFIX)/lib
+		--with-tcl=$(PREFIX)/lib \
+		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/miniarc && $(MAKE) all install
+	cd work/tclvfs && $(MAKE) all install install-lib-binaries
+	rm -rf "$(TOP_SRCDIR)"/src/tclvfs/tclconfig
+	touch $@
+
+cookfs: work/stamp-cookfs
+work/stamp-cookfs: work/stamp-tcl
+	mkdir -p work/cookfs
+	cd work/cookfs || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/cookfs/configure \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--enable-shared=no \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/cookfs && $(MAKE) all install
 	touch $@
 
 thread: work/stamp-thread
@@ -93,7 +118,8 @@ work/stamp-thread: work/stamp-tcl
 	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/thread/configure \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
-		$(SHARED_FLAG)
+		--enable-shared=no \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 # These files are necessary for installation. See:
 # https://github.com/tcltk/thread/blob/0b17425018a6cd3a0fdca30ce3c5fced28d25033/.travis.yml#L124-L127
 	cd "$(TOP_SRCDIR)"/src/thread && tar xzf ../thread.files.tar.gz
@@ -102,21 +128,22 @@ work/stamp-thread: work/stamp-tcl
 	touch $@
 
 installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-miniarc
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-thread work/stamp-twapi)
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
 	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/installkit/configure \
-		--version="$(KIT_VERSION)" \
 		--prefix=$(KIT_PREFIX) \
-		--debug=$(IK_DEBUG) \
-		--with-upx=$(TOP_SRCDIR)/src/installkit/tools/$(IJ_PLATFORM)/upx \
-		--with-miniarc-src=$(TOP_SRCDIR)/src/miniarc \
-		--with-lzma-src=$(TOP_SRCDIR)/src/miniarc/generic/LzmaC \
+		--exec-prefix=$(KIT_PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
 		--with-tk=$(PREFIX)/lib \
-		--with-zlib=$(PREFIX)
-	cd work/installkit && $(MAKE) all install
+		--with-lib-thread=`echo $(PREFIX)/lib/thread*/*thread*.a` \
+		--with-lib-twapi=`echo $(PREFIX)/lib/twapi*/*twapi*.a` \
+		--with-lib-cookfs=`echo $(PREFIX)/lib/cookfs*/*cookfs*.a` \
+		--with-lib-vfs=`echo $(PREFIX)/lib/vfs*/*vfs*.a` \
+		--with-upx-command="$(UPX)" \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/installkit && $(MAKE) all install-binaries
 	touch $@
 
 tktable: work/stamp-tktable
@@ -187,10 +214,18 @@ work/stamp-ffidl: work/stamp-tcl
 	touch $@
 
 twapi: work/stamp-twapi
-work/stamp-twapi:
-	mkdir -p "$(KIT_PREFIX)"/lib/twapi
-	cp -r "$(TOP_SRCDIR)/src/twapi"/* "$(KIT_PREFIX)"/lib/twapi
-	rm -rf "$(KIT_PREFIX)"/lib/twapi/tests
+work/stamp-twapi: work/stamp-tcl
+	mkdir -p work/twapi
+	cd work/twapi || exit; \
+	 test -f config.status \
+	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/twapi/configure \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--enable-shared=no \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/twapi && $(MAKE) all install install-lib-binaries
+	cp -f work/twapi/twapi_entry.tcl work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
+	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
 	touch $@
 
 dist:
@@ -205,8 +240,10 @@ clean-tcl:
 	rm -rf work/tcl work/stamp-tcl
 clean-tk:
 	rm -rf work/tk work/stamp-tk
-clean-miniarc:
-	rm -rf work/miniarc work/stamp-miniarc
+clean-cookfs:
+	rm -rf work/cookfs work/stamp-cookfs
+clean-tclvfs:
+	rm -rf work/tclvfs work/stamp-tclvfs
 clean-thread:
 	rm -rf work/thread work/stamp-thread
 clean-installkit:
@@ -224,38 +261,43 @@ clean:
 	rm -rf kit out work
 	rm -f $(IJ_PLATFORM).zip
 
-# CHECK_VERBOSE = -verbose "body error start"
-
-CHECK_CMD = cd tests && \
-    DISPLAY=:0 \
-    TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/src/installkit/tests/helper.sh $@`" \
-    TCL8_0_TM_PATH=`$(CYGPATH) "$(TOP_SRCDIR)/src/installkit/tests"` \
-    $(KIT_PREFIX)/bin/installkit
+ifneq ($(VERBOSE),)
+    CHECKFLAGS += -verbose "body error start"
+endif
 
 define run-check
-    $(if $(if $(CHECK_UNSAFE),1,$(filter $1,1)),mkdir -p tests && $(CHECK_CMD) `$(CYGPATH) $2` $(CHECK_VERBOSE) | tr -d '\r' | tee $@.output && grep -q 'Failed[[:space:]]\+0$$' $@.output,@echo Skipping unsafe check $@)
+    $(if $(if $(CHECK_UNSAFE),1,$(filter $1,1)),mkdir -p tests && cd tests && \
+        $(if $(filter $2,tcl),INSTALLKIT_CONSOLE=1,INSTALLKIT_GUI=1) \
+        DISPLAY=:0 \
+        TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/src/installkit/tests/helper.sh $@`" \
+        $(KIT_PREFIX)/bin/installkit `$(CYGPATH) $3` $(CHECKFLAGS) | \
+        tr -d '\r' | \
+        tee $@.output && \
+        grep -q 'Failed[[:space:]]\+0$$' $@.output,@echo Skipping unsafe check $@)
 endef
 
-check: $(patsubst %,check-%,$(TARGETS))
+check: $(patsubst %,check-%,$(ALL_TARGETS))
 
 check-tcl:
-	$(call run-check, 0, $(TOP_SRCDIR)/src/tcl/tests/all.tcl)
+	$(call run-check, 0, tcl, $(TOP_SRCDIR)/src/tcl/tests/all.tcl)
 check-tk:
-	$(call run-check, 0, $(TOP_SRCDIR)/src/tk/tests/all.tcl)
-check-miniarc:
-	@: no-op
+	$(call run-check, 0, tk, $(TOP_SRCDIR)/src/tk/tests/all.tcl)
+check-cookfs:
+	$(call run-check, 1, tcl, $(TOP_SRCDIR)/src/cookfs/tests/all.tcl)
+check-tclvfs:
+	$(call run-check, 1, tcl, $(TOP_SRCDIR)/src/tclvfs/tests/all.tcl)
 check-thread:
-	$(call run-check, 1, $(TOP_SRCDIR)/src/thread/tests/all.tcl)
+	$(call run-check, 1, tcl, $(TOP_SRCDIR)/src/thread/tests/all.tcl)
 check-installkit:
-	$(call run-check, 1, $(TOP_SRCDIR)/src/installkit/tests/all.tcl)
+	$(call run-check, 1, tcl, $(TOP_SRCDIR)/src/installkit/tests/all.tcl)
 check-tktable:
-	$(call run-check, 1, $(TOP_SRCDIR)/src/tktable/tests/all.tcl)
+	$(call run-check, 1, tk, $(TOP_SRCDIR)/src/tktable/tests/all.tcl)
 check-tkdnd:
-	@: no-op
+	$(call run-check, 1, tk, $(TOP_SRCDIR)/src/tkdnd/tests/all.tcl)
 check-ffidl:
 	@: no-op
 check-twapi:
-	$(call run-check, 0, $(TOP_SRCDIR)/src/twapi/tests/all.tcl)
+	$(call run-check, 0, tcl, $(TOP_SRCDIR)/src/twapi/tests/all.tcl)
 
 distclean: clean
 	rm -f Makefile

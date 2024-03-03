@@ -3,13 +3,17 @@
 ## Unreleased (1.4.0)
 
 ### Changes (potential incompatibilities)
-- Update Tcl/Tk from version 8.6b1.2 to 8.6.13 for all platforms
+- Update Tcl/Tk from version 8.6b1.2 to 8.6.14 for all platforms
 - Remove Itcl package. It was broken in IJ 1.3.0. It is only used to convert projects of versions 1.1.0.0 and below.
-- Update thread package from 2.6.6 to 2.8.8
+- Update thread package to version 2.8.9 (from 2.6.6)
 - [MacOS-X] the minimum version of MacOS is 10.6 because that is the minimum MacOS version for Tcl/Tk 8.6.8+. The previous minimum version of MacOS was 10.5.
 - [MacOS-X] add tkdnd package for this platform
 - Update Tktable package to version 2.11.1 (from 2.10.0)
 - Update zlib to version 1.3.1
+- [Windows] update twapi package to version 4.7.2 (from 1.1.5)
+
+### Internal changes
+- VFS engine was migrated to tclvfs+CookFS
 
 ## 1.3.1 - 2024-02-19
 

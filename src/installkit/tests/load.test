@@ -1,0 +1,89 @@
+# installkit tests - load from VFS
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# These tests check the expected content in installkit vfs
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+test load-1 {Prepare VFS with SO file(s)} -setup {} -body {
+    set vfs [tcltest::makeFile {} load.vfs]
+    vfs::cookfs::Mount $vfs $vfs
+    # Use Tktable library for tests
+    package require Tktable
+    set so [lsearch -exact -index 1 -inline [info loaded] Tktable]
+    set prefix "Tktable"
+    if { $so eq "" } {
+        error "could not find Tktable SO file"
+    }
+    set so [lindex $so 0]
+    set so_name [file tail $so]
+    set so_vfs1 [file join $vfs "${so_name}1"]
+    set so_vfs2 [file join $vfs "${so_name}2"]
+    file copy -force $so $so_vfs1
+    file copy -force $so $so_vfs2
+    vfs::unmount $vfs
+    return OK
+} -result OK
+
+# We define the following variables by the test above:
+#
+# $vfs - vfs file
+# $so_vfs1 - the first SO file in the VFS
+# $so_vfs2 - the second SO file in the VFS
+# $prefix  - the prefix to be used when loading the SO
+#
+
+# All of the following tests will be run in a separate interpetator
+# to ensure that the SO is loading and unloading correctly.
+
+set base_script [list]
+foreach v {vfs so_vfs1 so_vfs2 prefix} {
+    set $v [list [set $v]]
+    lappend base_script "set $v \$$v"
+}
+lappend base_script {vfs::cookfs::Mount $vfs $vfs}
+set base_script [join $base_script \n]
+
+test load-2.1 {Load shared object from VFS} -setup {} -body {
+    set script $base_script
+    append script {
+        load $so_vfs1 $prefix
+        vfs::unmount $vfs
+        puts OK
+        exit
+    }
+    set script [subst -nobackslashes -nocommands $script]
+    set script [tcltest::makeFile $script script]
+    exec [interpreter] $script
+} -result OK -cleanup {
+    file delete -force $script
+}
+
+test load-2.1 {Load 2 shared objects from VFS} -setup {} -body {
+    set script $base_script
+    append script {
+        load $so_vfs1 $prefix
+        load $so_vfs2 $prefix
+        vfs::unmount $vfs
+        puts OK
+        exit
+    }
+    set script [subst -nobackslashes -nocommands $script]
+    set script [tcltest::makeFile $script script]
+    exec [interpreter] $script
+} -result OK -cleanup {
+    file delete -force $script
+}
+
+# cleanup
+::tcltest::cleanupTests
+return

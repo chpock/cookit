@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# debug / dev / release
+: ${BUILD_TYPE:=dev}
+
 ABS_TOP_BUILDDIR=`/bin/pwd`
 
 TOP_SRCDIR=`dirname "$0"`
@@ -26,6 +29,7 @@ do
   case $i in
   -h|--help)       help ;;
   --debug)         IK_DEBUG=1
+                   BUILD_TYPE="debug"
                    echo "Extra debugging features enabled"
                    ;;
   *) echo "Invalid configure option $i" ; help ; exit 1 ;;
@@ -35,7 +39,7 @@ done
 echo
 
 TCL_SYSTEM=unix
-TARGETS="tcl tk"
+TARGETS="installkit"
 TCLSH="\$(PREFIX)/bin/tclsh8.6"
 AQUA_FLAG=
 SHARED_FLAG="--disable-shared --enable-static"
@@ -43,6 +47,12 @@ THREADS_FLAG="--disable-threads"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
 SEDI="sed -i"
+UPX="$ABS_TOP_SRCDIR/src/installkit/tools/$IJ_PLATFORM/upx"
+if [ "$BUILD_TYPE" = "dev" ]; then
+    UPX_ARGS="--lzma --overlay=strip"
+else
+    UPX_ARGS="--ultra-brute --overlay=strip"
+fi
 
 case "$IJ_PLATFORM" in
   Windows)
@@ -50,7 +60,7 @@ case "$IJ_PLATFORM" in
     TCLSH="\$(PREFIX)/bin/tclsh86s"
     TARGETS="$TARGETS thread"
     THREADS_FLAG="--enable-threads"
-    CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
+#    CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK -DHAVE_STRUCT_STAT64=1 $CFLAGS"
     CYGPATH="cygpath -m"
     ;;
 
@@ -79,6 +89,10 @@ case "$IJ_PLATFORM" in
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
+    # don't use UPX on MacOS for now due to multiple issues, like:
+    # https://github.com/upx/upx/issues/777
+    UPX="STRIP=\$(STRIP) $TOP_SRCDIR/helper.sh"
+    UPX_ARGS="strip-file"
     ;;
 
   MacOS-X-ppc)
@@ -86,10 +100,16 @@ case "$IJ_PLATFORM" in
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
+    # don't use UPX on MacOS for now due to multiple issues, like:
+    # https://github.com/upx/upx/issues/777
+    UPX="STRIP=\$(STRIP) $TOP_SRCDIR/helper.sh"
+    UPX_ARGS="strip-file"
     ;;
 esac
 
-TARGETS="$TARGETS zlib miniarc installkit tktable tkdnd"
+UPX="$UPX $UPX_ARGS"
+
+TARGETS="$TARGETS tktable tkdnd"
 
 case "$IJ_PLATFORM" in
   Windows)
@@ -100,6 +120,7 @@ esac
 if [ -n "$IK_DEBUG" ]; then
     SYMBOLS_FLAG="--enable-symbols"
     STRIP="echo"
+    UPX="echo"
 fi
 
 : ${CC:=${ARCH_TOOLS_PREFIX}gcc}
@@ -126,6 +147,8 @@ CXX             = $CXX
 PKG_CONFIG      = $PKG_CONFIG
 STRIP           = $STRIP
 RC              = $RC
+
+UPX             = $UPX
 
 CFLAGS          = $CFLAGS
 LDFLAGS         = $LDFLAGS

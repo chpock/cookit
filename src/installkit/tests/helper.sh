@@ -24,13 +24,17 @@ notfile() {
 }
 
 case "$1" in
-    check-thread)
-        case "$PLATFORM" in
-            Windows)
-                # This test generates an error that appears as a GUI message in Tk.
-                notfile tkt-84be1b5a73.test
-            ;;
-        esac
+#    check-thread)
+#        case "$PLATFORM" in
+#            Windows)
+#                # This test generates an error that appears as a GUI message in Tk.
+#                notfile tkt-84be1b5a73.test
+#            ;;
+#        esac
+#        ;;
+    check-tclvfs)
+        # Tests 4.1 and 4.2 depend on vfs::ns, which we don't ship
+        skip vfs-4.1 vfs-4.2
         ;;
     check-tcl)
         # installkit does not contain tzdata files and clock.test fails to

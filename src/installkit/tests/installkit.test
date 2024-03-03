@@ -1,0 +1,477 @@
+# installkit tests - installkit package
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+package require installkit
+
+# helpers
+proc getfile { fn } { return [read [set f [open $fn r]]][close $f] }
+
+# ::installkit::recursive_glob
+
+test ik-1.1 {A file as input} -setup {
+    set file [makeFile {} file]
+} -body {
+    ::installkit::recursive_glob $file *
+} -result {} -cleanup {
+    file delete -force $file
+}
+
+test ik-1.2 {An empty directory as input} -setup {
+    set dir [makeDirectory dir]
+} -body {
+    ::installkit::recursive_glob $dir *
+} -result {} -cleanup {
+    file delete -force $dir
+}
+
+test ik-1.3 {Non-existing directory as input} -setup {} -body {
+    ::installkit::recursive_glob wrong-dir *
+} -result {} -cleanup {}
+
+test ik-1.4 {An directory with one file as input} -setup {
+    set dir [makeDirectory dir]
+    makeFile {} [file join $dir file]
+} -body {
+    llength [::installkit::recursive_glob $dir *]
+} -result 1 -cleanup {
+    file delete -force $dir
+}
+
+test ik-1.5 {An directory with 3 files as input} -setup {
+    set dir [makeDirectory dir]
+    makeFile {} [file join $dir file1]
+    makeFile {} [file join $dir file2.foo]
+    makeFile {} [file join $dir file3]
+} -body {
+    list \
+        [llength [::installkit::recursive_glob $dir *]] \
+        [llength [::installkit::recursive_glob $dir *.foo]]
+} -result {3 1} -cleanup {
+    file delete -force $dir
+}
+
+test ik-1.6 {An directory tree as input} -setup {
+    set dir [makeDirectory dir]
+    makeFile {} [file join $dir file1]
+    makeFile {} [file join $dir file2.foo]
+    makeFile {} [file join $dir file3]
+    set subdir [makeDirectory subdir $dir]
+    makeFile {} [file join $subdir file2.foo]
+    makeFile {} [file join $subdir file3]
+} -body {
+    list \
+        [llength [::installkit::recursive_glob $dir *]] \
+        [llength [::installkit::recursive_glob $dir *.foo]]
+} -result {5 2} -cleanup {
+    file delete -force $dir
+}
+
+# ::installkit::tmpmount
+
+test ik-2.1 {::installkit::tmpmount} -body {
+    ::installkit::tmpmount
+} -result {/installkitvfs1}
+
+test ik-2.2 {::installkit::tmpmount, the first mount point is busy} -setup {
+    # cleanup the mount counter
+    unset ::installkit::tmpMountCount
+    # make busy mount point
+    set vfs [tcltest::makeFile {} vfs]
+    set tmpmount [::installkit::tmpmount]
+    vfs::cookfs::Mount $vfs $tmpmount
+    # cleanup the mount counter
+    unset ::installkit::tmpMountCount
+} -body {
+    ::installkit::tmpmount
+} -result {/installkitvfs2} -cleanup {
+    vfs::unmount $tmpmount
+    file delete -force $vfs
+}
+
+test ik-2.3 {::installkit::tmpmount, twice} -setup {
+    # cleanup the mount counter
+    unset ::installkit::tmpMountCount
+} -body {
+    list [::installkit::tmpmount] [::installkit::tmpmount]
+} -result {/installkitvfs1 /installkitvfs2}
+
+test ik-2.4 {::installkit::tmpmount, call the third time without cleanup} -body {
+    ::installkit::tmpmount
+} -result {/installkitvfs3}
+
+# ::installkit::addfiles
+
+test ik-3.1 {::installkit::addfiles} -setup {
+    set vfs [tcltest::makeFile {} vfs]
+    set dir [makeDirectory dir]
+    set f1 [makeFile {cf1} [file join $dir file1]]
+    set f2 [makeFile {cf2} [file join $dir file2.foo]]
+    set f3 [makeFile {cf3} [file join $dir file3]]
+    set subdir [makeDirectory subdir $dir]
+    set f1a [makeFile {cf1a} [file join $subdir file2.foo]]
+    set f2a [makeFile {cf2a} [file join $subdir file3]]
+} -body {
+    ::installkit::addfiles $vfs \
+        [list $f1 $f2  $f3  $f1a $f2a] \
+        [list f1  s/f2 x/f3 foo  bar ]
+    vfs::cookfs::Mount $vfs $vfs
+    join [concat \
+        [lsort [::installkit::recursive_glob $vfs *]] \
+        [list [getfile [file join $vfs s/f2]] [getfile [file join $vfs bar]]]] \n
+} -match glob -result {*/bar
+*/f1
+*/foo
+*/s/f2
+*/x/f3
+cf2
+
+cf2a
+} -cleanup {
+    vfs::unmount $vfs
+    file delete -force $vfs $dir
+}
+
+proc checkWrapArgs { args } {
+    array set a {
+        catalogs    {}
+        command     {}
+        executable  {}
+        icon        {}
+        level       6
+        mainScript  {}
+        method      zlib
+        packages    {}
+        password    {}
+        stubfile    {}
+        versionInfo {}
+        wrapFiles   {}
+        wrapMethods {}
+        wrapNames   {}
+    }
+    if { [llength $args] } {
+        array set a $args
+    }
+    return [lsort -stride 2 [array get a]]
+}
+
+# ::installkit::ParseWrapArgs
+
+test ik-4.1 {::installkit::ParseWrapArgs, default arguments} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a ""
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs] -cleanup {
+    unset a
+}
+
+test ik-4.2.1.1 {::installkit::ParseWrapArgs -f} -setup {
+    unset -nocomplain a
+    set file [tcltest::makeFile [string trim {
+f1 n1 zlib
+f2 n2 m1
+}] list]
+} -body {
+    ::installkit::ParseWrapArgs a [list -f $file]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs \
+    wrapFiles {f1 f2} \
+    wrapMethods {zlib m1} \
+    wrapNames {n1 n2} \
+] -cleanup {
+    file delete -force $file
+    unset a
+}
+
+test ik-4.2.1.2 {::installkit::ParseWrapArgs -f, not existing file, without 3rd arg} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -f wrong-file]
+    lsort -stride 2 [array get a]
+} -returnCodes error -match glob -result "Could not find list file: wrong-file*" -cleanup {
+    file delete -force $file
+    unset a
+}
+
+test ik-4.2.1.3 {::installkit::ParseWrapArgs -f, not existing file, with 3rd arg} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -f wrong-file] 0
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs] -cleanup {
+    file delete -force $file
+    unset a
+}
+
+test ik-4.2.2 {::installkit::ParseWrapArgs -o} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -o f/o\\o]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs executable f/o/o] -cleanup {
+    unset a
+}
+
+test ik-4.2.3 {::installkit::ParseWrapArgs -w} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -w f\\o/o]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs stubfile f/o/o] -cleanup {
+    unset a
+}
+
+# unsupported
+test ik-4.2.4 {::installkit::ParseWrapArgs -method} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -method foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs] -cleanup {
+    unset a
+}
+
+test ik-4.2.5 {::installkit::ParseWrapArgs -level} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -level 99]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs level 99] -cleanup {
+    unset a
+}
+
+test ik-4.2.6 {::installkit::ParseWrapArgs -command} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -command foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs command foo] -cleanup {
+    unset a
+}
+
+test ik-4.2.7 {::installkit::ParseWrapArgs -password} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -password foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs password foo] -cleanup {
+    unset a
+}
+
+test ik-4.2.8 {::installkit::ParseWrapArgs -icon} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -icon foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs icon foo] -cleanup {
+    unset a
+}
+
+test ik-4.2.9 {::installkit::ParseWrapArgs -company} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -company foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs versionInfo {CompanyName foo}] -cleanup {
+    unset a
+}
+
+test ik-4.2.10 {::installkit::ParseWrapArgs -copyright} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -copyright foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs versionInfo {LegalCopyright foo}] -cleanup {
+    unset a
+}
+
+test ik-4.2.11 {::installkit::ParseWrapArgs -fileversion} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -fileversion foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs versionInfo {FileVersion foo}] -cleanup {
+    unset a
+}
+
+test ik-4.2.12 {::installkit::ParseWrapArgs -productname} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -productname foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs versionInfo {ProductName foo}] -cleanup {
+    unset a
+}
+
+test ik-4.2.13 {::installkit::ParseWrapArgs -productversion} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -productversion foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs versionInfo {ProductVersion foo}] -cleanup {
+    unset a
+}
+
+test ik-4.2.14 {::installkit::ParseWrapArgs -filedescription} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -filedescription foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs versionInfo {FileDescription foo}] -cleanup {
+    unset a
+}
+
+test ik-4.2.15 {::installkit::ParseWrapArgs -originalfilename} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -originalfilename foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs versionInfo {OriginalFilename foo}] -cleanup {
+    unset a
+}
+
+test ik-4.2.16 {::installkit::ParseWrapArgs -catalog} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -catalog foo -catalog bar -catalog baz -catalog bar -catalog qux]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs catalogs {foo bar baz qux}] -cleanup {
+    unset a
+}
+
+test ik-4.2.17 {::installkit::ParseWrapArgs -package} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -package foo -package bar -package baz -package bar -package qux]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs packages {foo bar baz qux}] -cleanup {
+    unset a
+}
+
+test ik-4.3.1 {::installkit::ParseWrapArgs, unknown parameter -> main script} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list foo]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs mainScript foo] -cleanup {
+    unset a
+}
+
+test ik-4.3.2 {::installkit::ParseWrapArgs, unknown parameter, unknown file} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -w foo bla -f]
+    lsort -stride 2 [array get a]
+} -returnCodes error -result "Not a directory or a readable file: -f" -cleanup {
+    unset a
+}
+
+test ik-4.3.3 {::installkit::ParseWrapArgs, end of parameters} -setup {
+    unset -nocomplain a
+} -body {
+    ::installkit::ParseWrapArgs a [list -w foo -- -f]
+    lsort -stride 2 [array get a]
+} -result [checkWrapArgs stubfile foo mainScript -f] -cleanup {
+    unset a
+}
+
+test ik-4.3.4 {::installkit::ParseWrapArgs, files} -setup {
+    unset -nocomplain a
+    set f1 [makeFile {} file1]
+    set f2 [makeFile {} file2]
+} -body {
+    ::installkit::ParseWrapArgs a [list -w foo -- main $f1 $f2]
+    lsort -stride 2 [array get a]
+} -match glob -result [checkWrapArgs stubfile foo mainScript main \
+    wrapFiles {*/file1 */file2} \
+] -cleanup {
+    unset a
+    file delete -force $f1 $f2
+}
+
+test ik-4.3.4 {::installkit::ParseWrapArgs, files} -setup {
+    unset -nocomplain a
+    set f1 [makeFile {} file1]
+    set f2 [makeFile {} file2]
+    set dir [makeDirectory dir]
+    makeFile {} [file join $dir file1]
+    makeFile {} [file join $dir file2.foo]
+    makeFile {} [file join $dir file3]
+    set subdir [makeDirectory subdir $dir]
+    makeFile {} [file join $subdir file2.foo]
+    makeFile {} [file join $subdir file3]
+} -body {
+    ::installkit::ParseWrapArgs a [list -w foo main $f1 $dir $f2]
+    lsort -stride 2 [array get a]
+} -match glob -result [checkWrapArgs stubfile foo mainScript main \
+    wrapFiles {*/file1 */dir/file1 */dir/file2.foo */dir/file3 */dir/subdir/file2.foo */dir/subdir/file3 */file2} \
+] -cleanup {
+    unset a
+    file delete -force $f1 $f2 $dir
+}
+
+# ::installkit::ParsePEResources
+
+test ik-4.4.1 {::installkit::ParsePEResources} -setup {
+    set exe [makeFile {} temp.exe]
+    file copy -force [interpreter] $exe
+} -body {
+    set resources [::installkit::ParsePEResources $exe]
+    set result [list]
+    foreach resource [lsort [dict keys $resources]] {
+        lappend result $resource
+        if { $resource eq "icon" } {
+            lappend result {*}[dict keys [dict get $resources $resource]]
+        } elseif { $resource eq "version" } {
+            dict for { vres vdata } [dict get $resources $resource] {
+                switch -- $vres {
+                    dwFileVersionMS -
+                    dwFileVersionLS -
+                    dwProductVersionMS -
+                    dwProductVersionLS {
+                        lappend result "$vres [dict get $vdata value]"
+                    }
+                    default {
+                        lappend result "$vres [dict get $vdata length]"
+                    }
+                }
+            }
+        }
+    }
+    join $result \n
+} -result {icon
+16x32@4
+16x32@8
+32x64@4
+32x64@8
+48x96@4
+48x96@8
+version
+dwFileVersionMS 0
+dwFileVersionLS 0
+dwProductVersionMS 0
+dwProductVersionLS 0
+FileDescription 129
+OriginalFilename 65
+CompanyName 65
+FileVersion 33
+LegalCopyright 65
+ProductName 65
+ProductVersion 33} -cleanup {
+    file delete -force $exe
+}
+
+# cleanup
+::tcltest::cleanupTests
+return
