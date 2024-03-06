@@ -243,6 +243,10 @@ TEA_ENABLE_SHARED
 TEA_CONFIG_CFLAGS
 
 if test "${TEA_PLATFORM}" = "windows" ; then
+
+    # Add installkit::Windows package
+    TEA_ADD_TCL_SOURCES([library/installkit-windows.tcl])
+
     AC_MSG_CHECKING([for manifest version])
     # Version number for manifest. It must be 4 dotted pair Windows version format.
     MANIFEST_VERSION="${PACKAGE_VERSION}.0"

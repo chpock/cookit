@@ -345,6 +345,11 @@ installkit_vfs.image: $(srcdir)/library/init-vfs.tcl installkit.vfs bootstrap-vf
 	    TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
 	    ./installkit_raw$(EXEEXT) `$(CYGPATH) $<` "$@" "installkit.vfs"
 
+installkit_raw: $(PKG_OBJECTS)
+	rm -f "$@"
+	$(CC) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	chmod +x $@
+
 installkit_raw.exe: $(PKG_OBJECTS) installkit.user.res.o
 	rm -f "$@"
 	$(CC) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
@@ -353,6 +358,15 @@ installkit_raw.exe: $(PKG_OBJECTS) installkit.user.res.o
 installkitA_raw.exe: $(PKG_OBJECTS) installkit.admin.res.o
 	rm -f "$@"
 	$(CC) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	chmod +x $@
+
+installkit: installkit_raw magicstamp installkit_vfs.image
+	rm -f "$@"
+	cp -f "$<" "$@"
+ifneq ($(UPX_COMMAND),)
+	$(UPX_COMMAND) "$@"
+endif
+	cat magicstamp installkit_vfs.image >> "$@"
 	chmod +x $@
 
 installkit.exe: installkit_raw.exe magicstamp installkit_vfs.image

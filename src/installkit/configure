@@ -9470,6 +9470,20 @@ printf "%s\n" "no" >&6; }
 
 
 if test "${TEA_PLATFORM}" = "windows" ; then
+
+    # Add installkit::Windows package
+
+    vars="library/installkit-windows.tcl"
+    for i in $vars; do
+	# check for existence, be strict because it is installed
+	if test ! -f "${srcdir}/$i" ; then
+	    as_fn_error $? "could not find tcl source file '${srcdir}/$i'" "$LINENO" 5
+	fi
+	PKG_TCL_SOURCES="$PKG_TCL_SOURCES $i"
+    done
+
+
+
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for manifest version" >&5
 printf %s "checking for manifest version... " >&6; }
     # Version number for manifest. It must be 4 dotted pair Windows version format.

@@ -4,3 +4,7 @@ package ifneeded installkit @PACKAGE_VERSION@ [list ::apply {{ dir } {
     source [file join $dir installkit.tcl]
     package provide installkit @PACKAGE_VERSION@
 }} $dir]
+
+if { $::tcl_platform(platform) eq "windows" } {
+    package ifneeded installkit::Windows 1.1.1 [list source [file join $dir installkit-windows.tcl]]
+}

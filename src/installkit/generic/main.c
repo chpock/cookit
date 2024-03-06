@@ -27,6 +27,8 @@
 int _CRT_glob = 0;
 #endif /* __MINGW32__ */
 
+#define VFS_MOUNT "/installkitvfs"
+
 // 1 - console
 // 0 - GUI
 int installkitConsoleMode = 1;
@@ -117,15 +119,33 @@ Installkit_Startup(Tcl_Interp *interp) {
     // if we are in bootstrap mode
     if (Tcl_GetVar2Ex(interp, "::installkit::bootstrap_init", NULL, TCL_GLOBAL_ONLY) != NULL)
         return TCL_OK;
+    // reset the result if the above variable was not found
+    Tcl_ResetResult(interp);
 
     if (!installkitConsoleMode) {
         if (Tk_Init(interp) != TCL_OK)
             goto error;
-        if (Tk_CreateConsoleWindow(interp) != TCL_OK)
-            goto error;
     }
 
     // source the main script here if wrapped
+    int isWrappedInt;
+    Tcl_Obj *isWrappedObj = Tcl_ObjGetVar2(interp,
+        Tcl_NewStringObj("::installkit::wrapped", -1 ),
+        NULL, TCL_GLOBAL_ONLY);
+
+    if (isWrappedObj != NULL &&
+            Tcl_GetIntFromObj(interp, isWrappedObj, &isWrappedInt) != TCL_ERROR &&
+            isWrappedInt) {
+
+        Tcl_SetStartupScript(Tcl_NewStringObj(VFS_MOUNT "/main.tcl", -1), NULL);
+
+    } else if (!installkitConsoleMode) {
+
+        // create console if we run without script and in GUI mode
+        if (Tk_CreateConsoleWindow(interp) != TCL_OK)
+            goto error;
+
+    }
 
     return TCL_OK;
 
@@ -148,14 +168,16 @@ error:
 int
 _tmain(int argc, TCHAR *argv[])
 {
-    installkitConsoleMode = GetEnvironmentVariableA("INSTALLKIT_CONSOLE", NULL, 0) == 0 ? 0 : 1;
-/*    MessageBox(NULL, "bla", "Fatal HERE",
-            MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND); */
+
+    installkitConsoleMode = GetEnvironmentVariableA("INSTALLKIT_CONSOLE",
+        NULL, 0) == 0 ? 0 : 1;
+
     if (installkitConsoleMode) {
         Tcl_Main(argc, argv, Installkit_Startup);
     } else {
         Tk_Main(argc, argv, Installkit_Startup);
     }
+
     return TCL_OK;
 }
 

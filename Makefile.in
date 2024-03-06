@@ -262,7 +262,7 @@ clean:
 	rm -f $(IJ_PLATFORM).zip
 
 ifneq ($(VERBOSE),)
-    CHECKFLAGS += -verbose "body error start"
+    override CHECKFLAGS += -verbose "body error start"
 endif
 
 define run-check

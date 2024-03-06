@@ -219,14 +219,43 @@ proc addInstallkit { { optional 0 } } {
 
     addFile [file join $::installkitLibDirectory jammerTheme.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit.tcl] "" $dst
-    addFile "pkgIndex.tcl" "" $dst
 
     if { $::tcl_platform(platform) eq "windows" } {
+
+        addFile [file join $::installkitLibDirectory installkit-windows.tcl] "" $dst
+
         set dir [file join $::rootLibDirectory installkit]
         load {} Registry
         genStaticPkgIndex $dir registry [package present registry]
+
     }
 
+    addFile "pkgIndex.tcl" "" $dst
+
+}
+
+proc makeManifest { } {
+    set rglob [list apply { { dir rglob } {
+        set result [glob -nocomplain -directory $dir -type f *]
+        foreach dir [glob -nocomplain -directory $dir -type d *] {
+            lappend result {*}[{*}$rglob $dir $rglob]
+        }
+        return $result
+    }}]
+
+    set strip [llength [file split $::destinationDirectory]]
+
+    set fh [open [file join $::destinationDirectory manifest.txt] w]
+    fconfigure $fh -encoding utf-8 -translation lf
+
+    foreach file [{*}$rglob $::destinationDirectory $rglob] {
+        set file [file split $file]
+        set file [lrange $file $strip end]
+        set file [file join {*}$file]
+        puts $fh $file
+    }
+
+    close $fh
 }
 
 addTcl
@@ -238,6 +267,9 @@ if { $::tcl_platform(platform) eq "windows" } {
     addTwapi
 }
 
+addFile "manifest.txt" - ""
+
 copyFiles
+makeManifest
 
 puts "### VFS files are ready."
