@@ -38,7 +38,7 @@ TCL_SYSTEM=unix
 TARGETS="tcl tk"
 TCLSH="\$(PREFIX)/bin/tclsh8.6"
 AQUA_FLAG=
-SHARED_FLAG="--disable-shared --enable-static"
+TK_SHARED_FLAG="--disable-static --enable-shared"
 THREADS_FLAG="--disable-threads"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
@@ -54,6 +54,7 @@ case "$IJ_PLATFORM" in
     CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
     CYGPATH="cygpath -m"
     SO_EXT="dll"
+    TK_SHARED_FLAG="--disable-shared --enable-static"
     ;;
 
   Linux-x86)
@@ -138,7 +139,7 @@ RC              = $RC
 CFLAGS          = $CFLAGS
 LDFLAGS         = $LDFLAGS
 AQUA_FLAG       = $AQUA_FLAG
-SHARED_FLAG     = $SHARED_FLAG
+TK_SHARED_FLAG  = $TK_SHARED_FLAG
 THREADS_FLAG    = $THREADS_FLAG
 SYMBOLS_FLAG    = $SYMBOLS_FLAG
 

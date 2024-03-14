@@ -42,6 +42,7 @@ LibraryPathObjCmd(
 }
 
 #ifdef STATIC_BUILD
+#ifdef __WIN32__
 static int
 LoadTkObjCmd(
     ClientData clientData,
@@ -56,6 +57,7 @@ LoadTkObjCmd(
 
     return TCL_OK;
 }
+#endif
 
 #ifdef TCL_THREADS
 static int
@@ -927,8 +929,10 @@ Installkit_Init( Tcl_Interp *interp )
         0, 0 );
 
 #ifdef STATIC_BUILD
+#ifdef __WIN32__
     Tcl_CreateObjCommand( interp, "installkit::loadTk",
         LoadTkObjCmd, 0, 0 );
+#endif
 #ifdef TCL_THREADS
     Tcl_CreateObjCommand( interp, "installkit::loadThread",
         LoadThreadObjCmd, 0, 0 );

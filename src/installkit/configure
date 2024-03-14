@@ -24,7 +24,7 @@ TOP_SRCDIR=`dirname "$0"`
 ABS_TOP_SRCDIR=`cd "$TOP_SRCDIR" && /bin/pwd`
 
 PLATFORM="`uname`"
-BUILD="static"
+BUILD="shared"
 UPX="`command -v upx 2>/dev/null`"
 LZMA_SRCDIR=/no-lzma-src
 MINIARC_SRCDIR=/no-miniarc-src
@@ -110,6 +110,8 @@ case $PLATFORM in
         TCLVERSION_LIB=$TCLVERSION_NODOT
         #THREADVERSION_LIB=$THREADVERSION_NODOT
         MINIARCVERSION_LIB=$MINIARCVERSION_NODOT
+
+        BUILD="static"
         ;;
   *)
         MAKEFILE=unix/Makefile.in
