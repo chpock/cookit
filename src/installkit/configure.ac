@@ -77,7 +77,7 @@ TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
 TEA_ADD_LIBS([])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
-TEA_ADD_TCL_SOURCES([library/jammerTheme.tcl library/installkit.tcl])
+TEA_ADD_TCL_SOURCES([library/jammerTheme.tcl library/installkit.tcl library/wzipvfs.tcl])
 
 #--------------------------------------------------------------------
 # __CHANGE__
@@ -286,6 +286,12 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     AC_MSG_RESULT([${MACHINE}])
     AC_SUBST(MACHINE)
     AC_CONFIG_FILES([win/installkit.admin.manifest win/installkit.user.manifest])
+
+else
+
+    # at least threading support in XZ requires pthreads
+    TEA_ADD_LIBS([-lpthread])
+
 fi
 
 #--------------------------------------------------------------------

@@ -28,11 +28,15 @@ proc installkit_bootstrap {} {
 
     # unset TCLLIBPATH variable so init.tcl will not try directories there.
     unset -nocomplain ::env(TCLLIBPATH)
+    # unset TCL_LIBRARY variable that is used in TclpInitLibraryPath()
+    unset -nocomplain ::env(TCL_LIBRARY)
     # these environment variables will be used by ::tcl::tm::Defaults
     lassign [split [info tclversion] .] vmaj vmin
     for { set n $vmin } { $n >= 0 } { incr n -1 } {
         unset -nocomplain ::env(TCL${vmaj}.${n}_TM_PATH)
     }
+    # unset builtin variables for unix platform
+    unset -nocomplain ::tcl_pkgPath ::tclDefaultLibrary
 
     # TODO: the following places can search packages/files in
     # unexpected directories:

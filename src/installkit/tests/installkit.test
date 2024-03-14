@@ -318,7 +318,7 @@ test ik-4.3.4 {::installkit::parseWrapArgs, files} -setup {
 
 # ::installkit::ParsePEResources
 
-test ik-4.4.1 {::installkit::parsePEResources} -setup {
+test ik-4.4.1 {::installkit::parsePEResources} -constraints win -setup {
     set exe [makeFile {} temp.exe]
     file copy -force [interpreter] $exe
 } -body {

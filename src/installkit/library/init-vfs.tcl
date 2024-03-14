@@ -24,7 +24,7 @@ fconfigure $fp -encoding binary -translation binary
 set bootstrap [read $fp]
 close $fp
 
-proc addFilesFrom { dir } {
+proc addFilesFrom { dir { level 0 } } {
     if { ![info exists ::strip_count] } {
         set ::strip_count [llength [file split $::vfs_content]]
     }
@@ -36,14 +36,16 @@ proc addFilesFrom { dir } {
         if { ![file isdirectory $dstDir] } {
             file mkdir $dstDir
         }
+        puts "    [string repeat {  } $level]add file: $dst"
         file copy $file $dst
     }
     foreach subdir [glob -nocomplain -directory $dir -type d *] {
-        addFilesFrom $subdir
+        puts "    [string repeat {  } $level]add directory: $subdir"
+        addFilesFrom $subdir [expr { $level + 1 }]
     }
 }
 
-vfs::cookfs::Mount -bootstrap $bootstrap -compression zlib $vfs_out $mnt
+vfs::cookfs::Mount -bootstrap $bootstrap -compression xz $vfs_out $mnt
 addFilesFrom $vfs_content
 vfs::unmount $mnt
 

@@ -92,7 +92,7 @@ macThai macTurkish macUkraine symbol tis-620}] -cleanup {
     unset -nocomplain encs enc
 }
 
-test content-6 {icon exists} -body {
+test content-6 {icon exists} -constraints win -body {
     file exists /installkitvfs/installkit.ico
 } -result 1
 

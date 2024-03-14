@@ -81,6 +81,10 @@ case "$IJ_PLATFORM" in
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
+    # don't use UPX on MacOS for now due to multiple issues, like:
+    # https://github.com/upx/upx/issues/777
+    UPX="STRIP=\$(STRIP) $TOP_SRCDIR/helper.sh"
+    UPX_ARGS="strip-file"
     ;;
 
   MacOS-X-arm64)

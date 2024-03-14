@@ -1,4 +1,5 @@
 package ifneeded ttk::theme::jammer 0.1 [list source [file join $dir jammerTheme.tcl]]
+package ifneeded vfs::wzip 0.1.0 [list source [file join $dir wzipvfs.tcl]]
 
 package ifneeded installkit @PACKAGE_VERSION@ [list ::apply {{ dir } {
     source [file join $dir installkit.tcl]

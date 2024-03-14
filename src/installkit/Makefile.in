@@ -324,12 +324,12 @@ $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macosx
 
 bootstrap-vfs.tcl: $(BOOTSTRAP_FILES)
-	cat $^ | sed \
+	cat $^ | sed -E \
 	    -e '/^[[:space:]]*package require vfs/d' \
 	    -e '/^[[:space:]]*#/d' \
 	    -e '/^[[:space:]]*$$/d' \
-	    -e 's/^[[:space:]]\+//' \
-	    -e 's/[[:space:]]\+/ /g' \
+	    -e 's/^[[:space:]]+//' \
+	    -e 's/[[:space:]]+/ /g' \
 	    > $@
 
 # Install *.tcl and pkgIndex.tcl files before creating VFS content
@@ -347,17 +347,17 @@ installkit_vfs.image: $(srcdir)/library/init-vfs.tcl installkit.vfs bootstrap-vf
 
 installkit_raw: $(PKG_OBJECTS)
 	rm -f "$@"
-	$(CC) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
 	chmod +x $@
 
 installkit_raw.exe: $(PKG_OBJECTS) installkit.user.res.o
 	rm -f "$@"
-	$(CC) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
 	chmod +x $@
 
 installkitA_raw.exe: $(PKG_OBJECTS) installkit.admin.res.o
 	rm -f "$@"
-	$(CC) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
 	chmod +x $@
 
 installkit: installkit_raw magicstamp installkit_vfs.image
@@ -376,6 +376,11 @@ ifneq ($(UPX_COMMAND),)
 	$(UPX_COMMAND) "$@"
 endif
 	cat magicstamp installkit_vfs.image >> "$@"
+	chmod +x $@
+
+installkitU: installkit_raw magicstamp installkit_vfs.image
+	rm -f "$@"
+	cat $^ > $@
 	chmod +x $@
 
 installkitU.exe: installkit_raw.exe magicstamp installkit_vfs.image

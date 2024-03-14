@@ -97,6 +97,7 @@ work/stamp-tclvfs: work/stamp-tcl
 	rm -rf "$(TOP_SRCDIR)"/src/tclvfs/tclconfig
 	touch $@
 
+#		--enable-internal-debug
 cookfs: work/stamp-cookfs
 work/stamp-cookfs: work/stamp-tcl
 	mkdir -p work/cookfs
@@ -105,6 +106,7 @@ work/stamp-cookfs: work/stamp-tcl
 	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/cookfs/configure \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
+		--enable-xz \
 		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/cookfs && $(MAKE) all install
@@ -216,6 +218,8 @@ work/stamp-ffidl: work/stamp-tcl
 twapi: work/stamp-twapi
 work/stamp-twapi: work/stamp-tcl
 	mkdir -p work/twapi
+# see details in the patch
+	patch -N -p1 -d "$(TOP_SRCDIR)/src/twapi" < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
 	cd work/twapi || exit; \
 	 test -f config.status \
 	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/twapi/configure \
@@ -226,15 +230,17 @@ work/stamp-twapi: work/stamp-tcl
 	cd work/twapi && $(MAKE) all install install-lib-binaries
 	cp -f work/twapi/twapi_entry.tcl work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
 	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
+# revert the patch to keep source tree clean
+	patch -R -p1 -d "$(TOP_SRCDIR)/src/twapi" < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
 	touch $@
 
 dist:
+	rm -f "$(IJ_PLATFORM).zip"
 	cp -fp $(TOP_SRCDIR)/version kit/$(IJ_PLATFORM)
-	cat build.conf environment.conf work/installkit/environment.conf > kit/$(IJ_PLATFORM)/environment
-	cd kit && "`echo "$(PREFIX)/bin/tclsh"*`" \
-		`$(CYGPATH) $(TOP_SRCDIR)/src/tools/makezip.tcl` \
-		../$(IJ_PLATFORM).zip \
-		`find $(IJ_PLATFORM) -type f | sort`
+	cat build.conf environment.conf > kit/$(IJ_PLATFORM)/environment
+	cd kit && INSTALLKIT_CONSOLE=1 "$(KIT_PREFIX)/bin/installkit" \
+		`$(CYGPATH) $(TOP_SRCDIR)/src/installkit/library/make-zip.tcl` \
+		../$(IJ_PLATFORM).zip "$(IJ_PLATFORM)"
 
 clean-tcl:
 	rm -rf work/tcl work/stamp-tcl

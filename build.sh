@@ -1,5 +1,7 @@
 #!/bin/sh
 
+USE_SCI_LINUX6_DEV_TOOLSET=1
+
 set -e
 
 SELF_HOME="$(cd "$(dirname "$0")"; pwd)"
@@ -50,7 +52,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     [ "$1" != "all" ] && unset BUILD_ALL || set -- Windows MacOS-X Linux-x86 Linux-x86_64
 
     # Kill all child processes on ctrl-c or exit
-    trap "trap - SIGTERM && echo 'Caught SIGTERM, terminating child processes...' && kill -- -$$" SIGINT SIGTERM EXIT
+    trap "trap - SIGTERM && echo 'Caught SIGTERM, terminating child processes...' && kill -- -$$" INT TERM EXIT
 
     for PLATFORM; do
         rm -f "$BUILD_HOME/$PLATFORM".*
@@ -67,7 +69,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
 
     wait
 
-    trap - SIGINT SIGTERM EXIT
+    trap - INT TERM EXIT
 
     # Check that build is successful
     for PLATFORM; do
@@ -122,6 +124,23 @@ if [ -n "$PLATFORM" ]; then
 
     log "Start local build..."
 
+    if [ "$PLATFORM" = "Linux-x86" -o "$PLATFORM" = "Linux-x86_64" ]; then
+        CENTOS_VER="$(rpm -E %{rhel} 2>/dev/null)"
+        if [ "$CENTOS_VER" = "6" -a "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
+            echo "CentOS 6 detected. Scientific Linux CERN 6 Developer Toolset is enabled."
+            if [ ! -f /etc/yum.repos.d/slc6-devtoolset-i386.repo ]; then
+                sudo wget -O /etc/yum.repos.d/slc6-devtoolset-i386.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
+                sudo sed -i -e 's/\(\]$\)/-i386\1/' -e 's/\$basearch/i386/' /etc/yum.repos.d/slc6-devtoolset-i386.repo
+                sudo rpm --import http://linuxsoft.cern.ch/cern/slc6X/i386/RPM-GPG-KEY-cern
+                sudo wget -O /etc/yum.repos.d/slc6-devtoolset-x86_64.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
+                sudo sed -i -e 's/\(\]$\)/-x86_64\1/' -e 's/\$basearch/x86_64/' /etc/yum.repos.d/slc6-devtoolset-x86_64.repo
+                sudo rpm --import http://linuxsoft.cern.ch/cern/slc6X/x86_64/RPM-GPG-KEY-cern
+            fi
+        else
+            unset USE_SCI_LINUX6_DEV_TOOLSET
+        fi
+    fi
+
     BUILD_DIR="$BUILD_HOME/$PLATFORM"
     if [ -d "$BUILD_DIR" ]; then
         rm -rf "$BUILD_DIR"/*
@@ -153,12 +172,26 @@ if [ -n "$PLATFORM" ]; then
         Linux-x86)
             # dependencies
             # libXcursor-devel - for tkdnd
+            if [ "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
+                sudo yum install -y devtoolset-2-gcc.i686 devtoolset-2-gcc-c++.i686 devtoolset-2-binutils.i686
+                ARCH_TOOLS_PREFIX="/opt/rh/devtoolset-2/root/usr/bin/i686-redhat-linux-"
+                export ARCH_TOOLS_PREFIX
+                STRIP="/opt/rh/devtoolset-2/root/usr/bin/strip"
+                export STRIP
+            fi
             sudo yum install -y libgcc.i686 glibc-devel.i686 libX11-devel.i686 libXext-devel.i686 libXt-devel.i686 libXcursor-devel.i686
             PLATFORM="$PLATFORM" "$SELF_HOME/configure"
             ;;
         Linux-x86_64)
             # dependencies
             # libXcursor-devel - for tkdnd
+            if [ "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
+                sudo yum install -y devtoolset-2-gcc.x86_64 devtoolset-2-gcc-c++.x86_64 devtoolset-2-binutils.x86_64
+                ARCH_TOOLS_PREFIX="/opt/rh/devtoolset-2/root/usr/bin/x86_64-redhat-linux-"
+                export ARCH_TOOLS_PREFIX
+                STRIP="/opt/rh/devtoolset-2/root/usr/bin/strip"
+                export STRIP
+            fi
             sudo yum install -y libgcc.x86_64 glibc-devel.x86_64 libX11-devel.x86_64 libXext-devel.x86_64 libXt-devel.x86_64 libXcursor-devel.x86_64
             PLATFORM="$PLATFORM" "$SELF_HOME/configure"
             ;;
@@ -289,12 +322,12 @@ done
 log "Get SSH config..."
 vagrant_ssh
 log "Sync sources..."
-logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$SELF_HOME"/* "$VAGRANT_HOST:installkit-source"
+logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$SELF_HOME"/* "$VAGRANT_HOST:installkit-source-$PLATFORM"
 
 vagrant_lock soft
 
 log "Start build..."
-logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && IK_DEBUG=\"$IK_DEBUG\" MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
+logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && IK_DEBUG=\"$IK_DEBUG\" MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source-$PLATFORM/build.sh build-local $PLATFORM" && R=0 || R=$?
 log "Sync build results..."
 [ -d "$BUILD_DIR" ] || mkdir -p "$BUILD_DIR"
 logcmd rsync -a --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$VAGRANT_HOST:/tmp/work/$PLATFORM/*" "$BUILD_DIR"

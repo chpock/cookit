@@ -5785,7 +5785,7 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 
 
 
-    vars="library/jammerTheme.tcl library/installkit.tcl"
+    vars="library/jammerTheme.tcl library/installkit.tcl library/wzipvfs.tcl"
     for i in $vars; do
 	# check for existence, be strict because it is installed
 	if test ! -f "${srcdir}/$i" ; then
@@ -9548,6 +9548,22 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 printf "%s\n" "${MACHINE}" >&6; }
 
     ac_config_files="$ac_config_files win/installkit.admin.manifest win/installkit.user.manifest"
+
+
+else
+
+    # at least threading support in XZ requires pthreads
+
+    vars="-lpthread"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.[lL][iI][bB]$/-l\1/'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
 
 fi
 

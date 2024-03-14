@@ -209,16 +209,39 @@ proc addTwapi { { optional 0 } } {
 
 }
 
+proc addVfs { { optional 0 } } {
+
+    puts "* prepare the vfs package:"
+    set dir [glob -nocomplain -type d -directory $::rootLibDirectory "vfs*"]
+    if { ![llength $dir] } {
+        directoryExists [file join $::rootLibdirectory "vfs*"]
+        return
+    }
+
+    # detect available vfs::zip and vfs::tar versions
+    lappend auto_path $::rootLibDirectory
+    package require vfs::zip
+    package require vfs::tar
+
+    addFile [file join $dir zipvfs.tcl]
+    addFile [file join $dir tarvfs.tcl]
+
+    addFile [file join $dir pkgIndex.tcl] "package ifneeded vfs::zip\
+        [package present vfs::zip] \[list source \[file join \$dir zipvfs.tcl\]\]"
+    addFile [file join $dir pkgIndex.tcl] "package ifneeded vfs::tar\
+        [package present vfs::tar] \[list source \[file join \$dir tarvfs.tcl\]\]"
+
+}
+
 proc addInstallkit { { optional 0 } } {
 
     puts "* prepare the installkit package:"
-
-    addFile [file join $::installkitLibDirectory .. win installkit.ico] "" ""
 
     set dst "lib/installkit"
 
     addFile [file join $::installkitLibDirectory jammerTheme.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit.tcl] "" $dst
+    addFile [file join $::installkitLibDirectory wzipvfs.tcl] "" $dst
 
     if { $::tcl_platform(platform) eq "windows" } {
 
@@ -227,6 +250,8 @@ proc addInstallkit { { optional 0 } } {
         set dir [file join $::rootLibDirectory installkit]
         load {} Registry
         genStaticPkgIndex $dir registry [package present registry]
+
+        addFile [file join $::installkitLibDirectory .. win installkit.ico] "" ""
 
     }
 
@@ -260,7 +285,8 @@ proc makeManifest { } {
 
 addTcl
 addTk
-addThread
+addVfs
+if { [::tcl::pkgconfig get threaded] } addThread
 addInstallkit
 
 if { $::tcl_platform(platform) eq "windows" } {
