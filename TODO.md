@@ -11,3 +11,6 @@ cookfs:
       - for new file, try to compress the first 64Kb (or whole file if it is
         small). If all compression engines are not efficient enough, then add
         that file to pages without compression and without smallfilefilter.
+twapi:
+    * try to split into modules
+    * remove huge and potentially unused modules like tls/crypt
