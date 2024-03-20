@@ -1,0 +1,21 @@
+diff -rubBaN tcl.orig/Makefile tcl/Makefile
+--- tcl.orig/Makefile	2024-03-15 15:12:13.414774622 +0200
++++ tcl/Makefile	2024-03-15 15:25:12.014774067 +0200
+@@ -760,13 +760,13 @@
+ 
+ install-tzdata:
+ 	@echo "Installing time zone data"
+-	@$(TCL_EXE) "$(ROOT_DIR)/tools/installData.tcl" \
+-	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR_NATIVE)/tzdata"
++	@$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/installData.tcl" \
++	    "$(ROOT_DIR_NATIVE)/library/tzdata" "$(SCRIPT_INSTALL_DIR_NATIVE)/tzdata"
+ 
+ install-msgs:
+ 	@echo "Installing message catalogs"
+-	$(TCL_EXE) "$(ROOT_DIR)/tools/installData.tcl" \
+-	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR_NATIVE)/msgs"
++	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/installData.tcl" \
++	    "$(ROOT_DIR_NATIVE)/library/msgs" "$(SCRIPT_INSTALL_DIR_NATIVE)/msgs"
+ 
+ install-doc: doc
+ 

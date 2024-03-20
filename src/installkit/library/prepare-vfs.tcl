@@ -17,7 +17,7 @@ set filelist [list]
 
 proc isMatchList { str list } {
     foreach mask $list {
-        if { [string match $mask $str] } {
+        if { [string match -nocase $mask $str] } {
             return 1
         }
     }
@@ -160,7 +160,7 @@ proc addTcl { { optional 0 } } {
     }
 
     addAllFiles $dirMinor [list "encoding" "http1.*" "opt*" \
-        "tzdata" "msgs" "safe.tcl"]
+        "tzdata" "msgs" "safe.tcl" "*.c"]
 
 }
 

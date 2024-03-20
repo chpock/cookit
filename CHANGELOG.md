@@ -11,6 +11,7 @@
 - Update Tktable package to version 2.11.1 (from 2.10.0)
 - Update zlib to version 1.3.1
 - [Windows] update twapi package to version 4.7.2 (from 1.1.5)
+- [Windows] remove ffidl package
 
 ### Internal changes
 - VFS engine was migrated to tclvfs+CookFS

@@ -1,0 +1,1 @@
+package ifneeded Ffidl 0.8 [list source [file join $dir ffidl.tcl]]

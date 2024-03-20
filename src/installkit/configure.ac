@@ -173,10 +173,21 @@ AC_ARG_WITH(upx-command, [ --with-upx-command use specified command to pack bina
 AC_MSG_CHECKING([for usable UPX command])
 AS_IF([test "x${UPX_COMMAND}" != "x"], [
     AC_MSG_RESULT([yes - ${UPX_COMMAND}])
-    AC_SUBST(UPX_COMMAND)
 ], [
     AC_MSG_RESULT([no])
+    UPX_COMMAND="echo"
 ])
+AC_SUBST(UPX_COMMAND)
+
+AC_ARG_WITH(strip-command, [ --with-strip-command use specified command to strip binary ], STRIP_COMMAND=${withval})
+AC_MSG_CHECKING([for usable strip command])
+AS_IF([test "x${STRIP_COMMAND}" != "x"], [
+    AC_MSG_RESULT([yes - ${STRIP_COMMAND}])
+], [
+    AC_MSG_RESULT([no])
+    STRIP_COMMAND="echo"
+])
+AC_SUBST(STRIP_COMMAND)
 
 IK_ADD_BOOTSTRAP_FILES([library/bootstrap.tcl])
 
@@ -232,7 +243,7 @@ TEA_ENABLE_THREADS
 # building as a shared library instead of a static library.
 #--------------------------------------------------------------------
 
-TEA_ENABLE_SHARED
+#TEA_ENABLE_SHARED
 
 #--------------------------------------------------------------------
 # This macro figures out what flags to use with the compiler/linker
@@ -287,12 +298,57 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     AC_SUBST(MACHINE)
     AC_CONFIG_FILES([win/installkit.admin.manifest win/installkit.user.manifest])
 
+    # Link with Tk on Windows
+
+    AC_DEFINE(USE_TK_STUBS, 1, [Use Tk stubs])
+
 else
 
     # at least threading support in XZ requires pthreads
     TEA_ADD_LIBS([-lpthread])
 
 fi
+
+_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -Wl,-Map=conftest.map"
+AC_MSG_CHECKING([whether LD supports -Wl,-Map=])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([])],[
+    AC_MSG_RESULT([yes])
+    LDFLAGS="$_LDFLAGS -Wl,-Map=\$@.map"
+],[
+    AC_MSG_RESULT([no])
+    LDFLAGS="$_LDFLAGS"
+])
+
+_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Wall"
+AC_MSG_CHECKING([whether CC supports -Wall])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])], [
+    AC_MSG_RESULT([yes])
+],[
+    AC_MSG_RESULT([no])
+    CFLAGS="$_CFLAGS"
+])
+
+_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Wextra"
+AC_MSG_CHECKING([whether CC supports -Wextra])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])], [
+    AC_MSG_RESULT([yes])
+],[
+    AC_MSG_RESULT([no])
+    CFLAGS="$_CFLAGS"
+])
+
+_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -pedantic"
+AC_MSG_CHECKING([whether CC supports -pedantic])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])], [
+    AC_MSG_RESULT([yes])
+],[
+    AC_MSG_RESULT([no])
+    CFLAGS="$_CFLAGS"
+])
 
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols option.

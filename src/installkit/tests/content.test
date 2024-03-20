@@ -16,18 +16,11 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
 
 testConstraint darwin [expr {[testConstraint unix] && $tcl_platform(os) eq "Darwin"}]
 testConstraint notDarwin [expr {![testConstraint darwin]}]
+testConstraint installkitVersionDefined [info exists ::env(INSTALLKIT_VERSION)]
 
-test content-1 {Get ij version} -body {
-    set fp [open [file join [file dir [info script]] .. .. .. version] r]
-    set ij_ver [gets $fp]
-    close $fp
-} -result * -match glob
-
-#test content-2 [list package require installkit $ij_ver] \
-#    -body [list package require installkit $ij_ver] \
-#    -result $ij_ver -cleanup { unset ij_ver }
-
-#    installkit::Windows 1.1      {win}
+test content-1 {check installkit version} -constraints installkitVersionDefined -body {
+    string equal [package require installkit $::env(INSTALLKIT_VERSION)] $::env(INSTALLKIT_VERSION)
+} -result 1
 
 foreach { pkgName pkgVersion constraints } {
     Tcl                 8.6.14 {}
@@ -44,6 +37,7 @@ foreach { pkgName pkgVersion constraints } {
     ttk::theme::jammer  0.1    {}
     vfs                 1.4.2  {}
     vfs::cookfs         1.4.0  {}
+    installkit::Windows 1.1    {win}
 } {
     test content-3.[incr count] [list package require $pkgName $pkgVersion] \
         -constraints $constraints \

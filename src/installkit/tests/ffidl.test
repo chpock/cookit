@@ -21,6 +21,8 @@ catch { package require Ffidl }
 
 test ffidl-1 {SHChangeNotify} -constraints win -body {
 
+    # The same code as in InstallJammer
+
     if {[info commands ffidl::SHChangeNotify] eq ""} {
         set symbol [ffidl::symbol shell32 SHChangeNotify]
         ffidl::callout ffidl::SHChangeNotify \

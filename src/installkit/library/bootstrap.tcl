@@ -7,17 +7,21 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
-proc installkit_bootstrap {} {
+# This procedure will be called before Tcl/Tk initialization
+proc ::installkit::preInit {} {
 
-    rename installkit_bootstrap {}
+    rename ::installkit::preInit {}
 
     set ::installkit::root "/installkitvfs"
 
     if { [catch {
         set ::installkit::cookfsindex [::cookfs::fsindex [$::installkit::cookfspages index]]
-        set ::installkit::cookfshandle [::cookfs::Mount -pagesobject $::installkit::cookfspages \
-            -fsindexobject $::installkit::cookfsindex -readonly \
-            [info nameofexecutable] $::installkit::root]
+        set ::installkit::cookfshandle [::cookfs::Mount \
+            -pagesobject $::installkit::cookfspages \
+            -fsindexobject $::installkit::cookfsindex \
+            -readonly [info nameofexecutable] \
+            $::installkit::root \
+        ]
     } err] } {
         return -code error "Error while mounting the internal filesystem: $err"
     }
@@ -38,18 +42,47 @@ proc installkit_bootstrap {} {
     # unset builtin variables for unix platform
     unset -nocomplain ::tcl_pkgPath ::tclDefaultLibrary
 
-    # TODO: the following places can search packages/files in
-    # unexpected directories:
-    #
-    # procedure ::tcl::tm::Defaults in tm.tcl
-    # procedure tcl_findLibrary in auto.tcl
-    # initial code in init.tcl injects into 'auto_path' variable:
-    #     file join [file dirname [file dirname [info nameofexecutable]]] lib]
-    #
-    # These procedures should be overwritten to prevent files from being
-    # sourced/loaded from unexpected locations.
-
     set ::tcl_library [file join $libDir tcl[info tclversion]]
     set ::tk_library [file join $libDir tk[info tclversion]]
+
+}
+
+# This procedure will be called after Tcl/Tk initialization
+proc ::installkit::postInit {} {
+
+    rename ::installkit::postInit {}
+
+    # init.tcl initializes ::auto_path with a directory value relative to
+    # the current executable. This can be a security hole as malicious code
+    # can be loaded from this directory. Let's override this variable so
+    # that only a known location is used to download packages.
+    set ::auto_path [list [file join $::installkit::root lib] $::tcl_library]
+
+    # However, let's allow to load from $exename/../lib directory if
+    # installkit is not an envelope for application and INSTALLKIT_TESTMODE
+    # environment variable defined. This is developer mode, and we may
+    # need to load packages from there.
+    if { !$::installkit::wrapped && [info exists ::env(INSTALLKIT_TESTMODE)] } {
+        # We assume the following tree structure:
+        #   <root_dir>/bin/<our exe here>
+        #   <root_dir>/lib/<package dir>
+        lappend ::auto_path [file normalize [file join [info nameofexecutable] .. .. lib]]
+    }
+
+    # ::tcl::tm::Defaults adds default paths relative to current executable.
+    # Let's drop these paths since we don't allow anything outside of our VFS
+    # to be loaded.
+
+    # Initialize Tcl Modules first
+    ::tcl::tm::Defaults
+
+    # Override the default paths
+    set ::tcl::tm::paths [list]
+    ::tcl::tm::add {*}[glob -directory \
+        [file join $::installkit::root lib tcl[lindex [split [info tclversion] .] 0]] \
+        -type d *]
+
+    # Other places where Tcl can load something from unexpected locations:
+    #   * tcl_findLibrary proc in auto.tcl
 
 }

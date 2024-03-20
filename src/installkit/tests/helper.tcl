@@ -9,4 +9,13 @@
 
 testConstraint threaded [::tcl::pkgconfig get threaded]
 
+if { $::tcl_platform(platform) eq "windows" } {
+    package require twapi
+    testConstraint elevated [expr { [twapi::get_process_elevation] eq "full" }]
+    testConstraint notelevated [expr { [twapi::get_process_elevation] ne "full" }]
+} {
+    testConstraint elevated 0
+    testConstraint notelevated 0
+}
+
 proc getfile { fn } { return [read [set f [open $fn r]]][close $f] }

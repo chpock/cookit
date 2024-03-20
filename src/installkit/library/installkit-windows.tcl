@@ -514,7 +514,7 @@ proc installkit::Windows::createShortcut { shortcutPath args } {
                 lappend flags -desc $arg
             }
             "-objectpath" {
-                lappend flags -path $arg
+                lappend flags -path [file nativename $arg]
                 set objexists 1
             }
             "-showcommand" {
@@ -528,14 +528,14 @@ proc installkit::Windows::createShortcut { shortcutPath args } {
                 }
             }
             "-workingdirectory" {
-                lappend flags -workdir $arg
+                lappend flags -workdir [file nativename $arg]
             }
             "-icon" {
                 if { $i == [llength $args] - 1 } {
                     return -code error "-icon option must have iconPath and iconIndex"
                 }
                 set idx [lindex $args [incr i]]
-                lappend flags -iconpath $arg -iconindex $idx
+                lappend flags -iconpath [file nativename $arg] -iconindex $idx
             }
             default {
                 return -code error "invalid option \"$opt\": must be\
@@ -550,7 +550,7 @@ proc installkit::Windows::createShortcut { shortcutPath args } {
             is not specified"
     }
 
-    tailcall ::twapi::write_shortcut $shortcutPath {*}$flags
+    tailcall ::twapi::write_shortcut [file nativename $shortcutPath] {*}$flags
 
 }
 

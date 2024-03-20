@@ -29,7 +29,7 @@ test installkit::Windows-1.1 {installkit::Windows::FileExtension, exists} -const
     lappend result [installkit::Windows::FileExtension exists .wrong-extension]
 } -result [list 1 0]
 
-test installkit::Windows-1.2 {installkit::Windows::FileExtension, set} -constraints win -setup {
+test installkit::Windows-1.2 {installkit::Windows::FileExtension, set} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
 } -body {
     set result [list]
@@ -54,7 +54,7 @@ test installkit::Windows-2.1 {installkit::Windows::FileType, exists} -constraint
     lappend result [installkit::Windows::FileType exists wrong-file-type]
 } -result [list 1 0]
 
-test installkit::Windows-2.2 {installkit::Windows::FileType, set} -constraints win -setup {
+test installkit::Windows-2.2 {installkit::Windows::FileType, set} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
     set result [list]
@@ -67,7 +67,7 @@ test installkit::Windows-2.2 {installkit::Windows::FileType, set} -constraints w
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 }
 
-test installkit::Windows-2.3 {installkit::Windows::FileType, icon} -constraints win -setup {
+test installkit::Windows-2.3 {installkit::Windows::FileType, icon} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
     set result [list]
@@ -80,7 +80,7 @@ test installkit::Windows-2.3 {installkit::Windows::FileType, icon} -constraints 
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 }
 
-test installkit::Windows-2.4 {installkit::Windows::FileType, command} -constraints win -setup {
+test installkit::Windows-2.4 {installkit::Windows::FileType, command} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
     set result [list]
@@ -97,7 +97,7 @@ test installkit::Windows-2.4 {installkit::Windows::FileType, command} -constrain
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 }
 
-test installkit::Windows-2.5 {installkit::Windows::FileType, defaultcommand} -constraints win -setup {
+test installkit::Windows-2.5 {installkit::Windows::FileType, defaultcommand} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
     set result [list]
@@ -110,7 +110,7 @@ test installkit::Windows-2.5 {installkit::Windows::FileType, defaultcommand} -co
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 }
 
-test installkit::Windows-2.6 {installkit::Windows::FileType, menu} -constraints win -setup {
+test installkit::Windows-2.6 {installkit::Windows::FileType, menu} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
     set result [list]
@@ -122,7 +122,7 @@ test installkit::Windows-2.6 {installkit::Windows::FileType, menu} -constraints 
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 }
 
-test installkit::Windows-2.7 {installkit::Windows::FileType, showextension} -constraints win -setup {
+test installkit::Windows-2.7 {installkit::Windows::FileType, showextension} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
     set result [list]
@@ -140,7 +140,7 @@ test installkit::Windows-2.7 {installkit::Windows::FileType, showextension} -con
 
 # installkit::Windows::File
 
-test installkit::Windows-3.1 {installkit::Windows::File, type} -constraints win -setup {
+test installkit::Windows-3.1 {installkit::Windows::File, type} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
 } -body {
     set result [list]
@@ -153,7 +153,7 @@ test installkit::Windows-3.1 {installkit::Windows::File, type} -constraints win 
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
 }
 
-test installkit::Windows-3.2 {installkit::Windows::File, command} -constraints win -setup {
+test installkit::Windows-3.2 {installkit::Windows::File, command} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
@@ -170,7 +170,7 @@ test installkit::Windows-3.2 {installkit::Windows::File, command} -constraints w
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 }
 
-test installkit::Windows-3.3 {installkit::Windows::File, commands} -constraints win -setup {
+test installkit::Windows-3.3 {installkit::Windows::File, commands} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
@@ -187,7 +187,7 @@ test installkit::Windows-3.3 {installkit::Windows::File, commands} -constraints 
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 }
 
-test installkit::Windows-3.4 {installkit::Windows::File, defaultcommand} -constraints win -setup {
+test installkit::Windows-3.4 {installkit::Windows::File, defaultcommand} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 } -body {
@@ -203,7 +203,7 @@ test installkit::Windows-3.4 {installkit::Windows::File, defaultcommand} -constr
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
 }
 
-test installkit::Windows-3.5 {installkit::Windows::File, open} -constraints win -setup {
+test installkit::Windows-3.5 {installkit::Windows::File, open} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
     set file1 [makeFile {} "success"]
@@ -231,7 +231,7 @@ test installkit::Windows-3.5 {installkit::Windows::File, open} -constraints win 
     file delete -force $file1 $file2
 }
 
-test installkit::Windows-3.6 {installkit::Windows::File, print} -constraints win -setup {
+test installkit::Windows-3.6 {installkit::Windows::File, print} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
     set file1 [makeFile {} "success"]
@@ -419,7 +419,7 @@ test installkit::Windows-7.5 {installkit::Windows::getFolder, COMMON_APPDATA} -c
 
 # installkit::Windows::shellExecute
 
-test installkit::Windows-8.1 {installkit::Windows::shellExecute} -constraints win -setup {
+test installkit::Windows-8.1 {installkit::Windows::shellExecute} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
     set file1 [makeFile {} "success"]
@@ -447,7 +447,7 @@ test installkit::Windows-8.1 {installkit::Windows::shellExecute} -constraints wi
     file delete -force $file1 $file2
 }
 
-test installkit::Windows-8.2 {installkit::Windows::shellExecute, -wait} -constraints win -setup {
+test installkit::Windows-8.2 {installkit::Windows::shellExecute, -wait} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
     set file1 [makeFile {} "success"]
@@ -468,7 +468,7 @@ test installkit::Windows-8.2 {installkit::Windows::shellExecute, -wait} -constra
     file delete -force $file1 $file2
 }
 
-test installkit::Windows-8.3 {installkit::Windows::shellExecute, -workingdirectory} -constraints win -setup {
+test installkit::Windows-8.3 {installkit::Windows::shellExecute, -workingdirectory} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
     set dir [makeDirectory foo]
@@ -490,7 +490,7 @@ test installkit::Windows-8.3 {installkit::Windows::shellExecute, -workingdirecto
     file delete -force $dir $file2
 }
 
-test installkit::Windows-8.4.1 {installkit::Windows::shellExecute, -windowstate hidden} -constraints win -setup {
+test installkit::Windows-8.4.1 {installkit::Windows::shellExecute, -windowstate hidden} -constraints {win elevated} -setup {
     registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
     registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
     set file1 [makeFile {} success]

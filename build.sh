@@ -14,6 +14,10 @@ if [ "$SELF_HOME" = "$BUILD_HOME" ]; then
     BUILD_HOME="$SELF_HOME"/build
 fi
 
+if uname -r | grep -q -- '-WSL2'; then
+    IS_WSL=1
+fi
+
 COLORS="33 34 35 36 92 93 94 95 96"
 
 progress() {
@@ -27,7 +31,7 @@ progress() {
             \[ERROR\]*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
                 ;;
-            make\[*|\[*|mkdir\ *)
+            make\[*|\[*|mkdir\ *|Tests\ *)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m %s\n' "$COLOR" "$LABEL" "$line"
                 ;;
         esac
@@ -41,20 +45,29 @@ getcolor() {
     [ "$WORKING_COLORS" = "$_TMP_COLORS" ] && unset WORKING_COLORS || WORKING_COLORS="$_TMP_COLORS"
 }
 
-[ -n "$1" ] || set -- all
-
 if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
 
-    BUILD_ALL="$BUILD_HOME/all"
+    BUILD_PLATFORMS=
+    while true; do
+        [ -n "$1" ] || break
+        case "$1" in
+            --*) break;;
+        esac
+        [ -z "$BUILD_PLATFORMS" ] || BUILD_PLATFORMS="$BUILD_PLATFORMS "
+        BUILD_PLATFORMS="$BUILD_PLATFORMS$1"
+        shift
+    done
 
-    rm -rf "$BUILD_ALL" "$BUILD_HOME/installkit"-*
-
-    [ "$1" != "all" ] && unset BUILD_ALL || set -- Windows MacOS-X Linux-x86 Linux-x86_64
+    if [ -z "$BUILD_PLATFORMS" ]; then
+        BUILD_PLATFORMS="Windows MacOS-X Linux-x86 Linux-x86_64"
+        BUILD_ALL="$BUILD_HOME/all"
+        rm -rf "$BUILD_ALL" "$BUILD_HOME/installkit"-*
+    fi
 
     # Kill all child processes on ctrl-c or exit
-    trap "trap - SIGTERM && echo 'Caught SIGTERM, terminating child processes...' && kill -- -$$" INT TERM EXIT
+    trap "trap - TERM && echo 'Caught SIGTERM, terminating child processes...' && kill -- -$$" INT TERM EXIT
 
-    for PLATFORM; do
+    for PLATFORM in $BUILD_PLATFORMS; do
         rm -f "$BUILD_HOME/$PLATFORM".*
         rm -rf "$BUILD_HOME/$PLATFORM"
         LOG_OUT="$BUILD_HOME/$PLATFORM.log"
@@ -64,7 +77,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
         #    } 2>&1 1>&3 | tee "$LOG_ERR" | progress err "$PLATFORM"
         #} 3>&1 1>&2 &
         getcolor
-        "$SELF_FILE" build "$PLATFORM" 2>&1 | tee "$LOG_OUT" | progress "$PLATFORM" "$CURRENT_COLOR" &
+        "$SELF_FILE" build "$PLATFORM" "$@" 2>&1 | tee "$LOG_OUT" | progress "$PLATFORM" "$CURRENT_COLOR" &
     done
 
     wait
@@ -72,7 +85,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     trap - INT TERM EXIT
 
     # Check that build is successful
-    for PLATFORM; do
+    for PLATFORM in $BUILD_PLATFORMS; do
         if [ ! -e "$BUILD_HOME/$PLATFORM.zip" ]; then
             echo "Error: platform '$PLATFORM' failed."
             BUILD_FAILED=1
@@ -84,7 +97,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     echo
     if [ -n "$BUILD_ALL" ]; then
         mkdir -p "$BUILD_ALL"
-        for PLATFORM; do
+        for PLATFORM in $BUILD_PLATFORMS; do
             cp -r "$BUILD_HOME/$PLATFORM/kit"/* "$BUILD_ALL"
         done
         VERSION="$(cat "$SELF_HOME"/version)"
@@ -116,11 +129,12 @@ logcmd() {
     "$@"
 }
 
-if [ "$1" = "build-local" ] || [ "$2" = "Windows" ]; then
-    PLATFORM="$2"
-fi
+[ "$1" != "build-local" ] || BUILD_LOCAL=1
+PLATFORM="$2"
+shift
+shift
 
-if [ -n "$PLATFORM" ]; then
+if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows" ]; then
 
     log "Start local build..."
 
@@ -152,53 +166,53 @@ if [ -n "$PLATFORM" ]; then
 
     case "$PLATFORM" in
         Windows)
-            # dependencies
-            # mingw64-i686-libffi - for ffidl
-            for DEP in mingw64-i686-libffi mingw64-i686-gcc-core mingw64-i686-gcc-g++; do
-                if [ "$(cygcheck -c -n "$DEP" 2>/dev/null)" = "$DEP" ]; then
-                    log "dependency '$DEP' - OK"
-                else
-                    error "Error: dependency '$DEP' - not installed"
-                    error "Please run: setup-x86_64.exe -q -P $DEP"
-                    exit 1
-                fi
-            done
-            ARCH_TOOLS_PREFIX="/usr/bin/i686-w64-mingw32-" "$SELF_HOME/configure"
+            if [ -n "$IS_WSL" ]; then
+                # WSL env
+                # dependencies
+                sudo apt-get install -y tcl make gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686
+                sudo apt-get install -y ccache 2>/dev/null || true
+            else
+                # Cygwin env
+                # dependencies
+                for DEP in mingw64-i686-gcc-core mingw64-i686-gcc-g++; do
+                    if [ "$(cygcheck -c -n "$DEP" 2>/dev/null)" = "$DEP" ]; then
+                        log "dependency '$DEP' - OK"
+                    else
+                        error "Error: dependency '$DEP' - not installed"
+                        error "Please run: setup-x86_64.exe -q -P $DEP"
+                        exit 1
+                    fi
+                done
+            fi
+            set -- "$@" --toolchain-prefix "/usr/bin/i686-w64-mingw32-"
             [ "$MAKE_PARALLEL" != "true" ] || _MAKE_PARALLEL="-j8"
-            ;;
-        MacOS-X)
-            PLATFORM="$PLATFORM" "$SELF_HOME/configure"
             ;;
         Linux-x86)
             # dependencies
             # libXcursor-devel - for tkdnd
             if [ "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
                 sudo yum install -y devtoolset-2-gcc.i686 devtoolset-2-gcc-c++.i686 devtoolset-2-binutils.i686
-                ARCH_TOOLS_PREFIX="/opt/rh/devtoolset-2/root/usr/bin/i686-redhat-linux-"
-                export ARCH_TOOLS_PREFIX
-                STRIP="/opt/rh/devtoolset-2/root/usr/bin/strip"
-                export STRIP
+                # the strip utility doesn't use arch-specific prefix there
+                set -- "$@" --toolchain-prefix "/opt/rh/devtoolset-2/root/usr/bin/i686-redhat-linux-" \
+                    --strip-utility "/opt/rh/devtoolset-2/root/usr/bin/strip"
             fi
             sudo yum install -y libgcc.i686 glibc-devel.i686 libX11-devel.i686 libXext-devel.i686 libXt-devel.i686 libXcursor-devel.i686
-            PLATFORM="$PLATFORM" "$SELF_HOME/configure"
+            sudo yum install -y ccache 2>/dev/null || true
             ;;
         Linux-x86_64)
             # dependencies
             # libXcursor-devel - for tkdnd
             if [ "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
                 sudo yum install -y devtoolset-2-gcc.x86_64 devtoolset-2-gcc-c++.x86_64 devtoolset-2-binutils.x86_64
-                ARCH_TOOLS_PREFIX="/opt/rh/devtoolset-2/root/usr/bin/x86_64-redhat-linux-"
-                export ARCH_TOOLS_PREFIX
-                STRIP="/opt/rh/devtoolset-2/root/usr/bin/strip"
-                export STRIP
+                # the strip utility doesn't use arch-specific prefix there
+                set -- "$@" --toolchain-prefix "/opt/rh/devtoolset-2/root/usr/bin/x86_64-redhat-linux-" \
+                    --strip-utility "/opt/rh/devtoolset-2/root/usr/bin/strip"
             fi
             sudo yum install -y libgcc.x86_64 glibc-devel.x86_64 libX11-devel.x86_64 libXext-devel.x86_64 libXt-devel.x86_64 libXcursor-devel.x86_64
-            PLATFORM="$PLATFORM" "$SELF_HOME/configure"
-            ;;
-        *)
-            "$SELF_HOME/configure"
+            sudo yum install -y ccache 2>/dev/null || true
             ;;
     esac
+    "$SELF_HOME/configure" "$@" --platform "$PLATFORM"
 
     if [ "$MAKE_PARALLEL" = "true" ]; then
         [ -n "$_MAKE_PARALLEL" ] && MAKE_PARALLEL="$_MAKE_PARALLEL" || MAKE_PARALLEL="-j2"
@@ -222,8 +236,6 @@ fi
 
 log "Start remote build..."
 
-PLATFORM="$2"
-
 BUILD_DIR="$BUILD_HOME/$PLATFORM"
 rm -rf "$BUILD_DIR"
 
@@ -238,6 +250,8 @@ vagrant_ssh() {
     if [ -z "$VAGRANT_KEY" ]; then
         V_INFO="$(vagrant ssh-config | grep '^  ' | sed 's/^[[:space:]]\+//')"
         V_HOST="$(echo "$V_INFO" | grep -m 1 '^HostName ' | awk '{print $2}')"
+        # In WSL set VM hostname as Windows host, which is the default routing gateway in WSL.
+        [ -z "$IS_WSL" ] || V_HOST="$(ip route | grep default | awk '{print $3}')"
         V_PORT="$(echo "$V_INFO" | grep -m 1 '^Port ' | awk '{print $2}')"
         V_USER="$(echo "$V_INFO" | grep -m 1 '^User ' | awk '{print $2}')"
         V_KEY="$(echo "$V_INFO" | grep '^IdentityFile ' | \
@@ -251,10 +265,22 @@ vagrant_ssh() {
             tr '\n' '\t' | \
             sed -e 's/\t$//' -e 's/\t/ -o /g' -e 's/^/-o /'
         )"
+        if [ -n "$IS_WSL" ]; then
+            V_KEY="$(wslpath -u "$(echo "$V_KEY" | awk '{print $NF}')")"
+            cp "$V_KEY" "/tmp/$PLATFORM-ssh.key"
+            chmod 0600 "/tmp/$PLATFORM-ssh.key"
+            V_KEY="-i /tmp/$PLATFORM-ssh.key"
+        fi
         VAGRANT_OPTS="$V_OPTS"
         VAGRANT_KEY="$V_KEY"
         VAGRANT_HOST="$V_USER@$V_HOST"
         VAGRANT_PORT="$V_PORT"
+        # In WSL we must use the first forwarded port. The second forwarded port
+        # is bound to the loopback interface and is not available for WSL VM.
+        if [ -n "$IS_WSL" ]; then
+            VAGRANT_PORT="$(vagrant port | grep '^forwarded_port ' | head -n 1 | \
+                awk '{print $2}' | cut -d, -f2)"
+        fi
     fi
 }
 
@@ -306,17 +332,44 @@ fi
 
 vagrant_lock hard
 
+unset VM_ACTION
+
 while [ "$STATE" != "running" ]; do
     log "Check VM state..."
     STATE="$(vagrant status | grep '^state ' | awk '{print $2}')"
     log "The VM state is: '$STATE'"
-    if [ "$STATE" = "poweroff" ] || [ "$STATE" = "saved" ]; then
+    if [ "$STATE" = "poweroff" ]; then
+        if [ -n "$VM_ACTION" ]; then
+            error "Error: could not start the VM."
+            exit 1
+        fi
         log "Start the VM..."
-        vagrant up | grep -E '^ui (output|info),' | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
+        VM_ACTION="up"
+    elif [ "$STATE" = "saved" ]; then
+        if [ -z "$VM_ACTION" ]; then
+            log "Start the VM..."
+            VM_ACTION="up"
+        elif [ "$VM_ACTION" = "up" ]; then
+            log "Start failed. Try to reload the VM..."
+            VM_ACTION="reload"
+        else
+            error "Error: could not start the VM."
+            exit 1
+        fi
+    elif [ "$STATE" = "gurumeditation" ]; then
+        if [ -n "$VM_ACTION" ]; then
+            error "Error: could not start the VM."
+            exit 1
+        fi
+        log "VM is meditating. Let's try to reload it..."
+        VM_ACTION="reload"
     elif [ "$STATE" != "running" ]; then
         error "Error: unexpected VM state."
         exit 1
+    else
+        break
     fi
+    vagrant "$VM_ACTION" | grep -E '^ui (output|info|error),' | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
 done
 
 log "Get SSH config..."
@@ -327,7 +380,7 @@ logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHos
 vagrant_lock soft
 
 log "Start build..."
-logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && IK_DEBUG=\"$IK_DEBUG\" MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source-$PLATFORM/build.sh build-local $PLATFORM" && R=0 || R=$?
+logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source-$PLATFORM/build.sh build-local $PLATFORM $@" && R=0 || R=$?
 log "Sync build results..."
 [ -d "$BUILD_DIR" ] || mkdir -p "$BUILD_DIR"
 logcmd rsync -a --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$VAGRANT_HOST:/tmp/work/$PLATFORM/*" "$BUILD_DIR"

@@ -4,17 +4,12 @@ set -e
 
 OS=`uname -s`
 
-SO_EXT="so"
-STRIP_ARGS="--strip-all"
-
 case $OS in
     AIX)
         PLATFORM=AIX-ppc
         ;;
     Darwin)
         OS=MacOS-X
-        SO_EXT="dylib"
-        STRIP_ARGS="-Sx"
         ;;
     FreeBSD)
         VERSION=`uname -r | cut -f 1 -d .`
@@ -25,16 +20,12 @@ case $OS in
     IRIX*)
         PLATFORM=IRIX-mips
         ;;
-    *Linux)
-        STRIP_ARGS="$STRIP_ARGS --remove-section=.comment --remove-section=.note"
-        ;;
     SunOS)
         OS=Solaris
         ;;
     CYGWIN_NT*|MINGW*)
         EXE=.exe
         PLATFORM=Windows
-        SO_EXT="dll"
         ;;
 esac
 
@@ -162,30 +153,6 @@ case $1 in
             ldd --version 2>&1
             echo
         fi
-        ;;
-
-    strip-file)
-        if [ -z "$STRIP" ]; then
-            echo "Error: strip command is not defined."
-            exit 1
-        fi
-        if [ ! -f "$2" ]; then
-            echo "Error: stripping file doesn't exist: '$2'."
-            exit 1
-        fi
-        echo "Run: $STRIP $STRIP_ARGS $2"
-        "$STRIP" $STRIP_ARGS "$2"
-        ;;
-
-    strip-dir)
-        if [ ! -d "$2" ]; then
-            echo "Error: stripping directory doesn't exist: '$2'."
-            exit 1
-        fi
-        echo "Strip directory: $2"
-        find "$2" -type f -name "*.$SO_EXT" | while read -r FN; do
-            "$0" strip-file "$FN"
-        done
         ;;
 
 esac

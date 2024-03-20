@@ -7,8 +7,6 @@
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version. */
 
-//#include <tcl.h>
-//#include <tclIntDecls.h>
 #include <tclInt.h>
 
 #ifdef __WIN32__
@@ -29,6 +27,20 @@ int _CRT_glob = 0;
 
 #define VFS_MOUNT "/installkitvfs"
 
+// #define INSTALLKIT_DEBUG
+
+#ifdef INSTALLKIT_DEBUG
+#define IkDebug(...) {fprintf(stdout,"[IK DEBUG] "); fprintf(stdout,__VA_ARGS__); fprintf(stdout,"\r\n"); fflush(stdout);}
+#else
+#define IkDebug(...) {}
+#endif
+
+#ifdef __WIN32__
+#define NULL_DEVICE "NUL"
+#else
+#define NULL_DEVICE "/dev/null"
+#endif
+
 // 1 - console
 // 0 - GUI
 int installkitConsoleMode = 1;
@@ -45,7 +57,7 @@ static char preInitScript[] = TCL_SCRIPT_HERE(
         if { ![catch {
             set ::installkit::cookfspages [::cookfs::c::pages -readonly $n];
             uplevel #0 [$::installkit::cookfspages get 0];
-            installkit_bootstrap
+            ::installkit::preInit
         } e] } { return };
         if { [info exists ::env(INSTALLKIT_BOOTSTRAP)] } {
             set ::installkit::bootstrap_init 1;
@@ -86,8 +98,46 @@ Tcl_AppInitProc Twapi_Init;
 
 int
 Installkit_Startup(Tcl_Interp *interp) {
-/*    MessageBox(NULL, "Startup", "Fatal HERE",
-            MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND); */
+
+    if (Tcl_InitStubs(interp, "8.6", 0) == NULL) {
+        return TCL_ERROR;
+    }
+
+    // Make sure that we have stdout/stderr/stdin channels. Initialize them
+    // to /dev/null if we don't have any. This will prevent Tcl from crashing
+    // when attempting to write/read from standard channels. In GUI (Tk) that
+    // will be done by Tk_Main()->Tk_InitConsoleChannels().
+
+    if (installkitConsoleMode) {
+        Tcl_Channel chan;
+
+        chan = Tcl_GetStdChannel(TCL_STDIN);
+        if (!chan) {
+            chan = Tcl_OpenFileChannel(interp, NULL_DEVICE, "r", 0);
+            if (chan) {
+                Tcl_SetChannelOption(interp, chan, "-encoding", "utf-8");
+                Tcl_SetStdChannel(chan, TCL_STDIN);
+            }
+        }
+
+        chan = Tcl_GetStdChannel(TCL_STDOUT);
+        if (!chan) {
+            chan = Tcl_OpenFileChannel(interp, NULL_DEVICE, "w", 0);
+            if (chan) {
+                Tcl_SetChannelOption(interp, chan, "-encoding", "utf-8");
+                Tcl_SetStdChannel(chan, TCL_STDOUT);
+            }
+        }
+
+        chan = Tcl_GetStdChannel(TCL_STDERR);
+        if (!chan) {
+            chan = Tcl_OpenFileChannel(interp, NULL_DEVICE, "w", 0);
+            if (chan) {
+                Tcl_SetChannelOption(interp, chan, "-encoding", "utf-8");
+                Tcl_SetStdChannel(chan, TCL_STDERR);
+            }
+        }
+    }
 
     Tcl_StaticPackage(0, "vfs", Vfs_Init, NULL);
 
@@ -121,6 +171,9 @@ Installkit_Startup(Tcl_Interp *interp) {
         return TCL_OK;
     // reset the result if the above variable was not found
     Tcl_ResetResult(interp);
+
+    if (Tcl_EvalEx(interp, "::installkit::postInit", -1, TCL_EVAL_GLOBAL) != TCL_OK)
+        goto error;
 
     if (!installkitConsoleMode) {
         if (Tk_Init(interp) != TCL_OK)

@@ -123,6 +123,7 @@ TCL_SRC_DIR	= @TCL_SRC_DIR@
 TK_BIN_DIR	= @TK_BIN_DIR@
 TK_SRC_DIR	= @TK_SRC_DIR@
 TK_LIB_SPEC     = @TK_LIB_SPEC@
+TK_STUB_LIB_SPEC  = @TK_STUB_LIB_SPEC@
 TCL_LIB_SPEC    = @TCL_LIB_SPEC@
 TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 
@@ -172,7 +173,7 @@ CONFIG_CLEAN_FILES = Makefile
 CLEANFILES	= @CLEANFILES@
 
 CPPFLAGS	= @CPPFLAGS@
-LIBS		= @PKG_LIBS@ @LIBS@ @TK_LIB_SPEC@ @TCL_LIB_SPEC@ @TCL_STUB_LIB_SPEC@
+LIBS		= @PKG_LIBS@ @LIBS@ @TK_LIB_SPEC@ @TK_STUB_LIB_SPEC@ @TCL_LIB_SPEC@ @TCL_STUB_LIB_SPEC@
 AR		= @AR@
 CFLAGS		= @CFLAGS@
 LDFLAGS		= @LDFLAGS@
@@ -186,6 +187,7 @@ VALGRINDARGS	= --tool=memcheck --num-callers=8 --leak-resolution=high \
 		  --leak-check=yes --show-reachable=yes -v
 
 UPX_COMMAND     = @UPX_COMMAND@
+STRIP_COMMAND   = @STRIP_COMMAND@
 
 BOOTSTRAP_FILES = @BOOTSTRAP_FILES@
 
@@ -194,6 +196,10 @@ BOOTSTRAP_FILES = @BOOTSTRAP_FILES@
 #========================================================================
 # Start of user-definable TARGETS section
 #========================================================================
+
+# Required for WSL
+WSLENV = TCL_LIBRARY/p:INSTALLKIT_CONSOLE:INSTALLKIT_GUI:INSTALLKIT_BOOTSTRAP:TCLTEST_OPTIONS:INSTALLKIT_TESTMODE
+export WSLENV
 
 #========================================================================
 # TEA TARGETS.  Please note that the "libraries:" target refers to platform
@@ -332,32 +338,40 @@ bootstrap-vfs.tcl: $(BOOTSTRAP_FILES)
 	    -e 's/[[:space:]]+/ /g' \
 	    > $@
 
+# Use '| cat' for ./installkit_raw so that it has a stdout in Windows.
+# On Windows, we build GUI executable and Windows doesn't attach
+# stdout/stderr/stdin to it. When we pipe exe, the pipe will be treated
+# as stdout.
+
 # Install *.tcl and pkgIndex.tcl files before creating VFS content
 installkit.vfs: $(srcdir)/library/prepare-vfs.tcl installkit_raw$(EXEEXT) $(PKG_TCL_SOURCES)
 	rm -rf "$@"
 	INSTALLKIT_CONSOLE=1 INSTALLKIT_BOOTSTRAP=1 \
 	    TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
-	    ./installkit_raw$(EXEEXT) `$(CYGPATH) $<` "$@"
+	    ./installkit_raw$(EXEEXT) `$(CYGPATH) $<` "$@" | cat
 
 installkit_vfs.image: $(srcdir)/library/init-vfs.tcl installkit.vfs bootstrap-vfs.tcl installkit_raw$(EXEEXT)
 	rm -f "$@"
 	INSTALLKIT_CONSOLE=1 INSTALLKIT_BOOTSTRAP=1 \
 	    TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
-	    ./installkit_raw$(EXEEXT) `$(CYGPATH) $<` "$@" "installkit.vfs"
+	    ./installkit_raw$(EXEEXT) `$(CYGPATH) $<` "$@" "installkit.vfs" | cat
 
 installkit_raw: $(PKG_OBJECTS)
 	rm -f "$@"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
 installkit_raw.exe: $(PKG_OBJECTS) installkit.user.res.o
 	rm -f "$@"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
 installkitA_raw.exe: $(PKG_OBJECTS) installkit.admin.res.o
 	rm -f "$@"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
 installkit: installkit_raw magicstamp installkit_vfs.image
@@ -474,6 +488,8 @@ dist: dist-clean $(srcdir)/manifest.uuid
 install-lib-fake:
 	mkdir -p "$(libdir)/twapi"
 	cp "$(srcdir)"/library/twapi/* "$(libdir)/twapi"
+	mkdir -p "$(libdir)/ffidl"
+	cp "$(srcdir)"/library/ffidl/* "$(libdir)/ffidl"
 
 #========================================================================
 # End of user-definable section
