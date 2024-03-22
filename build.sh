@@ -165,6 +165,11 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows" ]; then
     cd "$BUILD_DIR"
 
     case "$PLATFORM" in
+        MacOS-X)
+            # Use PATH for macports
+            PATH="$PATH:/opt/local/bin"
+            export PATH
+            ;;
         Windows)
             if [ -n "$IS_WSL" ]; then
                 # WSL env
