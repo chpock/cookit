@@ -45,8 +45,7 @@ proc addFilesFrom { dir { level 0 } } {
     }
 }
 
-vfs::cookfs::Mount -bootstrap $bootstrap -compression xz $vfs_out $mnt
+::installkit::mountRoot -bootstrap $bootstrap $vfs_out $mnt
 addFilesFrom $vfs_content
 vfs::unmount $mnt
-
 

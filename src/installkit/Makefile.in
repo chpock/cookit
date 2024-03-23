@@ -210,7 +210,7 @@ export WSLENV
 # for the BINARIES that you specified above have already been done.
 #========================================================================
 
-all: binaries installkit-deps.txt
+all: binaries installkit-deps.txt installkit-stats.txt
 
 #========================================================================
 # The binaries target builds executable programs, Windows .dll's, unix
@@ -359,7 +359,7 @@ installkit_vfs.image: $(srcdir)/library/init-vfs.tcl installkit.vfs bootstrap-vf
 
 installkit_raw: $(PKG_OBJECTS)
 	rm -f "$@"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TCL_LIBS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
@@ -377,6 +377,10 @@ installkitA_raw.exe: $(PKG_OBJECTS) installkit.admin.res.o
 
 installkit-deps.txt: installkit_raw$(EXEEXT)
 	"$(srcdir)"/tools/gendeps.sh $(BUILD_PLATFORM) "$<" > "$@"
+
+installkit-stats.txt: installkit$(EXEEXT)
+	INSTALLKIT_CONSOLE=1 ./installkit$(EXEEXT) \
+	    `$(CYGPATH) $(srcdir)/tools/genkitstats.tcl` | cat > "$@"
 
 installkit: installkit_raw magicstamp installkit_vfs.image
 	rm -f "$@"
@@ -573,7 +577,7 @@ install-bin-binaries: binaries
 	    $(INSTALL_PROGRAM) $$p "$(DESTDIR)$(bindir)/$$p"; \
 	  fi; \
 	done
-	cp installkit-deps.txt "$(DESTDIR)$(exec_prefix)"
+	cp installkit-deps.txt installkit-stats.txt "$(DESTDIR)$(exec_prefix)"
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \

@@ -91,7 +91,7 @@ TARGETS="installkit"
 TCLSH="\$(PREFIX)/bin/tclsh8.6"
 SYMBOLS_FLAG=
 AQUA_FLAG=
-SHARED_FLAG="--disable-shared --enable-static"
+TK_SHARED_FLAG="--enable-shared --disable-static"
 THREADS_FLAG="--disable-threads"
 # -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--as-needed
 #     help to avoid unused code in binary
@@ -126,6 +126,7 @@ case "$IJ_PLATFORM" in
     TCLSH="\$(PREFIX)/bin/tclsh86s"
     TARGETS="$TARGETS thread"
     THREADS_FLAG="--enable-threads"
+    TK_SHARED_FLAG="--disable-shared --enable-static"
     if uname -r | grep -q -- '-WSL2'; then
         WINDOWS_SYSTEM=WSL
         CYGPATH="wslpath -w"
@@ -272,7 +273,7 @@ CFLAGS          = $CFLAGS
 LDFLAGS         = $LDFLAGS
 STRIPFLAGS      = $STRIPFLAGS
 AQUA_FLAG       = $AQUA_FLAG
-SHARED_FLAG     = $SHARED_FLAG
+TK_SHARED_FLAG  = $TK_SHARED_FLAG
 THREADS_FLAG    = $THREADS_FLAG
 SYMBOLS_FLAG    = $SYMBOLS_FLAG
 

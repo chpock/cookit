@@ -558,7 +558,7 @@ proc ::installkit::makestub { exe } {
     set bootstrap [$cookfspages get 0]
 
     set tmpmount [tmpmount]
-    vfs::cookfs::Mount -bootstrap $bootstrap -compression zlib $exe $tmpmount
+    mountRoot -bootstrap $bootstrap $exe $tmpmount
     set fh [open [file join $root manifest.txt] r]
     while { [gets $fh file] != -1 } {
         set dir [file join $tmpmount [file dirname $file]]

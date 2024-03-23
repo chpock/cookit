@@ -62,19 +62,19 @@ proc shrink { src dst } {
 
 proc copyFiles { } {
     puts "* copying selected files..."
-    # plain files
     foreach { src script dst } $::filelist {
-        if { $script ne "" } continue
-        shrink $src $dst
-    }
-    # scripts
-    foreach { src script dst } $::filelist {
-        set dir [file dirname $dst]
-        if { ![file isdirectory $dir] } { file mkdir $dir }
-        set fdst [open $dst a]
-        fconfigure $fdst -encoding utf-8 -translation lf
-        puts $fdst $script
-        close $fdst
+        if { $script eq "" } {
+            # plain files
+            shrink $src $dst
+        } {
+            # scripts
+            set dir [file dirname $dst]
+            if { ![file isdirectory $dir] } { file mkdir $dir }
+            set fdst [open $dst a]
+            fconfigure $fdst -encoding utf-8 -translation lf
+            puts $fdst $script
+            close $fdst
+        }
     }
 }
 
@@ -176,7 +176,14 @@ proc addTk { { optional 0 } } {
         "clrpick.tcl" "dialog.tcl" "fontchooser.tcl" "mkpsenc.tcl" \
         "optMenu.tcl" "safetk.tcl" "tkfbox.tcl" "xmfbox.tcl" "pkgIndex.tcl"]
 
-    genStaticPkgIndex $dirTk Tk [info patchlevel]
+    if { $::tcl_platform(platform) eq "windows" } {
+        genStaticPkgIndex $dirTk Tk [info patchlevel]
+    } {
+        addFile [file join $dirTk .. libtk[info tclversion][info sharedlibext]]
+        addFile [file join $dirTk pkgIndex.tcl] "package ifneeded Tk\
+            [info patchlevel]\
+            \[list load \[file normalize \[file join \$dir .. libtk[info tclversion][info sharedlibext]\]\]\]"
+    }
 
 }
 

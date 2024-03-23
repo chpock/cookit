@@ -3983,6 +3983,8 @@ printf "%s\n" "#define BUILD_${PACKAGE_NAME} /**/" >>confdefs.h
 # Load the tkConfig.sh file if necessary (Tk extension)
 #--------------------------------------------------------------------
 
+# Tk is statically linked only on Windows
+if test "${TEA_PLATFORM}" = "windows" ; then
 
     #
     # Ok, lets find the tk configuration
@@ -4214,6 +4216,7 @@ printf "%s\n" "#define MAC_OSX_TK 1" >>confdefs.h
 
 
 
+fi
 
 #-----------------------------------------------------------------------
 # Handle the --prefix=... option by defaulting to what Tcl gave.
@@ -6180,6 +6183,8 @@ printf %s "checking for Tcl private include files... " >&6; }
 printf "%s\n" "${result}" >&6; }
 
 
+# Tk is statically linked only on Windows
+if test "${TEA_PLATFORM}" = "windows" ; then
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Tk public headers" >&5
 printf %s "checking for Tk public headers... " >&6; }
@@ -6282,8 +6287,9 @@ printf %s "checking for X11 header files... " >&6; }
 printf "%s\n" "${INCLUDE_DIR_NATIVE}" >&6; }
     fi
 
-#TEA_PRIVATE_TK_HEADERS
-#TEA_PATH_X
+    #TEA_PRIVATE_TK_HEADERS
+    #TEA_PATH_X
+fi
 
 #--------------------------------------------------------------------
 # Check whether --enable-threads or --disable-threads was given.

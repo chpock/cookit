@@ -11,6 +11,7 @@
 
 #ifdef __WIN32__
 #include <tk.h>
+#include <tkDecls.h>
 #define WIN32_LEAN_AND_MEAN
 #ifndef STRICT
 #define STRICT // See MSDN Article Q83456
@@ -86,7 +87,9 @@ static char preInitScript[] = TCL_SCRIPT_HERE(
 Tcl_AppInitProc Thread_Init;
 #endif /* TCL_THREADS */
 
+#ifdef __WIN32__
 Tcl_AppInitProc Tk_Init;
+#endif /* __WIN32__ */
 Tcl_AppInitProc Vfs_Init;
 Tcl_AppInitProc Cookfs_Init;
 
@@ -149,7 +152,9 @@ Installkit_Startup(Tcl_Interp *interp) {
     if (Cookfs_Init(interp) != TCL_OK)
         goto error;
 
+#ifdef __WIN32__
     Tcl_StaticPackage(0, "Tk", Tk_Init, NULL);
+#endif /* __WIN32__ */
 
 #ifdef TCL_THREADS
     Tcl_StaticPackage(0, "Thread", Thread_Init, NULL);
@@ -176,7 +181,11 @@ Installkit_Startup(Tcl_Interp *interp) {
         goto error;
 
     if (!installkitConsoleMode) {
+#ifdef __WIN32__
         if (Tk_Init(interp) != TCL_OK)
+#else
+        if (Tcl_EvalEx(interp, "package require Tk", -1, TCL_EVAL_GLOBAL) != TCL_OK)
+#endif /* __WIN32__ */
             goto error;
     }
 
@@ -194,9 +203,11 @@ Installkit_Startup(Tcl_Interp *interp) {
 
     } else if (!installkitConsoleMode) {
 
+#ifdef __WIN32__
         // create console if we run without script and in GUI mode
         if (Tk_CreateConsoleWindow(interp) != TCL_OK)
             goto error;
+#endif /* __WIN32__ */
 
     }
 

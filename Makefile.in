@@ -41,7 +41,8 @@ work/stamp-tcl:
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
 		--with-encoding=utf-8 \
-		$(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
+		--disable-shared --enable-static \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 ifeq ($(WINDOWS_SYSTEM),Cygwin)
 	patch -N -p1 -d work/tcl < "$(TOP_SRCDIR)"/src/tcl-000-Windows-Cygwin.patch
 endif
@@ -73,7 +74,8 @@ work/stamp-tk: work/stamp-tcl
 		--build=$(AC_HOST) --host=$(AC_HOST)  \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
-		$(AQUA_FLAG) $(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
+		$(TK_SHARED_FLAG) \
+		$(AQUA_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # see details in the patch
 	patch -N -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
@@ -88,6 +90,8 @@ ifeq ($(IJ_PLATFORM),MacOS-X)
 # revert the patch to keep source tree clean
 	patch -R -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
 endif
+	test -e $(PREFIX)/lib/libtk*$(SO_EXT) && \
+	 $(STRIP) $(STRIPFLAGS) "$(PREFIX)"/lib/libtk*$(SO_EXT) || true
 	touch $@
 
 tclvfs: work/stamp-tclvfs

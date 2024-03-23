@@ -42,8 +42,11 @@ TEA_LOAD_TCLCONFIG
 # Load the tkConfig.sh file if necessary (Tk extension)
 #--------------------------------------------------------------------
 
-TEA_PATH_TKCONFIG
-TEA_LOAD_TKCONFIG
+# Tk is statically linked only on Windows
+if test "${TEA_PLATFORM}" = "windows" ; then
+    TEA_PATH_TKCONFIG
+    TEA_LOAD_TKCONFIG
+fi
 
 #-----------------------------------------------------------------------
 # Handle the --prefix=... option by defaulting to what Tcl gave.
@@ -227,9 +230,12 @@ AC_SUBST(bin_BINARIES)
 TEA_PUBLIC_TCL_HEADERS
 TEA_PRIVATE_TCL_HEADERS
 
-TEA_PUBLIC_TK_HEADERS
-#TEA_PRIVATE_TK_HEADERS
-#TEA_PATH_X
+# Tk is statically linked only on Windows
+if test "${TEA_PLATFORM}" = "windows" ; then
+    TEA_PUBLIC_TK_HEADERS
+    #TEA_PRIVATE_TK_HEADERS
+    #TEA_PATH_X
+fi
 
 #--------------------------------------------------------------------
 # Check whether --enable-threads or --disable-threads was given.

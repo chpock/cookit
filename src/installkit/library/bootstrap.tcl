@@ -86,3 +86,12 @@ proc ::installkit::postInit {} {
     #   * tcl_findLibrary proc in auto.tcl
 
 }
+
+# -pagesize: Use 2MB for the page size so that all source files are packed on one page.
+# -smallfilesize: However, if the file is larger than 512 KB, consider it a non-text file
+#                 and place it on a separate page.
+proc ::installkit::mountRoot { args } {
+    tailcall ::vfs::cookfs::Mount -compression xz \
+        -pagesize [expr { 1024 * 1024 * 2 }] -smallfilesize [expr { 1024 * 512 }] \
+        {*}$args
+}
