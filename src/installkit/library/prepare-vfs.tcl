@@ -249,6 +249,8 @@ proc addInstallkit { { optional 0 } } {
     addFile [file join $::installkitLibDirectory jammerTheme.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit.tcl] "" $dst
     addFile [file join $::installkitLibDirectory wzipvfs.tcl] "" $dst
+    addFile [file join $::installkitLibDirectory installkit-compat.tcl] "" $dst
+    addFile [file join $::installkitLibDirectory installkit-stats.tcl] "" $dst
 
     if { $::tcl_platform(platform) eq "windows" } {
 

@@ -20,6 +20,7 @@ if { [::tcl::pkgconfig get threaded] } {
             lappend script [list set ::argv0 $::argv0]
             lappend script [list info script $::argv0]
             lappend script [list set ::tcl_interactive $::tcl_interactive]
+            lappend script [list ::installkit::postInit]
             lappend script [lindex $args end]
             set args [lreplace $args end end [join $script \n]]
         }
@@ -879,7 +880,21 @@ proc ::installkit::setExecPerms { exe } {
     }
 }
 
+proc ::installkit::rawStartup { } {
+    if { ![info exists ::argv] } return
+    set cmd [lindex $::argv 0]
+    if { $cmd eq "wrap" } {
+        ::installkit::wrap {*}[lrange $::argv 1 end]
+        exit 0
+    } elseif { $cmd eq "stats" } {
+        package require installkit::stats
+        ::installkit::stats {*}[lrange $::argv 1 end]
+        exit 0
+    }
+}
 
 if { $::tcl_platform(platform) eq "windows" } {
     package require installkit::Windows
 }
+
+package require installkit::compat

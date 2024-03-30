@@ -28,6 +28,11 @@ proc ::installkit::preInit {} {
 
     set ::installkit::wrapped [file exists [file join $::installkit::root main.tcl]]
 
+    if { $::installkit::wrapped } {
+        set ::tcl_interactive 0
+        set ::argv0 [file join $::installkit::root main.tcl]
+    }
+
     set libDir [file join $::installkit::root lib]
 
     # unset TCLLIBPATH variable so init.tcl will not try directories there.
@@ -84,6 +89,12 @@ proc ::installkit::postInit {} {
 
     # Other places where Tcl can load something from unexpected locations:
     #   * tcl_findLibrary proc in auto.tcl
+
+    # the ::installkit package should be loaded by default
+    package require installkit
+
+    # if we haven't wrapped up and not in thread, try checking out the simple commands
+    if { !$::installkit::wrapped && ![info exists ::parentThread] } installkit::rawStartup
 
 }
 

@@ -328,7 +328,7 @@ $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 # As necessary, add $(srcdir):$(srcdir)/compat:....
 #========================================================================
 
-VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macosx
+VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macosx:$(srcdir)/tclx/generic:$(srcdir)/tclx/unix:$(srcdir)/tclx/win
 
 bootstrap-vfs.tcl: $(BOOTSTRAP_FILES)
 	cat $^ | sed -E \
@@ -379,8 +379,7 @@ installkit-deps.txt: installkit_raw$(EXEEXT)
 	"$(srcdir)"/tools/gendeps.sh $(BUILD_PLATFORM) "$<" > "$@"
 
 installkit-stats.txt: installkit$(EXEEXT)
-	INSTALLKIT_CONSOLE=1 ./installkit$(EXEEXT) \
-	    `$(CYGPATH) $(srcdir)/tools/genkitstats.tcl` | cat > "$@"
+	INSTALLKIT_CONSOLE=1 ./installkit$(EXEEXT) stats | cat > "$@"
 
 installkit: installkit_raw magicstamp installkit_vfs.image
 	rm -f "$@"

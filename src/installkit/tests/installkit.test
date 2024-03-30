@@ -735,6 +735,24 @@ barOK} -cleanup {
     file delete -force $exe $script $dir1 $file2
 }
 
+test ik-4.8.10 {::installkit::wrap, preserve command line} -setup {
+    set script [makeFile {
+        puts -nonewline :[join $::argv :]:
+    } temp.tcl]
+    set exe "[file rootname $script]$exeext"
+} -body {
+    unset -nocomplain result
+    ::installkit::wrap $script
+    lappend result [exec $exe file.tcl 2 3 4]
+    lappend result [exec $exe -file 2 3 4]
+    lappend result [exec $exe -encoding utf-8 file 1 2]
+    join $result \n
+} -result {:file.tcl:2:3:4:
+:-file:2:3:4:
+:-encoding:utf-8:file:1:2:} -cleanup {
+    file delete -force $exe $script
+}
+
 test ik-4.9.1 {::installkit::newThread} -constraints threaded -setup {
     set save [list ::argv $::argv ::argv0 $::argv0 ::tcl_interactive $::tcl_interactive]
     set ::argv [list "\{" "var" foo "\""]

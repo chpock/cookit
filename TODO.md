@@ -1,3 +1,6 @@
+installkit:
+    * binaries still depend on shared zlib on some platforms. Remove this
+      dependancy.
 cookfs:
     * add support for zstd.
     * add support for option for compression engine. Currently there is only

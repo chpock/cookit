@@ -76,11 +76,11 @@ TEA_SETUP_COMPILER
 
 TEA_ADD_SOURCES([main.c])
 TEA_ADD_HEADERS([])
-TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\"])
+TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\" -I\"`${CYGPATH} ${srcdir}/tclx/generic`\"])
 TEA_ADD_LIBS([])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
-TEA_ADD_TCL_SOURCES([library/jammerTheme.tcl library/installkit.tcl library/wzipvfs.tcl])
+TEA_ADD_TCL_SOURCES([library/jammerTheme.tcl library/installkit.tcl library/wzipvfs.tcl library/installkit-compat.tcl library/installkit-stats.tcl])
 
 #--------------------------------------------------------------------
 # __CHANGE__
@@ -259,6 +259,9 @@ TEA_ENABLE_THREADS
 
 TEA_CONFIG_CFLAGS
 
+# Add generic TclX
+TEA_ADD_SOURCES([tclx/generic/tclXutil.c])
+
 if test "${TEA_PLATFORM}" = "windows" ; then
 
     # Add installkit::Windows package
@@ -308,10 +311,18 @@ if test "${TEA_PLATFORM}" = "windows" ; then
 
     AC_DEFINE(USE_TK_STUBS, 1, [Use Tk stubs])
 
+    # Add platform-specific TclX
+    TEA_ADD_SOURCES([tclx/win/tclXwinId.c])
+    TEA_ADD_INCLUDES([-I\"`${CYGPATH} ${srcdir}/tclx/win`\"])
+
 else
 
     # at least threading support in XZ requires pthreads
     TEA_ADD_LIBS([-lpthread])
+
+    # Add platform-specific TclX
+    TEA_ADD_SOURCES([tclx/unix/tclXunixId.c])
+    TEA_ADD_INCLUDES([-I\"`${CYGPATH} ${srcdir}/tclx/unix`\"])
 
 fi
 

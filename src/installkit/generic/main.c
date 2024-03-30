@@ -40,11 +40,19 @@ int _CRT_glob = 0;
 #define NULL_DEVICE "NUL"
 #else
 #define NULL_DEVICE "/dev/null"
-#endif
+#endif /* __WIN32__ */
 
 // 1 - console
 // 0 - GUI
 int installkitConsoleMode = 1;
+
+int g_argc = 0;
+#ifdef __WIN32__
+TCHAR **g_argv;
+#else
+char **g_argv;
+#endif /* __WIN32__ */
+
 
 #define TCL_SCRIPT_HERE(...) #__VA_ARGS__
 
@@ -83,6 +91,14 @@ static char preInitScript[] = TCL_SCRIPT_HERE(
     preinit
 );
 
+static char getStartupScript[] = TCL_SCRIPT_HERE(
+    if { ![info exists ::argc] || ![info exists ::argv] || !$::argc } { return -code error };
+    set ::argv0 [lindex $::argv 0];
+    set ::argv [lrange $::argv 1 end];
+    incr ::argc -1;
+    return $::argv0
+);
+
 #ifdef TCL_THREADS
 Tcl_AppInitProc Thread_Init;
 #endif /* TCL_THREADS */
@@ -98,6 +114,8 @@ Tcl_AppInitProc Registry_Init;
 Tcl_AppInitProc Twapi_base_Init;
 Tcl_AppInitProc Twapi_Init;
 #endif /* __WIN32__ */
+
+void TclX_IdInit (Tcl_Interp *interp);
 
 int
 Installkit_Startup(Tcl_Interp *interp) {
@@ -142,6 +160,69 @@ Installkit_Startup(Tcl_Interp *interp) {
         }
     }
 
+    // Tcl_Main can break $argv by deciding that the user has specified
+    // a startup script in it. In this case, Tcl_Main sets $::argv0 to the value
+    // it thinks it is, and sets everything else to $::argv. This leads to
+    // the fact that we don't know exactly what the command line was. But we
+    // need this to properly handle command line arguments.
+    //
+    // This AI-based behavior of Tcl_Main can be disabled by setting
+    // the start script to some fake value. However, in builds with thread
+    // support, calling the Tcl_SetStartupScript procedure before Tcl_Main
+    // causes a crash.
+    //
+    // We have no choice but to rebuilt here $::argv $::argc $::argv0 from
+    // the original command line.
+
+
+    Tcl_DString ds;
+    Tcl_DStringInit(&ds);
+
+    // The first argument to argv is the name of the executable file. Set its
+    // value to $::argv0. However, before any manipulation with argv, we should
+    // make sure that argc is not zero.
+
+    Tcl_Obj *exename;
+
+    if (g_argc) {
+#ifdef UNICODE
+        Tcl_WinTCharToUtf(*g_argv++, -1, &ds);
+#else
+        Tcl_ExternalToUtfDString(NULL, (char *)*g_argv++, -1, &ds);
+#endif /* UNICODE */
+        g_argc--;
+        exename = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+    } else {
+        exename = Tcl_NewStringObj(NULL, 0);
+    }
+    Tcl_IncrRefCount(exename);
+    Tcl_SetVar2Ex(interp, "argv0", NULL, exename, TCL_GLOBAL_ONLY);
+    Tcl_DecrRefCount(exename);
+
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(g_argc),
+        TCL_GLOBAL_ONLY);
+
+    Tcl_Obj *argvObj = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(argvObj);
+    while (g_argc--) {
+#ifdef UNICODE
+        Tcl_WinTCharToUtf(*g_argv++, -1, &ds);
+#else
+        Tcl_ExternalToUtfDString(NULL, (char *)*g_argv++, -1, &ds);
+#endif /* UNICODE */
+        Tcl_ListObjAppendElement(interp, argvObj,
+            Tcl_NewStringObj(Tcl_DStringValue(&ds), -1));
+    }
+    Tcl_SetVar2Ex(interp, "argv", NULL, argvObj, TCL_GLOBAL_ONLY);
+    Tcl_DecrRefCount(argvObj);
+
+    // Reset the start script, from a possible AI-based detection in Tcl_Main.
+    // If necessary, we will set the desired value later.
+    Tcl_SetStartupScript(NULL, NULL);
+
+    // Init TclX
+    TclX_IdInit(interp);
+
     Tcl_StaticPackage(0, "vfs", Vfs_Init, NULL);
 
     if (Vfs_Init(interp) != TCL_OK)
@@ -171,25 +252,18 @@ Installkit_Startup(Tcl_Interp *interp) {
     if (Tcl_Init(interp) != TCL_OK)
         goto error;
 
-    // if we are in bootstrap mode
-    if (Tcl_GetVar2Ex(interp, "::installkit::bootstrap_init", NULL, TCL_GLOBAL_ONLY) != NULL)
-        return TCL_OK;
-    // reset the result if the above variable was not found
-    Tcl_ResetResult(interp);
+    // If we are not in bootstrap mode, run postInit
+    if (Tcl_GetVar2Ex(interp, "::installkit::bootstrap_init", NULL, TCL_GLOBAL_ONLY) == NULL) {
 
-    if (Tcl_EvalEx(interp, "::installkit::postInit", -1, TCL_EVAL_GLOBAL) != TCL_OK)
-        goto error;
+        // Reset the result if the above variable was not found
+        Tcl_ResetResult(interp);
 
-    if (!installkitConsoleMode) {
-#ifdef __WIN32__
-        if (Tk_Init(interp) != TCL_OK)
-#else
-        if (Tcl_EvalEx(interp, "package require Tk", -1, TCL_EVAL_GLOBAL) != TCL_OK)
-#endif /* __WIN32__ */
+        if (Tcl_EvalEx(interp, "::installkit::postInit", -1, TCL_EVAL_GLOBAL) != TCL_OK)
             goto error;
+
     }
 
-    // source the main script here if wrapped
+    // Check if we have a wrapped script in VFS
     int isWrappedInt;
     Tcl_Obj *isWrappedObj = Tcl_ObjGetVar2(interp,
         Tcl_NewStringObj("::installkit::wrapped", -1 ),
@@ -199,16 +273,37 @@ Installkit_Startup(Tcl_Interp *interp) {
             Tcl_GetIntFromObj(interp, isWrappedObj, &isWrappedInt) != TCL_ERROR &&
             isWrappedInt) {
 
+        // We have wrapped script in VFS. Use it as startup script.
+
         Tcl_SetStartupScript(Tcl_NewStringObj(VFS_MOUNT "/main.tcl", -1), NULL);
 
-    } else if (!installkitConsoleMode) {
+    } else {
 
+        // Try searching for the startup script on the command line. If it is found,
+        // a successful result will be returned.
+        if (Tcl_EvalEx(interp, getStartupScript, -1, TCL_EVAL_GLOBAL) == TCL_OK) {
+            // We found a startup script, let's use it. It can be retrieved from
+            // the script result.
+            Tcl_SetStartupScript(Tcl_GetObjResult(interp), NULL);
+        } else {
+            // No startup script is specified on the command line.
+            // Resetting the error state in the interpreter.
+            Tcl_ResetResult(interp);
+        }
+
+    }
+
+    if (!installkitConsoleMode) {
 #ifdef __WIN32__
-        // create console if we run without script and in GUI mode
+        if (Tk_Init(interp) != TCL_OK)
+            goto error;
+        // Create console if we run without script and in GUI mode.
         if (Tk_CreateConsoleWindow(interp) != TCL_OK)
             goto error;
+#else
+        if (Tcl_EvalEx(interp, "package require Tk", -1, TCL_EVAL_GLOBAL) != TCL_OK)
+            goto error;
 #endif /* __WIN32__ */
-
     }
 
     return TCL_OK;
@@ -230,8 +325,10 @@ error:
 #ifdef __WIN32__
 
 int
-_tmain(int argc, TCHAR *argv[])
-{
+_tmain(int argc, TCHAR *argv[]) {
+
+    g_argc = argc;
+    g_argv = argv;
 
     installkitConsoleMode = GetEnvironmentVariableA("INSTALLKIT_CONSOLE",
         NULL, 0) == 0 ? 0 : 1;
@@ -243,13 +340,15 @@ _tmain(int argc, TCHAR *argv[])
     }
 
     return TCL_OK;
+
 }
 
 #else
 
 int
-main(int argc, char **argv)
-{
+main(int argc, char **argv) {
+    g_argc = argc;
+    g_argv = argv;
     Tcl_Main(argc, argv, Installkit_Startup);
     return TCL_OK;
 }

@@ -143,10 +143,10 @@ case $1 in
         uname -a
         echo
         echo "\$ $CC --version"
-        "$CC" --version 2>&1
+        $CC --version 2>&1
         echo
         echo "\$ $CXX --version"
-        "$CXX" --version 2>&1
+        $CXX --version 2>&1
         echo
         if command -v ldd >/dev/null 2>&1; then
             echo "\$ ldd --version"

@@ -28,3 +28,6 @@
 [submodule "src/twapi"]
 	path = src/twapi
 	url = https://github.com/chpock/twapi.git
+[submodule "src/installkit/tclx"]
+	path = src/installkit/tclx
+	url = https://github.com/flightaware/tclx.git
