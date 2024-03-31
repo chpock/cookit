@@ -1,9 +1,14 @@
-BUILD_ENV = \
-	LDFLAGS="$(LDFLAGS)" CFLAGS="$(CFLAGS)" \
-	CC="$(CC)" CXX="$(CXX)" RC="$(RC)" STRIP="$(STRIP)" \
-	PKG_CONFIG="$(PKG_CONFIG)"
 
-ALL_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi
+export LDFLAGS
+export CFLAGS
+export CC
+export CXX
+export RC
+export STRIP
+export PKG_CONFIG
+
+CHECK_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi
+ALL_TARGETS   = $(CHECK_TARGETS) zlib wolfssl
 
 ifeq ($(IJ_PLATFORM),Windows)
     ALL_TARGETS += thread
@@ -27,17 +32,32 @@ endif
 
 .PHONY: all clean check dist distclean
 
-all: $(TARGETS)
+all: $(TARGETS) $(KIT_PREFIX)/libs-deps.txt
 	@echo
 	@echo "Now type: make dist"
 	@echo
 
+$(KIT_PREFIX)/libs-deps.txt: $(TARGETS)
+	"$(TOP_SRCDIR)/src/installkit"/tools/gendeps.sh $(AC_HOST) "$(KIT_PREFIX)/lib" > "$@"
+
+# We want to link Tcl with our specific zlib for the following reasons:
+#   1. Our zlib is static. We will be sure that the binaries are
+#      independent of the system shared zlib.
+#   2. We want to update the zlib version as we need it
+#   3. We want to share zlib procedures between Tcl and other
+#      packages/libraries
+
+# Unfortunatelly, the Tcl autoconf system does not allow us to specify
+# the location of the zlib used. Below, we will use hacky ways to achive that.
+
 tcl: work/stamp-tcl
-work/stamp-tcl:
+work/stamp-tcl: work/stamp-zlib
 	mkdir -p work/tcl
+# Use our zlib. Specify paths to zlib by CFLAGS/LDFLAGS
 	cd work/tcl || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tcl/$(TCL_SYSTEM)/configure \
+	 || CFLAGS="$(CFLAGS) -I$(PREFIX)/include" LDFLAGS="$(LDFLAGS) -L$(PREFIX)/lib -lz" \
+	    $(TOP_SRCDIR)/src/tcl/$(TCL_SYSTEM)/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
 		--with-encoding=utf-8 \
@@ -50,15 +70,23 @@ endif
 	$(SEDI) -E \
 		-e 's/(install-msgs|install-tzdata):/& $$(TCLSH)/' \
 		work/tcl/Makefile
-# Use our zlib
-	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/src/zlib#' \
+# Use our zlib: remove zlib objs from the list of linking objects
+	$(SEDI) -e 's#^\([[:space:]]*ZLIB_OBJS\)#\1_MASKED#' \
 		work/tcl/Makefile
-	cd work/tcl \
-	 && $(BUILD_ENV) $(MAKE) all install-binaries install-libraries
+#	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/src/zlib#' \
+#		work/tcl/Makefile
+ifeq ($(IJ_PLATFORM),Windows)
+# On Windows, Tcl uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking tclsh,
+# but ignores LDFLAGS. This means that our zlib will be ignored in tclsh.
+# Let's fix that by adding $(LDFLAGS) to LDFLAGS_CONSOLE / LDFLAGS_WINDOW.
+	$(SEDI) -E -e 's/^[[:space:]]*LDFLAGS_(CONSOLE|WINDOW).*/& $$(LDFLAGS)/' \
+		work/tcl/Makefile
+endif
+	cd work/tcl && $(MAKE) all install-binaries install-libraries
 # Tcl installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tcl/Makefile && \
-		cd work/tcl && $(BUILD_ENV) $(MAKE) install-headers || : no-op
+		cd work/tcl && $(MAKE) install-headers || : no-op
 ifeq ($(IJ_PLATFORM),Windows)
 # Fix for the build with MinGW. Library is specified in wrong format.
 	$(SEDI) -e 's/ lib\(tcl[^.]\+\)\.a/ -l\1/g' $(PREFIX)/lib/tclConfig.sh
@@ -68,24 +96,36 @@ endif
 tk: work/stamp-tk
 work/stamp-tk: work/stamp-tcl
 	mkdir -p work/tk
+# Tk doesn't depent on zlib directly. However, whish binary depends on Tcl static
+# library and the Tcl static library needs zlib. We should specify our zlib
+# via LDFLAGS.
 	cd work/tk || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tk/$(TCL_SYSTEM)/configure \
+	 || LDFLAGS="$(LDFLAGS) -L$(PREFIX)/lib -lz" \
+	     $(TOP_SRCDIR)/src/tk/$(TCL_SYSTEM)/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST)  \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
+		$(if $(filter unix,$(TCL_SYSTEM)),--disable-rpath) \
 		$(TK_SHARED_FLAG) \
 		$(AQUA_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # see details in the patch
 	patch -N -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
 endif
+ifeq ($(IJ_PLATFORM),Windows)
+# On Windows, Tk uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking wish,
+# but ignores LDFLAGS. This means that our zlib will be ignored in wish.
+# Let's fix that by adding $(LDFLAGS) to LDFLAGS_CONSOLE / LDFLAGS_WINDOW.
+	$(SEDI) -E -e 's/^[[:space:]]*LDFLAGS_(CONSOLE|WINDOW).*/& $$(LDFLAGS)/' \
+		work/tk/Makefile
+endif
 	cd work/tk \
 	 && $(MAKE) all install-binaries install-libraries
 # Tk installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tk/Makefile && \
-		cd work/tk && $(BUILD_ENV) $(MAKE) install-headers || : no-op
+		cd work/tk && $(MAKE) install-headers || : no-op
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # revert the patch to keep source tree clean
 	patch -R -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
@@ -101,7 +141,7 @@ work/stamp-tclvfs: work/stamp-tcl
 	cd "$(TOP_SRCDIR)"/src/tclvfs && tar xzf ../thread.files.tar.gz
 	cd work/tclvfs || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tclvfs/configure \
+	 || $(TOP_SRCDIR)/src/tclvfs/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
@@ -117,7 +157,7 @@ work/stamp-cookfs: work/stamp-tcl
 	mkdir -p work/cookfs
 	cd work/cookfs || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/cookfs/configure \
+	 || $(TOP_SRCDIR)/src/cookfs/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
@@ -132,7 +172,7 @@ work/stamp-thread: work/stamp-tcl
 	mkdir -p work/thread
 	cd work/thread || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/thread/configure \
+	 || $(TOP_SRCDIR)/src/thread/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
@@ -150,7 +190,7 @@ work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/installkit/configure \
+	 || $(TOP_SRCDIR)/src/installkit/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(KIT_PREFIX) \
 		--exec-prefix=$(KIT_PREFIX) \
@@ -171,7 +211,7 @@ work/stamp-tktable: work/stamp-tcl work/stamp-tk
 	mkdir -p work/tktable
 	cd work/tktable || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tktable/configure \
+	 || $(TOP_SRCDIR)/src/tktable/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(KIT_PREFIX) \
 		--exec-prefix=$(KIT_PREFIX) \
@@ -191,7 +231,7 @@ work/stamp-tkdnd: work/stamp-tcl work/stamp-tk
 	mkdir -p work/tkdnd
 	cd work/tkdnd || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tkdnd/configure \
+	 || $(TOP_SRCDIR)/src/tkdnd/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(KIT_PREFIX) \
 		--exec-prefix=$(KIT_PREFIX) \
@@ -227,7 +267,7 @@ work/stamp-twapi: work/stamp-tcl
 	 < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
 	cd work/twapi || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/twapi/configure \
+	 || $(TOP_SRCDIR)/src/twapi/configure \
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
@@ -239,6 +279,29 @@ work/stamp-twapi: work/stamp-tcl
 # revert the patch to keep source tree clean
 	patch -R -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/twapi" \
 	 < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
+	touch $@
+
+wolfssl: work/stamp-wolfssl
+work/stamp-wolfssl: work/stamp-zlib
+	mkdir -p work/wolfssl
+	cd work/wolfssl || exit; \
+	 test -f config.status \
+	 || $(TOP_SRCDIR)/src/wolfssl/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
+		--prefix=$(PREFIX) \
+		--enable-shared=no \
+		$(SYMBOLS_FLAG)
+	cd work/wolfssl && $(MAKE) all install
+	touch $@
+
+zlib: work/stamp-zlib
+work/stamp-zlib:
+	mkdir -p work/zlib
+	cd work/zlib || exit; \
+	 test -f Makefile \
+	 || $(TOP_SRCDIR)/src/zlib/configure \
+		--prefix=$(PREFIX) --static
+	cd work/zlib && $(MAKE) all install
 	touch $@
 
 dist:
@@ -267,6 +330,10 @@ clean-tkdnd:
 	rm -rf work/tkdnd work/stamp-tkdnd
 clean-twapi:
 	rm -rf work/twapi work/stamp-twapi
+clean-zlib:
+	rm -rf work/zlib work/stamp-zlib
+clean-wolfssl:
+	rm -rf work/wolfssl work/stamp-wolfssl
 
 clean:
 	rm -rf kit out work
@@ -304,7 +371,7 @@ define run-check
     )
 endef
 
-check: $(patsubst %,check-%,$(ALL_TARGETS))
+check: $(patsubst %,check-%,$(CHECK_TARGETS))
 
 check-tcl:
 	$(call run-check, 0, tcl, src/tcl/tests)

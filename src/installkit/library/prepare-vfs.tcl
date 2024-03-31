@@ -49,8 +49,45 @@ proc shrink { src dst } {
     set fdst [open $dst w]
     fconfigure $fdst -encoding utf-8 -translation lf
 
+    # Line continuations should be deleted before comments are deleted.
+    #
+    # Let's imagine the following Tcl code:
+    #
+    #     # some comment here\
+    #         another line of comment
+    #
+    # If we remove everything from '#' to EOL, then the line
+    # 'another line of comment' will appear as a code. However, it was originally
+    # a comment. Thus, we must first join line continuations and then remove comments.
+
+    # Stage 1. Join line continuations.
+
+    set lines [list]
+    unset -nocomplain prev
     while { [gets $fsrc line] != -1 } {
         set line [string trim $line]
+        # strip line continuations
+        if { [string index $line end] eq "\\" } {
+            set line [string range $line 0 end-1]
+            if { [info exists prev] } {
+                append prev " "
+            }
+            append prev $line
+        } else {
+            if { [info exists prev] } {
+                set line "$prev $line"
+                unset prev
+            }
+            lappend lines $line
+        }
+    }
+    if { [info exists prev] } {
+        lappend lines $line
+    }
+
+    # Stage 2. Remove empty lines and comments.
+
+    foreach line $lines {
         if { $line eq "" } continue
         if { [string index $line 0] eq "#" && ![string match "#define*" $line] } continue
         puts $fdst $line

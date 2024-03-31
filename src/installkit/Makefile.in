@@ -126,6 +126,7 @@ TK_LIB_SPEC     = @TK_LIB_SPEC@
 TK_STUB_LIB_SPEC  = @TK_STUB_LIB_SPEC@
 TCL_LIB_SPEC    = @TCL_LIB_SPEC@
 TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
+TCL_LD_FLAGS    = @TCL_LD_FLAGS@
 
 # Not used, but retained for reference of what libs Tcl required
 TCL_LIBS	= @TCL_LIBS@
@@ -330,8 +331,20 @@ $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 
 VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macosx:$(srcdir)/tclx/generic:$(srcdir)/tclx/unix:$(srcdir)/tclx/win
 
+# Line continuations should be deleted before comments are deleted.
+#
+# Let's imagine the following Tcl code:
+#
+#     # some comment here\
+#         another line of comment
+#
+# If we remove everything from '#' to EOL, then the line
+# 'another line of comment' will appear as a code. However, it was originally
+# a comment. Thus, we must first join line continuations and then remove comments.
+
 bootstrap-vfs.tcl: $(BOOTSTRAP_FILES)
 	cat $^ | sed -E \
+	    -e :a -e '/\\$$/N; s/\\\n[[:space:]]*/ /; ta' \
 	    -e '/^[[:space:]]*package require vfs/d' \
 	    -e '/^[[:space:]]*#/d' \
 	    -e '/^[[:space:]]*$$/d' \
@@ -359,24 +372,24 @@ installkit_vfs.image: $(srcdir)/library/init-vfs.tcl installkit.vfs bootstrap-vf
 
 installkit_raw: $(PKG_OBJECTS)
 	rm -f "$@"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TCL_LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TCL_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
 installkit_raw.exe: $(PKG_OBJECTS) installkit.user.res.o
 	rm -f "$@"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
 installkitA_raw.exe: $(PKG_OBJECTS) installkit.admin.res.o
 	rm -f "$@"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-installkit-deps.txt: installkit_raw$(EXEEXT)
-	"$(srcdir)"/tools/gendeps.sh $(BUILD_PLATFORM) "$<" > "$@"
+installkit-deps.txt: installkit_raw$(EXEEXT) installkit.vfs
+	"$(srcdir)"/tools/gendeps.sh $(BUILD_PLATFORM) $^ > "$@"
 
 installkit-stats.txt: installkit$(EXEEXT)
 	INSTALLKIT_CONSOLE=1 ./installkit$(EXEEXT) stats | cat > "$@"

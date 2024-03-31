@@ -8,6 +8,7 @@
 # (at your option) any later version.
 
 testConstraint threaded [::tcl::pkgconfig get threaded]
+testConstraint linuxOnly [string equal $::tcl_platform(os) Linux]
 
 if { $::tcl_platform(platform) eq "windows" } {
     package require twapi
