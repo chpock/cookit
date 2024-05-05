@@ -459,16 +459,18 @@ proc installkit::Windows::shellExecute { args } {
     }
 
     set cmd [lindex $args 0]
-    if { $cmd ni { default edit explore find open print } } {
-        return -code error "invalid command: must be default,\
-            edit, explore, find, open or print"
+    if { $cmd ne "default" } {
+        if { $cmd ni { edit explore find open print } } {
+            return -code error "invalid command: must be default,\
+                edit, explore, find, open or print"
+        }
+        lappend flags -verb $cmd
     }
-    lappend flags -verb $cmd
 
     lappend flags -path [lindex $args 1]
 
     if { [llength $args] > 2 } {
-        lappend flags --params [lindex $args 2]
+        lappend flags -params [lindex $args 2]
     }
 
     # exec without waiting

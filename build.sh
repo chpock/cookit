@@ -25,13 +25,70 @@ progress() {
     COLOR="$2"
     while IFS= read -r line; do
         case "$line" in
+# Hide known and expected warnings:
+#
+# /home/vagrant/installkit-source-Linux-x86/src/cookfs/7zip/C/Sha256.c:445:5: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+# /home/vagrant/installkit-source-Linux-x86/src/cookfs/7zip/C/Sha256.c:446:5: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+# /home/vagrant/installkit-source-Linux-x86/src/cookfs/7zip/C/Sha1.c:366:5: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+# /home/vagrant/installkit-source-Linux-x86/src/cookfs/7zip/C/Sha1.c:367:5: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+            */cookfs/7zip/*Wstrict-aliasing*) : noop;;
+# /Users/vagrant/installkit-source-MacOS-X/src/cookfs/7zip/C/Threads.c:546:36: warning: unknown warning group '-Watomic-implicit-seq-cst', ignored [-Wunknown-warning-option]
+            */cookfs/7zip/*Wunknown-warning-option*) : noop;;
+# /home/vagrant/installkit-source-Linux-x86/src/installkit/tclx/generic/tclXutil.c:358:17: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+# /home/vagrant/installkit-source-Linux-x86/src/installkit/tclx/generic/tclXutil.c:994:60: warning: unused parameter 'offType' [-Wunused-parameter]
+# /home/vagrant/installkit-source-Linux-x86/src/installkit/tclx/unix/tclXunixId.c:601:27: warning: unused parameter 'clientData' [-Wunused-parameter]
+            */installkit/tclx/*Wunused-parameter*) : noop;;
+            */installkit/tclx/*Wsign-compare*) : noop;;
+# /Users/vagrant/installkit-source-MacOS-X/src/tk/unix/../macosx/ttkMacOSXTheme.c:1397:47: warning: incompatible pointer types passing 'SInt *' (aka 'int *') to parameter of type 'SInt32 *' (aka 'long *') [-Wincompatible-pointer-types]
+            */tk/unix/*Wincompatible-pointer-types*) : noop;;
+# ld: warning: text-based stub file /System/Library/Frameworks//QuartzCore.framework/QuartzCore.tbd and library file /System/Library/Frameworks//QuartzCore.framework/QuartzCore are out of sync. Falling back to library file for linking.
+# ld: warning: text-based stub file /System/Library/Frameworks//QuartzCore.framework/QuartzCore.tbd and library file /System/Library/Frameworks//QuartzCore.framework/QuartzCore are out of sync. Falling back to library file for linking.
+            *QuartzCore.framework/QuartzCore\ are\ out\ of\ sync*) : noop;;
+# multiple warnings from tktable
+            */src/tktable/generic/*warning:*) : noop;;
+# multiple warnings from tkdnd
+            */src/tkdnd/macosx/macdnd.m*warning:*) : noop;;
+# /Users/vagrant/installkit-source-MacOS-X/src/installkit/generic/main.c:67:73: warning: '$' in identifier [-Wdollar-in-identifier-extension]
+            */src/installkit/generic/main.c:*Wdollar-in-identifier-extension*) : noop;;
+# <command-line>: warning: "BUILD_vfs" redefined
+            *BUILD_vfs*redefined*) : noop;;
+# <command-line>: warning: "BUILD_tkdnd" redefined
+            *BUILD_tkdnd*redefined*) : noop;;
+# ldd: warning: you do not have execution permission for `/tmp/work/Linux-x86/kit/Linux-x86/lib/Tktable2.11.1/libTktable2.11.1.so'
+# ldd: warning: you do not have execution permission for `/tmp/work/Linux-x86/kit/Linux-x86/lib/tkdnd2.9.4/libtkdnd2.9.4.so'
+            *you\ do\ not\ have\ execution\ permission*lib*.so*) : noop;;
+# /tmp/work/Linux-x86_64/out/include/tcl.h:2553:55: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+            */include/tcl.h*Wint-to-pointer-cast*) : noop;;
+# /w/projects/installkit/src/twapi/twapi/base/tclobjs.c:4823:16: warning: ‘nenc’ may be used uninitialized [-Wmaybe-uninitialized]
+            */src/twapi/twapi/*Wmaybe-uninitialized*) : noop;;
+# /w/projects/installkit/src/twapi/twapi/base/twapi.c:288:9: warning: unused variable ‘compressed’ [-Wunused-variable]
+            */src/twapi/twapi/*Wunused-variable*) : noop;;
+# /w/projects/installkit/src/twapi/twapi/etw/etw.c:795:35: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+            */src/twapi/twapi/*Wint-to-pointer-cast*) : noop;;
+# /w/projects/installkit/src/twapi/twapi/etw/etw.c:849:31: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+            */src/twapi/twapi/*Wpointer-to-int-cast*) : noop;;
             \[OK\]*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[32m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
                 ;;
-            \[ERROR\]*)
+            *Total*Passed*Skipped*Failed*0*)
+                : ignore test results with "Failed: 0"
+                ;;
+            *Total*Passed*Skipped*Failed*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
                 ;;
-            make\[*|\[*|mkdir\ *|Tests\ *)
+            *Total*0*Passed*Skipped*Failed*0*)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            \[ERROR\]*|Test\ file\ error:*)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            make\[*|*Tests\ running\ in\ working\ dir:*)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m %s\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            *\ warning:\ *)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[33m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            \[INFO\]*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m %s\n' "$COLOR" "$LABEL" "$line"
                 ;;
         esac

@@ -261,4 +261,20 @@ proc ::crapvfs::unmount { mountPoint } {
 # Just ignore this proc
 proc ::crapvfs::setPassword {args} {}
 
+# Windows-specific fixes
+if { $::tcl_platform(platform) eq "windows" } {
+
+    # There is a high risk that some installer uses $::twapi::builtin_account_sids
+    # to check if the current user is an administrator. However, this variable is
+    # not available in recent versions of twapi.
+    package require twapi
+    array set ::twapi::builtin_account_sids {
+        administrators  S-1-5-32-544
+        users           S-1-5-32-545
+        guests          S-1-5-32-546
+        "power users"   S-1-5-32-547
+    }
+
+}
+
 package provide installkit::compat 1.0.0

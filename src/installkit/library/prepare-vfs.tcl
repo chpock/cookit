@@ -277,6 +277,18 @@ proc addVfs { { optional 0 } } {
 
 }
 
+proc addMtls { { optional 0 } } {
+    puts "* prepare the mtls package:"
+    set dir [glob -nocomplain -type d -directory $::rootLibDirectory "mtls*"]
+    if { ![llength $dir] } {
+        directoryExists [file join $::rootLibdirectory "mtls*"]
+        return
+    }
+
+    load {} mtls
+    genStaticPkgIndex $dir mtls [package present mtls]
+}
+
 proc addInstallkit { { optional 0 } } {
 
     puts "* prepare the installkit package:"
@@ -332,6 +344,7 @@ proc makeManifest { } {
 addTcl
 addTk
 addVfs
+addMtls
 if { [::tcl::pkgconfig get threaded] } addThread
 addInstallkit
 

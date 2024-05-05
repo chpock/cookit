@@ -31,6 +31,6 @@
 [submodule "src/installkit/tclx"]
 	path = src/installkit/tclx
 	url = https://github.com/flightaware/tclx.git
-[submodule "src/wolfssl"]
-	path = src/wolfssl
-	url = https://github.com/wolfSSL/wolfssl.git
+[submodule "src/tclmtls"]
+	path = src/tclmtls
+	url = https://github.com/chpock/tclmtls

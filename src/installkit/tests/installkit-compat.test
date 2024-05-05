@@ -36,6 +36,10 @@ test installkit::compat-crapvfs-2 {setPassword} -body {
     set ok ok
 } -result ok
 
+test installkit::compat-win-1 {check for twapi::builtin_account_sids array} -constraints win -body {
+    lsort [array names ::twapi::builtin_account_sids]
+} -result [list administrators guests {power users} users]
+
 # cleanup
 ::tcltest::cleanupTests
 return

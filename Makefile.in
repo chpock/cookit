@@ -7,8 +7,8 @@ export RC
 export STRIP
 export PKG_CONFIG
 
-CHECK_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi
-ALL_TARGETS   = $(CHECK_TARGETS) zlib wolfssl
+CHECK_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi tclmtls
+ALL_TARGETS   = $(CHECK_TARGETS) zlib
 
 ifeq ($(IJ_PLATFORM),Windows)
     ALL_TARGETS += thread
@@ -185,8 +185,23 @@ work/stamp-thread: work/stamp-tcl
 	rm -rf "$(TOP_SRCDIR)"/src/thread/tclconfig
 	touch $@
 
+tclmtls: work/stamp-tclmtls
+work/stamp-tclmtls:
+	mkdir -p work/tclmtls
+	cd work/tclmtls || exit; \
+	 test -f config.status \
+	 || PKG_CONFIG= $(TOP_SRCDIR)/src/tclmtls/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--enable-client --disable-server \
+		--enable-shared=no \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/tclmtls && $(MAKE) all install
+	touch $@
+
 installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-thread work/stamp-twapi)
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-thread work/stamp-twapi)
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
@@ -200,6 +215,7 @@ work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp
 		--with-lib-twapi=`echo $(PREFIX)/lib/twapi*/*twapi*.a` \
 		--with-lib-cookfs=`echo $(PREFIX)/lib/cookfs*/*cookfs*.a` \
 		--with-lib-vfs=`echo $(PREFIX)/lib/vfs*/*vfs*.a` \
+		--with-lib-mtls=`echo $(PREFIX)/lib/mtls*/*mtls*.a` \
 		--with-strip-command="$(STRIP) $(STRIPFLAGS)" \
 		--with-upx-command="$(UPX)" \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
@@ -281,19 +297,6 @@ work/stamp-twapi: work/stamp-tcl
 	 < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
 	touch $@
 
-wolfssl: work/stamp-wolfssl
-work/stamp-wolfssl: work/stamp-zlib
-	mkdir -p work/wolfssl
-	cd work/wolfssl || exit; \
-	 test -f config.status \
-	 || $(TOP_SRCDIR)/src/wolfssl/configure \
-		--build=$(AC_HOST) --host=$(AC_HOST) \
-		--prefix=$(PREFIX) \
-		--enable-shared=no \
-		$(SYMBOLS_FLAG)
-	cd work/wolfssl && $(MAKE) all install
-	touch $@
-
 zlib: work/stamp-zlib
 work/stamp-zlib:
 	mkdir -p work/zlib
@@ -332,16 +335,12 @@ clean-twapi:
 	rm -rf work/twapi work/stamp-twapi
 clean-zlib:
 	rm -rf work/zlib work/stamp-zlib
-clean-wolfssl:
-	rm -rf work/wolfssl work/stamp-wolfssl
+clean-tclmtls:
+	rm -rf work/tclmtls work/stamp-tclmtls
 
 clean:
 	rm -rf kit out work
 	rm -f $(IJ_PLATFORM).zip
-
-ifneq ($(VERBOSE),)
-    override CHECKFLAGS += -verbose "body error start"
-endif
 
 ifeq ($(WINDOWS_SYSTEM),WSL)
 # Use native temporary directory for builds for Windows platform on WSL
@@ -362,7 +361,7 @@ define run-check
             DISPLAY=:0 \
             TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/src/installkit/tests/helper.sh $@`" \
             $(KIT_PREFIX)/bin/installkit$(EXE_EXT) \
-            `$(CYGPATH) "$(CHECK_WORK_DIR)/$@/all.tcl"` $(CHECKFLAGS) | \
+            `$(CYGPATH) "$(CHECK_WORK_DIR)/$@/all.tcl"` -verbose "body error start" $(CHECKFLAGS) | \
             tr -d '\r' | \
             tee $@.output && \
             grep -q 'Failed[[:space:]]\+0$$' $@.output
@@ -391,6 +390,8 @@ check-tkdnd:
 	$(call run-check, 1, tk, src/tkdnd/tests)
 check-twapi:
 	$(call run-check, 0, tcl, src/twapi/tests)
+check-tclmtls:
+	$(call run-check, 1, tcl, src/tclmtls/tests)
 
 distclean: clean
 	rm -f Makefile

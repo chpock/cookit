@@ -18,7 +18,7 @@ package require installkit
 
 test installkit-tclX-1 {id host} -body {
     id host
-} -result [info hostname]
+} -result [string trimright [info hostname] .]
 
 test installkit-tclX-unix-1 {id user} -constraints unix -setup {
     set expected [list [exec id -run] [exec id -un]]

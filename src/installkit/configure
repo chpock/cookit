@@ -786,6 +786,7 @@ with_lib_twapi
 with_lib_thread
 with_lib_vfs
 with_lib_cookfs
+with_lib_mtls
 with_upx_command
 with_strip_command
 with_tclinclude
@@ -1440,6 +1441,7 @@ Optional Packages:
  --with-lib-thread library file for Thread package
  --with-lib-vfs library file for VFS package
  --with-lib-cookfs library file for CookFS package
+ --with-lib-mtls library file for mtls package
  --with-upx-command use specified command to pack binary
  --with-strip-command use specified command to strip binary
   --with-tclinclude       directory containing the public Tcl header files
@@ -5860,6 +5862,20 @@ else $as_nop
 fi
 
 
+    dir="${LIB_VFS_DIR}"
+    vars=" vfsUtils.tcl vfslib.tcl "
+    for i in $vars; do
+
+    vars="${dir}/$i"
+    for i in $vars; do
+        BOOTSTRAP_FILES="$BOOTSTRAP_FILES $i"
+    done
+
+
+    done
+
+
+
 # Check whether --with-lib-cookfs was given.
 if test ${with_lib_cookfs+y}
 then :
@@ -5893,20 +5909,6 @@ else $as_nop
 fi
 
 
-    dir="${LIB_VFS_DIR}"
-    vars=" vfsUtils.tcl vfslib.tcl "
-    for i in $vars; do
-
-    vars="${dir}/$i"
-    for i in $vars; do
-        BOOTSTRAP_FILES="$BOOTSTRAP_FILES $i"
-    done
-
-
-    done
-
-
-
     dir="${LIB_COOKFS_DIR}"
     vars="
     pkgconfig.tcl memchan.tcl readerchannel.tcl \
@@ -5922,6 +5924,39 @@ fi
 
     done
 
+
+
+# Check whether --with-lib-mtls was given.
+if test ${with_lib_mtls+y}
+then :
+  withval=$with_lib_mtls; LIB_MTLS_FILE=${withval}
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for mtls package library file" >&5
+printf %s "checking for mtls package library file... " >&6; }
+if test -f "${LIB_MTLS_FILE}"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: found ${LIB_MTLS_FILE}" >&5
+printf "%s\n" "found ${LIB_MTLS_FILE}" >&6; }
+
+    vars="${LIB_MTLS_FILE}"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.[lL][iI][bB]$/-l\1/'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
+    LIB_MTLS_DIR="`dirname "${LIB_MTLS_FILE}"`"
+
+else $as_nop
+
+    as_fn_error $? "could not find ${LIB_MTLS_FILE}" "$LINENO" 5
+
+fi
 
 
 # Check whether --with-upx-command was given.
@@ -9327,9 +9362,37 @@ printf "%s\n" "#define USE_TK_STUBS 1" >>confdefs.h
 
 
 
+    # required for tclmtls
+
+    vars="-lbcrypt -lws2_32"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.[lL][iI][bB]$/-l\1/'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
+
 else
 
-    # at least threading support in XZ requires pthreads
+    if test "${TCL_SHLIB_SUFFIX}" = ".dylib"; then
+        # required for tclmtls on MacOS
+
+    vars="-framework Security"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.[lL][iI][bB]$/-l\1/'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
+    fi
+
+    # pthreads is needed for threading support in XZ
 
     vars="-lpthread"
     for i in $vars; do
@@ -9509,6 +9572,55 @@ printf "%s\n" "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+# -lrt may be required on old Linux platforms for tclmtls, since mbedtls
+# uses clock_gettime(). Modern Linux platforms have clock_gettime() directly
+# in glibc.
+if test "${TEA_PLATFORM}" = "unix" ; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for required -lrt" >&5
+printf %s "checking for required -lrt... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+        #include <time.h>
+
+int
+main (void)
+{
+
+        struct timespec t;
+        clock_gettime(0, &t);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+else $as_nop
+
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+    vars="-lrt"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.[lL][iI][bB]$/-l\1/'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+fi
 
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols option.

@@ -233,12 +233,12 @@ case "$IJ_PLATFORM" in
     ;;
 esac
 
-if command -v ccache >/dev/null 2>&1; then
-    CCACHE="ccache "
-    echo "Info: ccache is enabled"
-else
+#if command -v ccache >/dev/null 2>&1; then
+#    CCACHE="ccache "
+#    echo "Info: ccache is enabled"
+#else
     unset CCACHE
-fi
+#fi
 
 : ${CC:=${CCACHE}${TOOLCHAIN_PREFIX}gcc}
 : ${CXX:=${CCACHE}${TOOLCHAIN_PREFIX}g++}

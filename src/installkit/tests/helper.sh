@@ -24,6 +24,17 @@ notfile() {
 }
 
 case "$1" in
+    check-installkit)
+        case "$PLATFORM" in
+            Linux*)
+                # Don't check dependencies in Ubuntu24.04 environment.
+                # Real linux build environment is Centos6
+                if test -e /etc/lsb-release && grep -q -F DISTRIB_RELEASE=24.04 /etc/lsb-release; then
+                    skip "installkit-deps-*"
+                fi
+            ;;
+        esac
+        ;;
     check-tclvfs)
         # Tests 4.1 and 4.2 depend on vfs::ns, which we don't ship
         skip vfs-4.1 vfs-4.2

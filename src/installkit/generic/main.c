@@ -108,6 +108,7 @@ Tcl_AppInitProc Tk_Init;
 #endif /* __WIN32__ */
 Tcl_AppInitProc Vfs_Init;
 Tcl_AppInitProc Cookfs_Init;
+Tcl_AppInitProc Mtls_Init;
 
 #ifdef __WIN32__
 Tcl_AppInitProc Registry_Init;
@@ -231,6 +232,11 @@ Installkit_Startup(Tcl_Interp *interp) {
     Tcl_StaticPackage(0, "Cookfs", Cookfs_Init, NULL);
 
     if (Cookfs_Init(interp) != TCL_OK)
+        goto error;
+
+    Tcl_StaticPackage(0, "mtls", Mtls_Init, NULL);
+
+    if (Mtls_Init(interp) != TCL_OK)
         goto error;
 
 #ifdef __WIN32__

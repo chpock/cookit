@@ -31,6 +31,7 @@ set expected [dict create {*}{
                 libdl.so.2
                 libm.so.6
                 libpthread.so.0
+                librt.so.1
                 linux-gate.so.1
             }
             libtk*.so {
@@ -84,6 +85,7 @@ set expected [dict create {*}{
                 libdl.so.2
                 libm.so.6
                 libpthread.so.0
+                librt.so.1
                 linux-vdso.so.1
             }
             libtk*.so {
@@ -133,6 +135,7 @@ set expected [dict create {*}{
         installkit-deps {
             installkit_raw {
                 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+                /System/Library/Frameworks/Security.framework/Versions/A/Security
                 /usr/lib/libSystem.B.dylib
             }
             libtk*.dylib   {
@@ -193,6 +196,7 @@ set expected [dict create {*}{
                 WINTRUST.dll
                 WS2_32.dll
                 WTSAPI32.dll
+                bcrypt.dll
                 credui.dll
                 msvcrt.dll
                 ole32.dll
@@ -230,7 +234,7 @@ set expected [list apply {{ platform expected type } {
     if { ![dict exists $expected $platform $type] } { return "" }
     set result [list]
     dict for { k v } [dict get $expected $platform $type] {
-        lappend result "$k [join $v { }]"
+        lappend result "$k [string tolower [join $v { }]]"
     }
     return [join $result \n]
 }} $platform $expected]
@@ -243,7 +247,7 @@ test installkit-deps-installkit-deps {installkit dependencies} -setup [concat \
     dict for { exe data } $deps {
         dict for { type data } $data {
             if { $type ne "DEPS" } continue
-            lappend result "$exe $data"
+            lappend result "$exe [string tolower $data]"
         }
     }
     join $result \n
@@ -292,7 +296,7 @@ test installkit-deps-libs-deps {other packages dependencies} -setup [concat \
     dict for { exe data } $deps {
         dict for { type data } $data {
             if { $type ne "DEPS" } continue
-            lappend result "$exe $data"
+            lappend result "$exe [string tolower $data]"
         }
     }
     join $result \n

@@ -155,6 +155,8 @@ AS_IF([test -f "${LIB_VFS_FILE}"], [
     AC_MSG_ERROR([could not find ${LIB_VFS_FILE}])
 ])
 
+IK_ADD_BOOTSTRAP_FILES_FROM([${LIB_VFS_DIR}], [ vfsUtils.tcl vfslib.tcl ])
+
 AC_ARG_WITH(lib-cookfs, [ --with-lib-cookfs library file for CookFS package ], LIB_COOKFS_FILE=${withval})
 AC_MSG_CHECKING([for CookFS package library file])
 AS_IF([test -f "${LIB_COOKFS_FILE}"], [
@@ -165,11 +167,19 @@ AS_IF([test -f "${LIB_COOKFS_FILE}"], [
     AC_MSG_ERROR([could not find ${LIB_COOKFS_FILE}])
 ])
 
-IK_ADD_BOOTSTRAP_FILES_FROM([${LIB_VFS_DIR}], [ vfsUtils.tcl vfslib.tcl ])
-
 IK_ADD_BOOTSTRAP_FILES_FROM([${LIB_COOKFS_DIR}], [
     pkgconfig.tcl memchan.tcl readerchannel.tcl \
     vfs.tcl writer.tcl optimize.tcl cookvfs.tcl \
+])
+
+AC_ARG_WITH(lib-mtls, [ --with-lib-mtls library file for mtls package ], LIB_MTLS_FILE=${withval})
+AC_MSG_CHECKING([for mtls package library file])
+AS_IF([test -f "${LIB_MTLS_FILE}"], [
+    AC_MSG_RESULT([found ${LIB_MTLS_FILE}])
+    TEA_ADD_LIBS([${LIB_MTLS_FILE}])
+    LIB_MTLS_DIR="`dirname "${LIB_MTLS_FILE}"`"
+], [
+    AC_MSG_ERROR([could not find ${LIB_MTLS_FILE}])
 ])
 
 AC_ARG_WITH(upx-command, [ --with-upx-command use specified command to pack binary ], UPX_COMMAND=${withval})
@@ -315,9 +325,17 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_SOURCES([tclx/win/tclXwinId.c])
     TEA_ADD_INCLUDES([-I\"`${CYGPATH} ${srcdir}/tclx/win`\"])
 
+    # required for tclmtls
+    TEA_ADD_LIBS([-lbcrypt -lws2_32])
+
 else
 
-    # at least threading support in XZ requires pthreads
+    if test "${TCL_SHLIB_SUFFIX}" = ".dylib"; then
+        # required for tclmtls on MacOS
+        TEA_ADD_LIBS([-framework Security])
+    fi
+
+    # pthreads is needed for threading support in XZ
     TEA_ADD_LIBS([-lpthread])
 
     # Add platform-specific TclX
@@ -366,6 +384,24 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])], [
     AC_MSG_RESULT([no])
     CFLAGS="$_CFLAGS"
 ])
+
+# -lrt may be required on old Linux platforms for tclmtls, since mbedtls
+# uses clock_gettime(). Modern Linux platforms have clock_gettime() directly
+# in glibc.
+if test "${TEA_PLATFORM}" = "unix" ; then
+    AC_MSG_CHECKING(for required -lrt)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+        #include <time.h>
+    ]],[[
+        struct timespec t;
+        clock_gettime(0, &t);
+    ]])], [
+        AC_MSG_RESULT(no)
+    ], [
+        AC_MSG_RESULT([yes])
+        TEA_ADD_LIBS([-lrt])
+    ])
+fi
 
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols option.
