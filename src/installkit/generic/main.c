@@ -53,6 +53,10 @@ TCHAR **g_argv;
 char **g_argv;
 #endif /* __WIN32__ */
 
+static Tcl_Obj *bootstrapObj = NULL;
+#ifdef TCL_THREADS
+static Tcl_Mutex bootstrapMx;
+#endif /* TCL_THREADS */
 
 #define TCL_SCRIPT_HERE(...) #__VA_ARGS__
 
@@ -64,8 +68,14 @@ static char preInitScript[] = TCL_SCRIPT_HERE(
         rename preinit {};
         set n [info nameofexecutable];
         if { ![catch {
-            set ::installkit::cookfspages [::cookfs::c::pages -readonly $n];
-            uplevel #0 [$::installkit::cookfspages get 0];
+            if { [info exists bootstrap] } {
+                set ::installkit::bootstrap $bootstrap;
+                unset bootstrap
+            } {
+                set ::installkit::cookfspages [::cookfs::c::pages -readonly $n];
+                set ::installkit::bootstrap [$::installkit::cookfspages get 0]
+            };
+            uplevel #0 $::installkit::bootstrap;
             ::installkit::preInit
         } e] } { return };
         if { [info exists ::env(INSTALLKIT_BOOTSTRAP)] } {
@@ -225,19 +235,8 @@ Installkit_Startup(Tcl_Interp *interp) {
     TclX_IdInit(interp);
 
     Tcl_StaticPackage(0, "vfs", Vfs_Init, NULL);
-
-    if (Vfs_Init(interp) != TCL_OK)
-        goto error;
-
     Tcl_StaticPackage(0, "Cookfs", Cookfs_Init, NULL);
-
-    if (Cookfs_Init(interp) != TCL_OK)
-        goto error;
-
     Tcl_StaticPackage(0, "mtls", Mtls_Init, NULL);
-
-    if (Mtls_Init(interp) != TCL_OK)
-        goto error;
 
 #ifdef __WIN32__
     Tcl_StaticPackage(0, "Tk", Tk_Init, NULL);
@@ -253,16 +252,52 @@ Installkit_Startup(Tcl_Interp *interp) {
     Tcl_StaticPackage(0, "twapi", Twapi_Init, NULL);
 #endif /* __WIN32__ */
 
+    // If the bootstrap code is already retrieved by the first interpreter,
+    // it must be used in child interpreters as well.
+#ifdef TCL_THREADS
+    Tcl_MutexLock(&bootstrapMx);
+#endif /* TCL_THREADS */
+    if (bootstrapObj != NULL) {
+        Tcl_SetVar2Ex(interp, "bootstrap", NULL,
+            Tcl_DuplicateObj(bootstrapObj), TCL_GLOBAL_ONLY);
+    }
+#ifdef TCL_THREADS
+    Tcl_MutexUnlock(&bootstrapMx);
+#endif /* TCL_THREADS */
+
     TclSetPreInitScript(preInitScript);
 
     if (Tcl_Init(interp) != TCL_OK)
         goto error;
 
     // If we are not in bootstrap mode, run postInit
-    if (Tcl_GetVar2Ex(interp, "::installkit::bootstrap_init", NULL, TCL_GLOBAL_ONLY) == NULL) {
+    if (Tcl_GetVar2Ex(interp, "::installkit::bootstrap_init", NULL,
+        TCL_GLOBAL_ONLY) == NULL)
+    {
 
         // Reset the result if the above variable was not found
         Tcl_ResetResult(interp);
+
+        #ifdef TCL_THREADS
+        Tcl_MutexLock(&bootstrapMx);
+        #endif /* TCL_THREADS */
+        // Save bootstrap code. It will be used in child interps.
+        if (bootstrapObj == NULL) {
+            bootstrapObj = Tcl_GetVar2Ex(interp, "::installkit::bootstrap", NULL,
+                TCL_GLOBAL_ONLY);
+            if (bootstrapObj == NULL) {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to get"
+                    " bootstrap", -1));
+                #ifdef TCL_THREADS
+                Tcl_MutexUnlock(&bootstrapMx);
+                #endif /* TCL_THREADS */
+                goto error;
+            }
+            bootstrapObj = Tcl_DuplicateObj(bootstrapObj);
+        }
+        #ifdef TCL_THREADS
+        Tcl_MutexUnlock(&bootstrapMx);
+        #endif /* TCL_THREADS */
 
         if (Tcl_EvalEx(interp, "::installkit::postInit", -1, TCL_EVAL_GLOBAL) != TCL_OK)
             goto error;

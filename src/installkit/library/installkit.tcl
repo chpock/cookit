@@ -39,8 +39,7 @@ proc ::installkit::recursive_glob { dir pattern } {
 
 proc ::installkit::tmpmount {} {
     variable tmpMountCount
-    variable root
-    while { [file exists [set mnt "$root[incr tmpMountCount]"]] } {}
+    while { [file exists [set mnt "/installkittmpvfs[incr tmpMountCount]"]] } {}
     return $mnt
 }
 
@@ -548,15 +547,18 @@ proc ::installkit::parsePEResources { exe } {
 proc ::installkit::makestub { exe } {
 
     variable root
-    variable cookfspages
+
+    # TODO: optimize and don't read the head into memory
+    set pg [::cookfs::c::pages -readonly [info nameofexecutable]]
+    set head [$pg gethead]
+    set bootstrap [$pg get 0]
+    $pg delete
 
     set fh [open $exe w]
     fconfigure $fh -encoding binary -translation binary
-    puts -nonewline $fh [$cookfspages gethead]
+    puts -nonewline $fh $head
     puts -nonewline $fh "IKMAGICIK\0\0\0\0\0\0\0\0"
     close $fh
-
-    set bootstrap [$cookfspages get 0]
 
     set tmpmount [tmpmount]
     mountRoot -bootstrap $bootstrap $exe $tmpmount

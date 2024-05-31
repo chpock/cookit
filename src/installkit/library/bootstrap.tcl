@@ -14,19 +14,42 @@ proc ::installkit::preInit {} {
 
     set ::installkit::root "/installkitvfs"
 
-    if { [catch {
-        set ::installkit::cookfsindex [::cookfs::fsindex [$::installkit::cookfspages index]]
-        set ::installkit::cookfshandle [::cookfs::Mount \
-            -pagesobject $::installkit::cookfspages \
-            -fsindexobject $::installkit::cookfsindex \
-            -readonly [info nameofexecutable] \
-            $::installkit::root \
-        ]
-    } err] } {
-        return -code error "Error while mounting the internal filesystem: $err"
-    }
+    # Mount the root VFS if it is not already mounted
+    if { [catch { file attributes $::installkit::root -vfs } isVfs] || !$isVfs } {
 
-    set ::installkit::wrapped [file exists [file join $::installkit::root main.tcl]]
+        if { [catch {
+            # Create a new pages object if it does not exist
+            if { ![info exists ::installkit::cookfspages] } {
+                set ::installkit::cookfspages [::cookfs::pages -readonly \
+                    [info nameofexecutable]]
+            }
+            set ::installkit::cookfsindex [::cookfs::fsindex \
+                [$::installkit::cookfspages index]]
+            set ::installkit::cookfshandle [::cookfs::Mount \
+                -volume \
+                -pagesobject $::installkit::cookfspages \
+                -fsindexobject $::installkit::cookfsindex \
+                -readonly [info nameofexecutable] \
+                "$::installkit::root" \
+            ]
+        } err] } {
+            return -code error "Error while mounting the internal filesystem: $err"
+        }
+
+        # This flag will be used lated in postInit
+        set ::installkit::main_interp 1
+
+        set ::installkit::wrapped [file exists [file join $::installkit::root main.tcl]]
+
+    } else {
+
+        # This flag will be used lated in postInit
+        set ::installkit::main_interp 0
+
+        # This is not the first interp, don't check for wrapped main script
+        set ::installkit::wrapped 0
+
+    }
 
     if { $::installkit::wrapped } {
         set ::tcl_interactive 0
@@ -94,7 +117,11 @@ proc ::installkit::postInit {} {
     package require installkit
 
     # if we haven't wrapped up and not in thread, try checking out the simple commands
-    if { !$::installkit::wrapped && ![info exists ::parentThread] } installkit::rawStartup
+    if { $::installkit::main_interp && !$::installkit::wrapped && ![info exists ::parentThread] } {
+        installkit::rawStartup
+    }
+
+    unset ::installkit::main_interp
 
 }
 

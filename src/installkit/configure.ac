@@ -168,7 +168,7 @@ AS_IF([test -f "${LIB_COOKFS_FILE}"], [
 ])
 
 IK_ADD_BOOTSTRAP_FILES_FROM([${LIB_COOKFS_DIR}], [
-    pkgconfig.tcl memchan.tcl readerchannel.tcl \
+    memchan.tcl readerchannel.tcl \
     vfs.tcl writer.tcl optimize.tcl cookvfs.tcl \
 ])
 

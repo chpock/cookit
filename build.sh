@@ -425,6 +425,9 @@ while [ "$STATE" != "running" ]; do
         fi
         log "VM is meditating. Let's try to reload it..."
         VM_ACTION="reload"
+    elif [ -z "$STATE" ]; then
+        log "Warning: VM state is empty. Retry."
+        unset VM_ACTION
     elif [ "$STATE" != "running" ]; then
         error "Error: unexpected VM state."
         exit 1

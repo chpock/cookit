@@ -80,7 +80,7 @@ test ik-1.6 {An directory tree as input} -setup {
 
 test ik-2.1 {::installkit::tmpmount} -body {
     ::installkit::tmpmount
-} -result {/installkitvfs1}
+} -result {/installkittmpvfs1}
 
 test ik-2.2 {::installkit::tmpmount, the first mount point is busy} -setup {
     # cleanup the mount counter
@@ -93,7 +93,7 @@ test ik-2.2 {::installkit::tmpmount, the first mount point is busy} -setup {
     unset ::installkit::tmpMountCount
 } -body {
     ::installkit::tmpmount
-} -result {/installkitvfs2} -cleanup {
+} -result {/installkittmpvfs2} -cleanup {
     vfs::unmount $tmpmount
     file delete -force $vfs
 }
@@ -103,11 +103,11 @@ test ik-2.3 {::installkit::tmpmount, twice} -setup {
     unset ::installkit::tmpMountCount
 } -body {
     list [::installkit::tmpmount] [::installkit::tmpmount]
-} -result {/installkitvfs1 /installkitvfs2}
+} -result {/installkittmpvfs1 /installkittmpvfs2}
 
 test ik-2.4 {::installkit::tmpmount, call the third time without cleanup} -body {
     ::installkit::tmpmount
-} -result {/installkitvfs3}
+} -result {/installkittmpvfs3}
 
 # ::installkit::addfiles
 
@@ -767,6 +767,29 @@ test ik-4.9.1 {::installkit::newThread} -constraints threaded -setup {
 } -result {+ {\{ var foo {"}} bar false bar} -cleanup {
     foreach { k v } $save { set $k $v }
     ::thread::release $tid
+}
+
+# If VFS is mounted not as volume, then it is mounted relative to
+# the current volume. On Windows it means that the root mount point will be
+# unavailable when volume (drive) for pwd is changed. In order to avoid that,
+# the root mount point should be registered as a volume.
+#
+# On the other hand, it is possible that the root file system is mounted
+# several times. To avoid multiple mounts, here we check that there is exactly
+# one root volume.
+test ik-5.1 {Test that installkit root is a volume} -body {
+    llength [lsearch -all -exact [file volumes] $::installkit::root]
+} -result 1
+
+test ik-5.2 {Check that there is only one installkit root volume for multiple interps} -setup {
+    set interp1 [interp create]
+    set interp2 [interp create]
+} -body {
+    llength [lsearch -all -exact [file volumes] $::installkit::root]
+} -result 1 -cleanup {
+    interp delete $interp1
+    interp delete $interp2
+    unset interp1 interp2
 }
 
 # cleanup

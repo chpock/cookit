@@ -5911,7 +5911,7 @@ fi
 
     dir="${LIB_COOKFS_DIR}"
     vars="
-    pkgconfig.tcl memchan.tcl readerchannel.tcl \
+    memchan.tcl readerchannel.tcl \
     vfs.tcl writer.tcl optimize.tcl cookvfs.tcl \
 "
     for i in $vars; do
