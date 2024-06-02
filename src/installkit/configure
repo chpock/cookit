@@ -679,7 +679,6 @@ TCL_INCLUDES
 bin_BINARIES
 STRIP_COMMAND
 UPX_COMMAND
-BOOTSTRAP_FILES
 PKG_OBJECTS
 PKG_SOURCES
 RANLIB
@@ -5717,10 +5716,6 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 # TEA_ADD_* any platform specific compiler/build info here.
 #--------------------------------------------------------------------
 
-
-
-
-
 if test "${TEA_PLATFORM}" = "windows"
 then :
 
@@ -5862,20 +5857,6 @@ else $as_nop
 fi
 
 
-    dir="${LIB_VFS_DIR}"
-    vars=" vfsUtils.tcl vfslib.tcl "
-    for i in $vars; do
-
-    vars="${dir}/$i"
-    for i in $vars; do
-        BOOTSTRAP_FILES="$BOOTSTRAP_FILES $i"
-    done
-
-
-    done
-
-
-
 # Check whether --with-lib-cookfs was given.
 if test ${with_lib_cookfs+y}
 then :
@@ -5907,23 +5888,6 @@ else $as_nop
     as_fn_error $? "could not find ${LIB_COOKFS_FILE}" "$LINENO" 5
 
 fi
-
-
-    dir="${LIB_COOKFS_DIR}"
-    vars="
-    memchan.tcl readerchannel.tcl \
-    vfs.tcl writer.tcl optimize.tcl cookvfs.tcl \
-"
-    for i in $vars; do
-
-    vars="${dir}/$i"
-    for i in $vars; do
-        BOOTSTRAP_FILES="$BOOTSTRAP_FILES $i"
-    done
-
-
-    done
-
 
 
 # Check whether --with-lib-mtls was given.
@@ -6004,14 +5968,6 @@ printf "%s\n" "no" >&6; }
     STRIP_COMMAND="echo"
 
 fi
-
-
-
-    vars="library/bootstrap.tcl"
-    for i in $vars; do
-        BOOTSTRAP_FILES="$BOOTSTRAP_FILES $i"
-    done
-
 
 
 bin_BINARIES="${PACKAGE_NAME}${EXEEXT} ${PACKAGE_NAME}U${EXEEXT}"

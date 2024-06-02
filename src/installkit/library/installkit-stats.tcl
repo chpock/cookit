@@ -15,7 +15,7 @@ proc ::installkit::stats { args } {
         set fname   [lindex $args 0]
         set fsize   [file size $fname]
         set root    [::installkit::tmpmount]
-        set pages   [::cookfs::c::pages -readonly $fname]
+        set pages   [::cookfs::pages -readonly $fname]
         set fsindex [::cookfs::fsindex [$pages index]]
         ::cookfs::Mount -pagesobject $pages -fsindexobject $fsindex \
             -readonly $fname $root

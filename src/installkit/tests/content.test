@@ -36,7 +36,7 @@ foreach { pkgName pkgVersion constraints } {
     tkdnd               2.9.4  {}
     ttk::theme::jammer  0.1    {}
     vfs                 1.4.2  {}
-    vfs::cookfs         1.4.0  {}
+    cookfs              1.6.0  {}
     installkit::Windows 1.1    {win}
 } {
     test content-3.[incr count] [list package require $pkgName $pkgVersion] \

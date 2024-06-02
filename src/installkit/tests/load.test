@@ -16,7 +16,7 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
 
 test load-1 {Prepare VFS with SO file(s)} -setup {} -body {
     set vfs [tcltest::makeFile {} load.vfs]
-    vfs::cookfs::Mount $vfs $vfs
+    ::cookfs::Mount $vfs $vfs
     # Use Tktable library for tests
     package require Tktable
     set so [lsearch -exact -index 1 -inline [info loaded] Tktable]
@@ -30,7 +30,7 @@ test load-1 {Prepare VFS with SO file(s)} -setup {} -body {
     set so_vfs2 [file join $vfs "${so_name}2"]
     file copy -force $so $so_vfs1
     file copy -force $so $so_vfs2
-    vfs::unmount $vfs
+    ::cookfs::Unmount $vfs
     return OK
 } -result OK
 
@@ -50,14 +50,14 @@ foreach v {vfs so_vfs1 so_vfs2 prefix} {
     set $v [list [set $v]]
     lappend base_script "set $v \$$v"
 }
-lappend base_script {vfs::cookfs::Mount $vfs $vfs}
+lappend base_script {::cookfs::Mount $vfs $vfs}
 set base_script [join $base_script \n]
 
 test load-2.1 {Load shared object from VFS} -setup {} -body {
     set script $base_script
     append script {
         load $so_vfs1 $prefix
-        vfs::unmount $vfs
+        ::cookfs::Unmount $vfs
         puts OK
         exit
     }
@@ -73,7 +73,7 @@ test load-2.1 {Load 2 shared objects from VFS} -setup {} -body {
     append script {
         load $so_vfs1 $prefix
         load $so_vfs2 $prefix
-        vfs::unmount $vfs
+        ::cookfs::Unmount $vfs
         puts OK
         exit
     }

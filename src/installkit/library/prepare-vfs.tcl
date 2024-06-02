@@ -264,16 +264,26 @@ proc addVfs { { optional 0 } } {
 
     # detect available vfs::zip and vfs::tar versions
     lappend auto_path $::rootLibDirectory
+    load {} vfs
     package require vfs::zip
     package require vfs::tar
 
     addFile [file join $dir zipvfs.tcl]
     addFile [file join $dir tarvfs.tcl]
+    addFile [file join $dir vfsUtils.tcl]
+    addFile [file join $dir vfslib.tcl]
 
     addFile [file join $dir pkgIndex.tcl] "package ifneeded vfs::zip\
         [package present vfs::zip] \[list source \[file join \$dir zipvfs.tcl\]\]"
     addFile [file join $dir pkgIndex.tcl] "package ifneeded vfs::tar\
         [package present vfs::tar] \[list source \[file join \$dir tarvfs.tcl\]\]"
+    addFile [file join $dir pkgIndex.tcl] "package ifneeded vfs\
+        [package present vfs] \[list apply {{ dir } {\
+        namespace eval ::vfs {};\
+        load {} vfs;\
+        source \[file join \$dir vfsUtils.tcl\];\
+        source \[file join \$dir vfslib.tcl\];\
+        }} \$dir\]"
 
 }
 
@@ -300,6 +310,8 @@ proc addInstallkit { { optional 0 } } {
     addFile [file join $::installkitLibDirectory wzipvfs.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit-compat.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit-stats.tcl] "" $dst
+
+    addFile [file join $::installkitLibDirectory boot.tcl] "" ""
 
     if { $::tcl_platform(platform) eq "windows" } {
 

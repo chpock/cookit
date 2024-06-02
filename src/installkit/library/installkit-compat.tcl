@@ -14,6 +14,7 @@
 
 # Load msgcat procedures
 package require msgcat
+package require vfs
 
 # Define ::msgcat::* procedures for use in InstallJammer
 
@@ -188,6 +189,7 @@ rename ::proc ::__installkit_proc
         ::msgcat::mcgetall
         ::msgcat::mcget
         ::msgcat::mcclear
+        sha1hex
     } } {
         # if a procedure from the list above exists, return without modifying it
         if { [llength [info command [lindex $args 0]]] } {
@@ -241,21 +243,26 @@ proc ::installkit::ParseWrapArgs { arrayName arglist { withFiles 1 } } {
     array set installkit [::installkit::parseWrapArgs $arglist]
 }
 
-# InstallJammer 1.3.0 expects ::sha1 procedure to exist and returns
-# a binary sha1 hash.
-proc ::sha1 { data } {
-    tailcall ::cookfs::sha1 -bin $data
+# InstallJammer 1.3.0 expects ::sha1hex procedure to exist and returns
+# a hex sha1 hash. This is used to generate UID or to verify passwords.
+# Actually, it can be any hash function that returns 16 hex encoded
+# bytes (128 bits). We use MD5, which is 128 bits, but add another
+# 32 bits (4 bytes) to make it look like sha1, which is 160 bits.
+proc ::sha1hex { string } {
+    set md5 [::cookfs::md5 $string]
+    append md5 [string range $md5 0 7]
+    return $md5
 }
 
 # InstallJammer 1.3.0 uses crapvfs. Let's forward these requests to cookfs.
 namespace eval ::crapvfs {}
 
 proc ::crapvfs::mount { file mountPoint } {
-    tailcall ::vfs::cookfs::Mount -readonly $file $mountPoint
+    tailcall ::cookfs::Mount -readonly $file $mountPoint
 }
 
 proc ::crapvfs::unmount { mountPoint } {
-    tailcall ::vfs::unmount $mountPoint
+    tailcall ::cookfs::Unmount $mountPoint
 }
 
 # Just ignore this proc

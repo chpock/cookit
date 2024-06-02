@@ -94,22 +94,6 @@ TEA_ADD_TCL_SOURCES([library/jammerTheme.tcl library/installkit.tcl library/wzip
 # TEA_ADD_* any platform specific compiler/build info here.
 #--------------------------------------------------------------------
 
-AC_DEFUN([IK_ADD_BOOTSTRAP_FILES], [
-    vars="$@"
-    for i in $vars; do
-        BOOTSTRAP_FILES="$BOOTSTRAP_FILES $i"
-    done
-    AC_SUBST(BOOTSTRAP_FILES)
-])
-
-AC_DEFUN([IK_ADD_BOOTSTRAP_FILES_FROM], [
-    dir="$1"
-    vars="$2"
-    for i in $vars; do
-        IK_ADD_BOOTSTRAP_FILES([${dir}/$i])
-    done
-])
-
 AS_IF([test "${TEA_PLATFORM}" = "windows"], [
     AC_ARG_WITH(lib-twapi, [ --with-lib-twapi library file for twapi package ], LIB_TWAPI_FILE=${withval})
 
@@ -155,8 +139,6 @@ AS_IF([test -f "${LIB_VFS_FILE}"], [
     AC_MSG_ERROR([could not find ${LIB_VFS_FILE}])
 ])
 
-IK_ADD_BOOTSTRAP_FILES_FROM([${LIB_VFS_DIR}], [ vfsUtils.tcl vfslib.tcl ])
-
 AC_ARG_WITH(lib-cookfs, [ --with-lib-cookfs library file for CookFS package ], LIB_COOKFS_FILE=${withval})
 AC_MSG_CHECKING([for CookFS package library file])
 AS_IF([test -f "${LIB_COOKFS_FILE}"], [
@@ -165,11 +147,6 @@ AS_IF([test -f "${LIB_COOKFS_FILE}"], [
     LIB_COOKFS_DIR="`dirname "${LIB_COOKFS_FILE}"`"
 ], [
     AC_MSG_ERROR([could not find ${LIB_COOKFS_FILE}])
-])
-
-IK_ADD_BOOTSTRAP_FILES_FROM([${LIB_COOKFS_DIR}], [
-    memchan.tcl readerchannel.tcl \
-    vfs.tcl writer.tcl optimize.tcl cookvfs.tcl \
 ])
 
 AC_ARG_WITH(lib-mtls, [ --with-lib-mtls library file for mtls package ], LIB_MTLS_FILE=${withval})
@@ -201,8 +178,6 @@ AS_IF([test "x${STRIP_COMMAND}" != "x"], [
     STRIP_COMMAND="echo"
 ])
 AC_SUBST(STRIP_COMMAND)
-
-IK_ADD_BOOTSTRAP_FILES([library/bootstrap.tcl])
 
 bin_BINARIES="${PACKAGE_NAME}${EXEEXT} ${PACKAGE_NAME}U${EXEEXT}"
 if test "${TEA_PLATFORM}" = "windows" ; then

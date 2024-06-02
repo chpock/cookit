@@ -7,48 +7,36 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
+namespace eval ::installkit {
+
+    # -pagesize: Use 1MB as the page size.
+    # -smallfilesize: If the file is larger than 512 KB, consider it a non-text
+    #                 file and place it on a separate page.
+    variable mount_options [list \
+        -compression lzma \
+        -pagesize [expr { 1024 * 1024 }] \
+        -smallfilesize [expr { 1024 * 512 }] \
+    ]
+
+}
+
 # This procedure will be called before Tcl/Tk initialization
 proc ::installkit::preInit {} {
 
     rename ::installkit::preInit {}
 
-    set ::installkit::root "/installkitvfs"
+    if { [info exists ::installkit::init_vfs] } {
+        return
+    }
 
-    # Mount the root VFS if it is not already mounted
-    if { [catch { file attributes $::installkit::root -vfs } isVfs] || !$isVfs } {
+    set ::installkit::cookfshandle [file attributes $::installkit::root -handle]
+    set ::installkit::cookfsindex [$::installkit::cookfshandle getindex]
+    set ::installkit::cookfspages [$::installkit::cookfshandle getpages]
 
-        if { [catch {
-            # Create a new pages object if it does not exist
-            if { ![info exists ::installkit::cookfspages] } {
-                set ::installkit::cookfspages [::cookfs::pages -readonly \
-                    [info nameofexecutable]]
-            }
-            set ::installkit::cookfsindex [::cookfs::fsindex \
-                [$::installkit::cookfspages index]]
-            set ::installkit::cookfshandle [::cookfs::Mount \
-                -volume \
-                -pagesobject $::installkit::cookfspages \
-                -fsindexobject $::installkit::cookfsindex \
-                -readonly [info nameofexecutable] \
-                "$::installkit::root" \
-            ]
-        } err] } {
-            return -code error "Error while mounting the internal filesystem: $err"
-        }
-
-        # This flag will be used lated in postInit
-        set ::installkit::main_interp 1
-
+    if { $::installkit::main_interp } {
         set ::installkit::wrapped [file exists [file join $::installkit::root main.tcl]]
-
     } else {
-
-        # This flag will be used lated in postInit
-        set ::installkit::main_interp 0
-
-        # This is not the first interp, don't check for wrapped main script
         set ::installkit::wrapped 0
-
     }
 
     if { $::installkit::wrapped } {
@@ -125,11 +113,4 @@ proc ::installkit::postInit {} {
 
 }
 
-# -pagesize: Use 2MB for the page size so that all source files are packed on one page.
-# -smallfilesize: However, if the file is larger than 512 KB, consider it a non-text file
-#                 and place it on a separate page.
-proc ::installkit::mountRoot { args } {
-    tailcall ::vfs::cookfs::Mount -compression xz \
-        -pagesize [expr { 1024 * 1024 * 2 }] -smallfilesize [expr { 1024 * 512 }] \
-        {*}$args
-}
+::installkit::preInit

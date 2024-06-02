@@ -16,13 +16,15 @@ source [file join [tcltest::testsDirectory] helper.tcl]
 
 package require installkit::compat
 
+# It is not real sha1 hash. This is a string computed from an MD5 hash.
 test installkit::compat-sha1-1 {sha1 proc with empty data} -body {
-    binary encode hex [::sha1 ""]
-} -result da39a3ee5e6b4b0d3255bfef95601890afd80709
+    sha1hex ""
+} -result D41D8CD98F00B204E9800998ECF8427ED41D8CD9
 
+# It is not real sha1 hash. This is a string computed from an MD5 hash.
 test installkit::compat-sha1-2 {sha1 proc with simple data} -body {
-    binary encode hex [::sha1 "a"]
-} -result 86f7e437faa5a7fce15d1ddcb9eaeaea377667b8
+    sha1hex "a"
+} -result 0CC175B9C0F1B6A831C399E2697726610CC175B9
 
 test installkit::compat-crapvfs-1 {mount/unmount} -body {
     set mnt [::installkit::tmpmount]

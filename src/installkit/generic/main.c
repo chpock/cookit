@@ -44,7 +44,8 @@ int _CRT_glob = 0;
 
 // 1 - console
 // 0 - GUI
-int installkitConsoleMode = 1;
+int g_isConsoleMode;
+int g_isBootstrap;
 
 int g_argc = 0;
 #ifdef __WIN32__
@@ -53,53 +54,9 @@ TCHAR **g_argv;
 char **g_argv;
 #endif /* __WIN32__ */
 
-static Tcl_Obj *bootstrapObj = NULL;
-#ifdef TCL_THREADS
-static Tcl_Mutex bootstrapMx;
-#endif /* TCL_THREADS */
+int g_isMainInterp = 1;
 
 #define TCL_SCRIPT_HERE(...) #__VA_ARGS__
-
-static char preInitScript[] = TCL_SCRIPT_HERE(
-    namespace eval ::installkit {};
-    load {} vfs;
-    load {} Cookfs;
-    proc preinit {} {
-        rename preinit {};
-        set n [info nameofexecutable];
-        if { ![catch {
-            if { [info exists bootstrap] } {
-                set ::installkit::bootstrap $bootstrap;
-                unset bootstrap
-            } {
-                set ::installkit::cookfspages [::cookfs::c::pages -readonly $n];
-                set ::installkit::bootstrap [$::installkit::cookfspages get 0]
-            };
-            uplevel #0 $::installkit::bootstrap;
-            ::installkit::preInit
-        } e] } { return };
-        if { [info exists ::env(INSTALLKIT_BOOTSTRAP)] } {
-            set ::installkit::bootstrap_init 1;
-            return
-        };
-        set f [open $n r];
-        fconfigure $f -encoding binary -translation binary;
-        seek $f -17 end;
-        set s [read $f 17];
-        close $f;
-        binary scan $s a7a2W a b c;
-        if { $a ne {IKMAGIC} || $b ne {IK} } {
-            return -code error "$e; Magic stamp not found."
-        };
-        set s [file size $n];
-        if { $c == $s } {
-            return -code error "The executable file is corrupted."
-        } {
-            return -code error "The executable file is corrupted. Expected file size: $c; Actual file size: $n"
-        }
-    };
-    preinit
-);
 
 static char getStartupScript[] = TCL_SCRIPT_HERE(
     if { ![info exists ::argc] || ![info exists ::argv] || !$::argc } { return -code error };
@@ -109,6 +66,15 @@ static char getStartupScript[] = TCL_SCRIPT_HERE(
     return $::argv0
 );
 
+Tcl_AppInitProc Cookfs_Init;
+
+int Cookfs_Mount(Tcl_Interp *interp, Tcl_Obj *archive, Tcl_Obj *local,
+    void *props);
+void *Cookfs_VfsPropsInit(void *p);
+void Cookfs_VfsPropsFree(void *p);
+void Cookfs_VfsPropSetVolume(void *p, int volume);
+void Cookfs_VfsPropSetReadonly(void *p, int readonly);
+
 #ifdef TCL_THREADS
 Tcl_AppInitProc Thread_Init;
 #endif /* TCL_THREADS */
@@ -117,7 +83,6 @@ Tcl_AppInitProc Thread_Init;
 Tcl_AppInitProc Tk_Init;
 #endif /* __WIN32__ */
 Tcl_AppInitProc Vfs_Init;
-Tcl_AppInitProc Cookfs_Init;
 Tcl_AppInitProc Mtls_Init;
 
 #ifdef __WIN32__
@@ -128,8 +93,7 @@ Tcl_AppInitProc Twapi_Init;
 
 void TclX_IdInit (Tcl_Interp *interp);
 
-int
-Installkit_Startup(Tcl_Interp *interp) {
+static int Installkit_Startup(Tcl_Interp *interp) {
 
     if (Tcl_InitStubs(interp, "8.6", 0) == NULL) {
         return TCL_ERROR;
@@ -140,7 +104,7 @@ Installkit_Startup(Tcl_Interp *interp) {
     // when attempting to write/read from standard channels. In GUI (Tk) that
     // will be done by Tk_Main()->Tk_InitConsoleChannels().
 
-    if (installkitConsoleMode) {
+    if (g_isConsoleMode) {
         Tcl_Channel chan;
 
         chan = Tcl_GetStdChannel(TCL_STDIN);
@@ -208,7 +172,6 @@ Installkit_Startup(Tcl_Interp *interp) {
     }
     Tcl_IncrRefCount(exename);
     Tcl_SetVar2Ex(interp, "argv0", NULL, exename, TCL_GLOBAL_ONLY);
-    Tcl_DecrRefCount(exename);
 
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(g_argc),
         TCL_GLOBAL_ONLY);
@@ -252,67 +215,67 @@ Installkit_Startup(Tcl_Interp *interp) {
     Tcl_StaticPackage(0, "twapi", Twapi_Init, NULL);
 #endif /* __WIN32__ */
 
-    // If the bootstrap code is already retrieved by the first interpreter,
-    // it must be used in child interpreters as well.
-#ifdef TCL_THREADS
-    Tcl_MutexLock(&bootstrapMx);
-#endif /* TCL_THREADS */
-    if (bootstrapObj != NULL) {
-        Tcl_SetVar2Ex(interp, "bootstrap", NULL,
-            Tcl_DuplicateObj(bootstrapObj), TCL_GLOBAL_ONLY);
+    Tcl_CreateNamespace(interp, "::installkit", NULL, NULL);
+
+    Tcl_SetVar2Ex(interp, "::installkit::main_interp", NULL,
+        Tcl_NewIntObj(g_isMainInterp), TCL_GLOBAL_ONLY);
+    if (g_isMainInterp) {
+        g_isMainInterp = 0;
     }
-#ifdef TCL_THREADS
-    Tcl_MutexUnlock(&bootstrapMx);
-#endif /* TCL_THREADS */
 
-    TclSetPreInitScript(preInitScript);
+    Tcl_Obj *local = Tcl_NewStringObj(VFS_MOUNT, -1);
+    Tcl_IncrRefCount(local);
 
-    if (Tcl_Init(interp) != TCL_OK)
+    Tcl_SetVar2Ex(interp, "::installkit::root", NULL, local, TCL_GLOBAL_ONLY);
+
+    if (Cookfs_Init(interp) != TCL_OK) {
         goto error;
+    }
 
-    // If we are not in bootstrap mode, run postInit
-    if (Tcl_GetVar2Ex(interp, "::installkit::bootstrap_init", NULL,
-        TCL_GLOBAL_ONLY) == NULL)
-    {
+    void *props = Cookfs_VfsPropsInit(NULL);
+    Cookfs_VfsPropSetVolume(props, 1);
+    Cookfs_VfsPropSetReadonly(props, 1);
+    int isVFSAvailable = Cookfs_Mount(interp, exename, local, props) == TCL_OK
+        ? 1 : 0;
 
-        // Reset the result if the above variable was not found
-        Tcl_ResetResult(interp);
+    Cookfs_VfsPropsFree(props);
 
-        #ifdef TCL_THREADS
-        Tcl_MutexLock(&bootstrapMx);
-        #endif /* TCL_THREADS */
-        // Save bootstrap code. It will be used in child interps.
-        if (bootstrapObj == NULL) {
-            bootstrapObj = Tcl_GetVar2Ex(interp, "::installkit::bootstrap", NULL,
-                TCL_GLOBAL_ONLY);
-            if (bootstrapObj == NULL) {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to get"
-                    " bootstrap", -1));
-                #ifdef TCL_THREADS
-                Tcl_MutexUnlock(&bootstrapMx);
-                #endif /* TCL_THREADS */
-                goto error;
-            }
-            bootstrapObj = Tcl_DuplicateObj(bootstrapObj);
-        }
-        #ifdef TCL_THREADS
-        Tcl_MutexUnlock(&bootstrapMx);
-        #endif /* TCL_THREADS */
+    Tcl_DecrRefCount(exename);
+    Tcl_DecrRefCount(local);
 
-        if (Tcl_EvalEx(interp, "::installkit::postInit", -1, TCL_EVAL_GLOBAL) != TCL_OK)
+    if (isVFSAvailable) {
+        // If VFS available, then use boot script from it
+        if (Tcl_EvalFile(interp, VFS_MOUNT "/boot.tcl") != TCL_OK) {
             goto error;
+        }
+    } else if (!g_isBootstrap) {
+        // If VFS unavailable and we are not in VFS bootstrap, throw an error.
+        goto error;
+    }
 
+    if (Tcl_Init(interp) != TCL_OK) {
+        goto error;
+    }
+
+    // ::installkit::postInit is from boot.tcl and is only available when
+    // VFS is present
+    if (isVFSAvailable) {
+        if (Tcl_EvalEx(interp, "::installkit::postInit", -1, TCL_EVAL_GLOBAL
+            | TCL_EVAL_DIRECT) != TCL_OK)
+        {
+            goto error;
+        }
     }
 
     // Check if we have a wrapped script in VFS
     int isWrappedInt;
     Tcl_Obj *isWrappedObj = Tcl_ObjGetVar2(interp,
-        Tcl_NewStringObj("::installkit::wrapped", -1 ),
-        NULL, TCL_GLOBAL_ONLY);
+        Tcl_NewStringObj("::installkit::wrapped", -1 ), NULL, TCL_GLOBAL_ONLY);
 
     if (isWrappedObj != NULL &&
-            Tcl_GetIntFromObj(interp, isWrappedObj, &isWrappedInt) != TCL_ERROR &&
-            isWrappedInt) {
+            Tcl_GetIntFromObj(interp, isWrappedObj, &isWrappedInt) != TCL_ERROR
+            && isWrappedInt)
+    {
 
         // We have wrapped script in VFS. Use it as startup script.
 
@@ -320,9 +283,11 @@ Installkit_Startup(Tcl_Interp *interp) {
 
     } else {
 
-        // Try searching for the startup script on the command line. If it is found,
-        // a successful result will be returned.
-        if (Tcl_EvalEx(interp, getStartupScript, -1, TCL_EVAL_GLOBAL) == TCL_OK) {
+        // Try searching for the startup script on the command line. If it is
+        // found, a successful result will be returned.
+        if (Tcl_EvalEx(interp, getStartupScript, -1,
+            TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT) == TCL_OK)
+        {
             // We found a startup script, let's use it. It can be retrieved from
             // the script result.
             Tcl_SetStartupScript(Tcl_GetObjResult(interp), NULL);
@@ -334,7 +299,7 @@ Installkit_Startup(Tcl_Interp *interp) {
 
     }
 
-    if (!installkitConsoleMode) {
+    if (!g_isConsoleMode) {
 #ifdef __WIN32__
         if (Tk_Init(interp) != TCL_OK)
             goto error;
@@ -353,7 +318,7 @@ error:
 #ifdef __WIN32__
     fprintf(stderr, "Fatal error: %s\n", Tcl_GetStringResult(interp));
     fflush(stderr);
-    if (!installkitConsoleMode) {
+    if (!g_isConsoleMode) {
         MessageBeep(MB_ICONEXCLAMATION);
         MessageBoxA(NULL, Tcl_GetStringResult(interp), "Fatal error",
             MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
@@ -371,10 +336,12 @@ _tmain(int argc, TCHAR *argv[]) {
     g_argc = argc;
     g_argv = argv;
 
-    installkitConsoleMode = GetEnvironmentVariableA("INSTALLKIT_CONSOLE",
+    g_isConsoleMode = GetEnvironmentVariableA("INSTALLKIT_CONSOLE",
+        NULL, 0) == 0 ? 0 : 1;
+    g_isBootstrap = GetEnvironmentVariableA("INSTALLKIT_BOOTSTRAP",
         NULL, 0) == 0 ? 0 : 1;
 
-    if (installkitConsoleMode) {
+    if (g_isConsoleMode) {
         Tcl_Main(argc, argv, Installkit_Startup);
     } else {
         Tk_Main(argc, argv, Installkit_Startup);
@@ -390,6 +357,10 @@ int
 main(int argc, char **argv) {
     g_argc = argc;
     g_argv = argv;
+
+    g_isConsoleMode = getenv("INSTALLKIT_GUI") == NULL ? 1 : 0;
+    g_isBootstrap = getenv("INSTALLKIT_BOOTSTRAP") == NULL ? 0 : 1;
+
     Tcl_Main(argc, argv, Installkit_Startup);
     return TCL_OK;
 }

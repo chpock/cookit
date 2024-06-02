@@ -7,22 +7,19 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
-set bootstrap_script "bootstrap-vfs.tcl"
 set vfs_out     [lindex $argv 0]
 set vfs_content [lindex $argv 1]
 set mnt "/mnt"
 
 puts "Initialize VFS..."
-puts "  bootstrap script: $bootstrap_script"
 puts "  content from: $vfs_content"
 puts "  destination: $vfs_out"
 
-source $bootstrap_script
+namespace eval ::installkit {
+    variable init_vfs 1
+}
 
-set fp [open $bootstrap_script r]
-fconfigure $fp -encoding binary -translation binary
-set bootstrap [read $fp]
-close $fp
+source [file join $vfs_content "boot.tcl"]
 
 proc addFilesFrom { dir { level 0 } } {
     if { ![info exists ::strip_count] } {
@@ -45,7 +42,7 @@ proc addFilesFrom { dir { level 0 } } {
     }
 }
 
-::installkit::mountRoot -bootstrap $bootstrap $vfs_out $mnt
+cookfs::Mount $vfs_out $mnt {*}$::installkit::mount_options
 addFilesFrom $vfs_content
-vfs::unmount $mnt
+cookfs::Unmount $mnt
 

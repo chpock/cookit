@@ -547,21 +547,20 @@ proc ::installkit::parsePEResources { exe } {
 proc ::installkit::makestub { exe } {
 
     variable root
+    variable mount_options
 
     # TODO: optimize and don't read the head into memory
     set pg [::cookfs::c::pages -readonly [info nameofexecutable]]
     set head [$pg gethead]
-    set bootstrap [$pg get 0]
     $pg delete
 
     set fh [open $exe w]
     fconfigure $fh -encoding binary -translation binary
     puts -nonewline $fh $head
-    puts -nonewline $fh "IKMAGICIK\0\0\0\0\0\0\0\0"
     close $fh
 
     set tmpmount [tmpmount]
-    mountRoot -bootstrap $bootstrap $exe $tmpmount
+    ::cookfs::Mount $exe $tmpmount {*}$mount_options
     set fh [open [file join $root manifest.txt] r]
     while { [gets $fh file] != -1 } {
         set dir [file join $tmpmount [file dirname $file]]
@@ -570,7 +569,7 @@ proc ::installkit::makestub { exe } {
         }
         file copy [file join $root $file] [file join $tmpmount $file]
     }
-    vfs::unmount $tmpmount
+    ::cookfs::Unmount $tmpmount
 
     setExecPerms $exe
 
@@ -790,6 +789,8 @@ proc ::installkit::updateWindowsResources { params } {
 
 proc ::installkit::wrap { args } {
 
+    variable mount_options
+
     set params [parseWrapArgs $args]
 
     set mainScript [dict get $params mainScript]
@@ -821,7 +822,7 @@ proc ::installkit::wrap { args } {
     }
 
     set mnt [::installkit::tmpmount]
-    vfs::cookfs::Mount $executable $mnt
+    ::cookfs::Mount $executable $mnt {*}$mount_options
 
     foreach package [dict get $params packages] {
         # Don't try to overwrite packages/libraries.
@@ -868,7 +869,7 @@ proc ::installkit::wrap { args } {
         }
     }
 
-    vfs::unmount $mnt
+    ::cookfs::Unmount $mnt
     setExecPerms $executable
     return $executable
 

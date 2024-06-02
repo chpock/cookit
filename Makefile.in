@@ -26,11 +26,11 @@ endif
 
 .PHONY: $(ALL_TARGETS)
 
-.PHONY: $(patsubst %,check-%,$(ALL_TARGETS))
+.PHONY: $(patsubst %,test-%,$(ALL_TARGETS))
 
 .PHONY: $(patsubst %,clean-%,$(ALL_TARGETS))
 
-.PHONY: all clean check dist distclean
+.PHONY: all clean test dist distclean
 
 all: $(TARGETS) $(KIT_PREFIX)/libs-deps.txt
 	@echo
@@ -151,7 +151,8 @@ work/stamp-tclvfs: work/stamp-tcl
 	rm -rf "$(TOP_SRCDIR)"/src/tclvfs/tclconfig
 	touch $@
 
-#		--enable-internal-debug
+# --enable-internal-debug
+# --disable-tcl-commands
 cookfs: work/stamp-cookfs
 work/stamp-cookfs: work/stamp-tcl
 	mkdir -p work/cookfs
@@ -161,7 +162,7 @@ work/stamp-cookfs: work/stamp-tcl
 		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
-		--enable-xz \
+		--enable-lzma \
 		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/cookfs && $(MAKE) all install
@@ -361,7 +362,7 @@ define run-check
             DISPLAY=:0 \
             TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/src/installkit/tests/helper.sh $@`" \
             $(KIT_PREFIX)/bin/installkit$(EXE_EXT) \
-            `$(CYGPATH) "$(CHECK_WORK_DIR)/$@/all.tcl"` -verbose "body error start" $(CHECKFLAGS) | \
+            `$(CYGPATH) "$(CHECK_WORK_DIR)/$@/all.tcl"` -verbose "body error start" $(TESTFLAGS) | \
             tr -d '\r' | \
             tee $@.output && \
             grep -q 'Failed[[:space:]]\+0$$' $@.output
@@ -370,27 +371,27 @@ define run-check
     )
 endef
 
-check: $(patsubst %,check-%,$(CHECK_TARGETS))
+test: $(patsubst %,test-%,$(CHECK_TARGETS))
 
-check-tcl:
+test-tcl:
 	$(call run-check, 0, tcl, src/tcl/tests)
-check-tk:
+test-tk:
 	$(call run-check, 0, tk, src/tk/tests)
-check-cookfs:
+test-cookfs:
 	$(call run-check, 1, tcl, src/cookfs/tests)
-check-tclvfs:
+test-tclvfs:
 	$(call run-check, 1, tcl, src/tclvfs/tests)
-check-thread:
+test-thread:
 	$(call run-check, 1, tcl, src/thread/tests)
-check-installkit:
+test-installkit:
 	$(call run-check, 1, tcl, src/installkit/tests)
-check-tktable:
+test-tktable:
 	$(call run-check, 1, tk, src/tktable/tests)
-check-tkdnd:
+test-tkdnd:
 	$(call run-check, 1, tk, src/tkdnd/tests)
-check-twapi:
+test-twapi:
 	$(call run-check, 0, tcl, src/twapi/tests)
-check-tclmtls:
+test-tclmtls:
 	$(call run-check, 1, tcl, src/tclmtls/tests)
 
 distclean: clean

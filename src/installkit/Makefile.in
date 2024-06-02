@@ -190,7 +190,6 @@ VALGRINDARGS	= --tool=memcheck --num-callers=8 --leak-resolution=high \
 UPX_COMMAND     = @UPX_COMMAND@
 STRIP_COMMAND   = @STRIP_COMMAND@
 
-BOOTSTRAP_FILES = @BOOTSTRAP_FILES@
 BUILD_PLATFORM  = @build_alias@
 
 .SUFFIXES: .c .$(OBJEXT)
@@ -331,27 +330,6 @@ $(PKG_STUB_LIB_FILE): $(PKG_STUB_OBJECTS)
 
 VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macosx:$(srcdir)/tclx/generic:$(srcdir)/tclx/unix:$(srcdir)/tclx/win
 
-# Line continuations should be deleted before comments are deleted.
-#
-# Let's imagine the following Tcl code:
-#
-#     # some comment here\
-#         another line of comment
-#
-# If we remove everything from '#' to EOL, then the line
-# 'another line of comment' will appear as a code. However, it was originally
-# a comment. Thus, we must first join line continuations and then remove comments.
-
-bootstrap-vfs.tcl: $(BOOTSTRAP_FILES)
-	cat $^ | sed -E \
-	    -e :a -e '/\\$$/N; s/\\\n[[:space:]]*/ /; ta' \
-	    -e '/^[[:space:]]*package require vfs/d' \
-	    -e '/^[[:space:]]*#/d' \
-	    -e '/^[[:space:]]*$$/d' \
-	    -e 's/^[[:space:]]+//' \
-	    -e 's/[[:space:]]+/ /g' \
-	    > $@
-
 # Use '| cat' for ./installkit_raw so that it has a stdout in Windows.
 # On Windows, we build GUI executable and Windows doesn't attach
 # stdout/stderr/stdin to it. When we pipe exe, the pipe will be treated
@@ -364,7 +342,7 @@ installkit.vfs: $(srcdir)/library/prepare-vfs.tcl installkit_raw$(EXEEXT) $(PKG_
 	    TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
 	    ./installkit_raw$(EXEEXT) `$(CYGPATH) $<` "$@" | cat
 
-installkit_vfs.image: $(srcdir)/library/init-vfs.tcl installkit.vfs bootstrap-vfs.tcl installkit_raw$(EXEEXT)
+installkit_vfs.image: $(srcdir)/library/init-vfs.tcl installkit.vfs installkit_raw$(EXEEXT)
 	rm -f "$@"
 	INSTALLKIT_CONSOLE=1 INSTALLKIT_BOOTSTRAP=1 \
 	    TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
@@ -394,7 +372,35 @@ installkit-deps.txt: installkit_raw$(EXEEXT) installkit.vfs
 installkit-stats.txt: installkit$(EXEEXT)
 	INSTALLKIT_CONSOLE=1 ./installkit$(EXEEXT) stats | cat > "$@"
 
-installkit: installkit_raw magicstamp installkit_vfs.image
+installkit: installkit_raw installkit_vfs.image
+	rm -f "$@"
+	cp -f "$<" "$@"
+ifneq ($(UPX_COMMAND),)
+	$(UPX_COMMAND) "$@"
+endif
+	cat installkit_vfs.image >> "$@"
+	chmod +x $@
+
+installkit.exe: installkit_raw.exe installkit_vfs.image
+	rm -f "$@"
+	cp -f "$<" "$@"
+ifneq ($(UPX_COMMAND),)
+	$(UPX_COMMAND) "$@"
+endif
+	cat installkit_vfs.image >> "$@"
+	chmod +x $@
+
+installkitU: installkit_raw installkit_vfs.image
+	rm -f "$@"
+	cat $^ > $@
+	chmod +x $@
+
+installkitU.exe: installkit_raw.exe installkit_vfs.image
+	rm -f "$@"
+	cat $^ > $@
+	chmod +x $@
+
+installkitA.exe: installkitA_raw.exe installkit_vfs.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -403,41 +409,10 @@ endif
 	cat magicstamp installkit_vfs.image >> "$@"
 	chmod +x $@
 
-installkit.exe: installkit_raw.exe magicstamp installkit_vfs.image
-	rm -f "$@"
-	cp -f "$<" "$@"
-ifneq ($(UPX_COMMAND),)
-	$(UPX_COMMAND) "$@"
-endif
-	cat magicstamp installkit_vfs.image >> "$@"
-	chmod +x $@
-
-installkitU: installkit_raw magicstamp installkit_vfs.image
+installkitUA.exe: installkitA_raw.exe installkit_vfs.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
-
-installkitU.exe: installkit_raw.exe magicstamp installkit_vfs.image
-	rm -f "$@"
-	cat $^ > $@
-	chmod +x $@
-
-installkitA.exe: installkitA_raw.exe magicstamp installkit_vfs.image
-	rm -f "$@"
-	cp -f "$<" "$@"
-ifneq ($(UPX_COMMAND),)
-	$(UPX_COMMAND) "$@"
-endif
-	cat magicstamp installkit_vfs.image >> "$@"
-	chmod +x $@
-
-installkitUA.exe: installkitA_raw.exe magicstamp installkit_vfs.image
-	rm -f "$@"
-	cat $^ > $@
-	chmod +x $@
-
-magicstamp:
-	printf 'IKMAGICIK\0\0\0\0\0\0\0\0' >> $@
 
 installkit.user.res.o: $(srcdir)/win/installkit.user.rc win/installkit.user.manifest
 	$(RC) -o $@ --define STATIC_BUILD --define BASE_NO_TK_ICON "$<" $(INCLUDES) --include $(TK_SRC_DIR)/win/rc --include $(srcdir)/win

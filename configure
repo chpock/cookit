@@ -206,11 +206,13 @@ case "$IJ_PLATFORM" in
 esac
 
 if [ -n "$IK_DEBUG" ]; then
-    SYMBOLS_FLAG="--enable-symbols"
+    SYMBOLS_FLAG="--enable-symbols=all"
     GCC_LDFLAGS=""
     GCC_CFLAGS=""
     STRIP="echo"
     UPX="echo"
+    CFLAGS="-DPURIFY -fsanitize=undefined -fsanitize=address $CFLAGS"
+    LDFLAGS="-fsanitize=undefined -fsanitize=address $LDFLAGS"
 fi
 
 if [ "$COMPILER" = "GCC" ]; then

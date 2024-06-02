@@ -24,7 +24,11 @@ notfile() {
 }
 
 case "$1" in
-    check-installkit)
+    test-tclmtls)
+        # Skip unstable tests
+        skip "mtls-badssl-*"
+        ;;
+    test-installkit)
         case "$PLATFORM" in
             Linux*)
                 # Don't check dependencies in Ubuntu24.04 environment.
@@ -35,7 +39,7 @@ case "$1" in
             ;;
         esac
         ;;
-    check-tclvfs)
+    test-tclvfs)
         # Tests 4.1 and 4.2 depend on vfs::ns, which we don't ship
         skip vfs-4.1 vfs-4.2
         case "$PLATFORM" in
@@ -53,7 +57,7 @@ case "$1" in
             ;;
         esac
         ;;
-    check-tcl)
+    test-tcl)
         # installkit does not contain tzdata files and clock.test fails to
         # run with an error about the time zone ':America/Detroit' not being
         # available.
