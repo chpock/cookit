@@ -233,6 +233,9 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     }
 
     void *props = Cookfs_VfsPropsInit(NULL);
+    if (props == NULL) {
+        goto error;
+    }
     Cookfs_VfsPropSetVolume(props, 1);
     Cookfs_VfsPropSetReadonly(props, 1);
     int isVFSAvailable = Cookfs_Mount(interp, exename, local, props) == TCL_OK
