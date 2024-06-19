@@ -44,7 +44,7 @@ proc ::installkit::tmpmount {} {
 }
 
 proc ::installkit::addfiles { filename files names } {
-    set h [vfs::cookfs::Mount $filename $filename]
+    set h [::cookfs::Mount $filename $filename]
     set params [list]
     set dirs [list]
     foreach file $files name $names {
@@ -66,7 +66,16 @@ proc ::installkit::addfiles { filename files names } {
     }
     file mkdir {*}$dirs2
     $h writeFiles {*}$params
-    vfs::unmount $filename
+    ::cookfs::Unmount $filename
+}
+
+# This is a legacy version of ::installkit::parseWrapArgs, which uses arrays.
+# This procedure is expected to be available in InstallJammer v1.3.0.
+proc ::installkit::ParseWrapArgs { arrayName arglist { withFiles 1 } } {
+    upvar 1 $arrayName installkit
+    # This will load the package installkit::compat
+    namespace eval ::InstallJammer {}
+    array set installkit [::installkit::parseWrapArgs $arglist]
 }
 
 proc ::installkit::parseWrapArgs { arglist } {
@@ -900,4 +909,26 @@ if { $::tcl_platform(platform) eq "windows" } {
     package require installkit::Windows
 }
 
-package require installkit::compat
+if { ![llength [info procs ::namespace]] } {
+
+    interp hide {} namespace
+    proc ::namespace { args } {
+        if { [lindex $args 0] eq "eval" && [lindex $args 1] eq "::InstallJammer" } {
+            rename ::namespace ""
+            interp expose {} namespace
+            if { [catch [list package present installkit::compat]] } {
+                package require installkit::compat
+            }
+            tailcall ::namespace {*}$args
+        } else {
+            tailcall interp invokehidden {} namespace {*}$args
+        }
+    }
+
+}
+
+
+
+
+
+

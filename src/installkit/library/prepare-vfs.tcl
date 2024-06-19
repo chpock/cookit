@@ -302,6 +302,7 @@ proc addMtls { { optional 0 } } {
 proc addInstallkit { { optional 0 } } {
 
     puts "* prepare the installkit package:"
+    set dir [file join $::rootLibDirectory installkit]
 
     set dst "lib/installkit"
 
@@ -313,11 +314,13 @@ proc addInstallkit { { optional 0 } } {
 
     addFile [file join $::installkitLibDirectory boot.tcl] "" ""
 
+    load {} Cookfs
+    genStaticPkgIndex $dir cookfs [package present cookfs]
+
     if { $::tcl_platform(platform) eq "windows" } {
 
         addFile [file join $::installkitLibDirectory installkit-windows.tcl] "" $dst
 
-        set dir [file join $::rootLibDirectory installkit]
         load {} Registry
         genStaticPkgIndex $dir registry [package present registry]
 

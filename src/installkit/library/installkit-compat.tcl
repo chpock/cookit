@@ -236,13 +236,6 @@ rename ::proc ::__installkit_proc
 # Let's initialize it by calling 'clock format'
 clock format [clock seconds]
 
-# This is a legacy version of ::installkit::parseWrapArgs, which uses arrays.
-# This procedure is expected to be available in InstallJammer v1.3.0.
-proc ::installkit::ParseWrapArgs { arrayName arglist { withFiles 1 } } {
-    upvar 1 $arrayName installkit
-    array set installkit [::installkit::parseWrapArgs $arglist]
-}
-
 # InstallJammer 1.3.0 expects ::sha1hex procedure to exist and returns
 # a hex sha1 hash. This is used to generate UID or to verify passwords.
 # Actually, it can be any hash function that returns 16 hex encoded

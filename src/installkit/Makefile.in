@@ -406,7 +406,7 @@ installkitA.exe: installkitA_raw.exe installkit_vfs.image
 ifneq ($(UPX_COMMAND),)
 	$(UPX_COMMAND) "$@"
 endif
-	cat magicstamp installkit_vfs.image >> "$@"
+	cat installkit_vfs.image >> "$@"
 	chmod +x $@
 
 installkitUA.exe: installkitA_raw.exe installkit_vfs.image

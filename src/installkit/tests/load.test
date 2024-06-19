@@ -45,15 +45,17 @@ test load-1 {Prepare VFS with SO file(s)} -setup {} -body {
 # All of the following tests will be run in a separate interpetator
 # to ensure that the SO is loading and unloading correctly.
 
-set base_script [list]
-foreach v {vfs so_vfs1 so_vfs2 prefix} {
-    set $v [list [set $v]]
-    lappend base_script "set $v \$$v"
+if { [info exists vfs] } {
+    set base_script [list]
+    foreach v {vfs so_vfs1 so_vfs2 prefix} {
+        set $v [list [set $v]]
+        lappend base_script "set $v \$$v"
+    }
+    lappend base_script {::cookfs::Mount $vfs $vfs}
+    set base_script [join $base_script \n]
 }
-lappend base_script {::cookfs::Mount $vfs $vfs}
-set base_script [join $base_script \n]
 
-test load-2.1 {Load shared object from VFS} -setup {} -body {
+test load-2.1 {Load shared object from VFS} -constraints { [info exists vfs] } -setup {} -body {
     set script $base_script
     append script {
         load $so_vfs1 $prefix
@@ -68,7 +70,7 @@ test load-2.1 {Load shared object from VFS} -setup {} -body {
     file delete -force $script
 }
 
-test load-2.1 {Load 2 shared objects from VFS} -setup {} -body {
+test load-2.1 {Load 2 shared objects from VFS} -constraints { [info exists vfs] } -setup {} -body {
     set script $base_script
     append script {
         load $so_vfs1 $prefix

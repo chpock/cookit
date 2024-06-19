@@ -58,6 +58,16 @@ int g_isMainInterp = 1;
 
 #define TCL_SCRIPT_HERE(...) #__VA_ARGS__
 
+static char preInitScript[] = TCL_SCRIPT_HERE(
+    set v "/installkitvfs";
+    if { [catch {file attribute $v -vfs}] } {
+        load {} Cookfs;
+        ::cookfs::Mount [info nameofexecutable] $v -readonly -volume;
+    };
+    source $v/boot.tcl;
+    unset v
+);
+
 static char getStartupScript[] = TCL_SCRIPT_HERE(
     if { ![info exists ::argc] || ![info exists ::argv] || !$::argc } { return -code error };
     set ::argv0 [lindex $::argv 0];
@@ -95,7 +105,10 @@ void TclX_IdInit (Tcl_Interp *interp);
 
 static int Installkit_Startup(Tcl_Interp *interp) {
 
+    IkDebug("Installkit_Startup: ENTER to interp: %p", (void *)interp);
+
     if (Tcl_InitStubs(interp, "8.6", 0) == NULL) {
+        IkDebug("Installkit_Startup: failed to init stubs");
         return TCL_ERROR;
     }
 
@@ -107,8 +120,10 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     if (g_isConsoleMode) {
         Tcl_Channel chan;
 
+        IkDebug("Installkit_Startup: check channels for console mode");
         chan = Tcl_GetStdChannel(TCL_STDIN);
         if (!chan) {
+            IkDebug("Installkit_Startup: create stdin");
             chan = Tcl_OpenFileChannel(interp, NULL_DEVICE, "r", 0);
             if (chan) {
                 Tcl_SetChannelOption(interp, chan, "-encoding", "utf-8");
@@ -118,6 +133,7 @@ static int Installkit_Startup(Tcl_Interp *interp) {
 
         chan = Tcl_GetStdChannel(TCL_STDOUT);
         if (!chan) {
+            IkDebug("Installkit_Startup: create stdout");
             chan = Tcl_OpenFileChannel(interp, NULL_DEVICE, "w", 0);
             if (chan) {
                 Tcl_SetChannelOption(interp, chan, "-encoding", "utf-8");
@@ -127,6 +143,7 @@ static int Installkit_Startup(Tcl_Interp *interp) {
 
         chan = Tcl_GetStdChannel(TCL_STDERR);
         if (!chan) {
+            IkDebug("Installkit_Startup: create stderr");
             chan = Tcl_OpenFileChannel(interp, NULL_DEVICE, "w", 0);
             if (chan) {
                 Tcl_SetChannelOption(interp, chan, "-encoding", "utf-8");
@@ -149,36 +166,36 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     // We have no choice but to rebuilt here $::argv $::argc $::argv0 from
     // the original command line.
 
-
-    Tcl_DString ds;
-    Tcl_DStringInit(&ds);
-
-    // The first argument to argv is the name of the executable file. Set its
-    // value to $::argv0. However, before any manipulation with argv, we should
-    // make sure that argc is not zero.
-
-    Tcl_Obj *exename;
-
-    if (g_argc) {
-#ifdef UNICODE
-        Tcl_WinTCharToUtf(*g_argv++, -1, &ds);
-#else
-        Tcl_ExternalToUtfDString(NULL, (char *)*g_argv++, -1, &ds);
-#endif /* UNICODE */
-        g_argc--;
-        exename = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-    } else {
-        exename = Tcl_NewStringObj(NULL, 0);
+    // We should not use argv[0] here to get executable name. Let Tcl do
+    // it for us. This is especially important on Windows, since argv[0]
+    // can contain strange things.
+    const char *exenameStr = Tcl_GetNameOfExecutable();
+    if (exenameStr == NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("failed to get the name"
+            " of the current executable file", -1));
+        goto error;
     }
+    IkDebug("Installkit_Startup: got exe name [%s]", exenameStr);
+    Tcl_Obj *exename = Tcl_NewStringObj(exenameStr, -1);
     Tcl_IncrRefCount(exename);
     Tcl_SetVar2Ex(interp, "argv0", NULL, exename, TCL_GLOBAL_ONLY);
+
+    // Skip argv[0], since we don't need it anymore.
+    if (g_argc) {
+        g_argc--;
+        g_argv++;
+    }
 
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(g_argc),
         TCL_GLOBAL_ONLY);
 
+    Tcl_DString ds;
+    Tcl_DStringInit(&ds);
+
     Tcl_Obj *argvObj = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(argvObj);
     while (g_argc--) {
+        IkDebug("Installkit_Startup: add arg...");
 #ifdef UNICODE
         Tcl_WinTCharToUtf(*g_argv++, -1, &ds);
 #else
@@ -189,6 +206,7 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvObj, TCL_GLOBAL_ONLY);
     Tcl_DecrRefCount(argvObj);
+    Tcl_DStringFree(&ds);
 
     // Reset the start script, from a possible AI-based detection in Tcl_Main.
     // If necessary, we will set the desired value later.
@@ -197,6 +215,7 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     // Init TclX
     TclX_IdInit(interp);
 
+    IkDebug("Installkit_Startup: register static packages");
     Tcl_StaticPackage(0, "vfs", Vfs_Init, NULL);
     Tcl_StaticPackage(0, "Cookfs", Cookfs_Init, NULL);
     Tcl_StaticPackage(0, "mtls", Mtls_Init, NULL);
@@ -220,7 +239,10 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     Tcl_SetVar2Ex(interp, "::installkit::main_interp", NULL,
         Tcl_NewIntObj(g_isMainInterp), TCL_GLOBAL_ONLY);
     if (g_isMainInterp) {
+        IkDebug("Installkit_Startup: is main interp");
         g_isMainInterp = 0;
+    } else {
+        IkDebug("Installkit_Startup: is slave interp");
     }
 
     Tcl_Obj *local = Tcl_NewStringObj(VFS_MOUNT, -1);
@@ -228,18 +250,26 @@ static int Installkit_Startup(Tcl_Interp *interp) {
 
     Tcl_SetVar2Ex(interp, "::installkit::root", NULL, local, TCL_GLOBAL_ONLY);
 
+    IkDebug("Installkit_Startup: init cookfs");
     if (Cookfs_Init(interp) != TCL_OK) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("failed to init cookfs"
+            " package", -1));
+        IkDebug("Installkit_Startup: ERROR");
         goto error;
     }
 
     void *props = Cookfs_VfsPropsInit(NULL);
     if (props == NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("failed to alloc"
+            " cookfs props", -1));
         goto error;
     }
     Cookfs_VfsPropSetVolume(props, 1);
     Cookfs_VfsPropSetReadonly(props, 1);
+    IkDebug("Installkit_Startup: mount root vfs");
     int isVFSAvailable = Cookfs_Mount(interp, exename, local, props) == TCL_OK
         ? 1 : 0;
+    IkDebug("Installkit_Startup: vfs available: %d", isVFSAvailable);
 
     Cookfs_VfsPropsFree(props);
 
@@ -248,14 +278,18 @@ static int Installkit_Startup(Tcl_Interp *interp) {
 
     if (isVFSAvailable) {
         // If VFS available, then use boot script from it
-        if (Tcl_EvalFile(interp, VFS_MOUNT "/boot.tcl") != TCL_OK) {
-            goto error;
-        }
+        //if (Tcl_EvalFile(interp, VFS_MOUNT "/boot.tcl") != TCL_OK) {
+        //    goto error;
+        //}
+        IkDebug("Installkit_Startup: set boot.tcl as a pre-init script");
+        TclSetPreInitScript(preInitScript);
     } else if (!g_isBootstrap) {
+        IkDebug("Installkit_Startup: FATAL! vfs is not available");
         // If VFS unavailable and we are not in VFS bootstrap, throw an error.
         goto error;
     }
 
+    IkDebug("Installkit_Startup: initialize interp...");
     if (Tcl_Init(interp) != TCL_OK) {
         goto error;
     }
@@ -263,6 +297,7 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     // ::installkit::postInit is from boot.tcl and is only available when
     // VFS is present
     if (isVFSAvailable) {
+        IkDebug("Installkit_Startup: call postInit ...");
         if (Tcl_EvalEx(interp, "::installkit::postInit", -1, TCL_EVAL_GLOBAL
             | TCL_EVAL_DIRECT) != TCL_OK)
         {
@@ -281,11 +316,13 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     {
 
         // We have wrapped script in VFS. Use it as startup script.
+        IkDebug("Installkit_Startup: have wrapped script, use main.tcl");
 
         Tcl_SetStartupScript(Tcl_NewStringObj(VFS_MOUNT "/main.tcl", -1), NULL);
 
     } else {
 
+        IkDebug("Installkit_Startup: not wrapped");
         // Try searching for the startup script on the command line. If it is
         // found, a successful result will be returned.
         if (Tcl_EvalEx(interp, getStartupScript, -1,
@@ -294,15 +331,18 @@ static int Installkit_Startup(Tcl_Interp *interp) {
             // We found a startup script, let's use it. It can be retrieved from
             // the script result.
             Tcl_SetStartupScript(Tcl_GetObjResult(interp), NULL);
+            IkDebug("Installkit_Startup: found startup script in cmd line args");
         } else {
             // No startup script is specified on the command line.
             // Resetting the error state in the interpreter.
             Tcl_ResetResult(interp);
+            IkDebug("Installkit_Startup: no startup script in cmd line args");
         }
 
     }
 
     if (!g_isConsoleMode) {
+        IkDebug("Installkit_Startup: init GUI...");
 #ifdef __WIN32__
         if (Tk_Init(interp) != TCL_OK)
             goto error;
@@ -315,9 +355,11 @@ static int Installkit_Startup(Tcl_Interp *interp) {
 #endif /* __WIN32__ */
     }
 
+    IkDebug("Installkit_Startup: ok");
     return TCL_OK;
 
 error:
+    IkDebug("Installkit_Startup: RETURN ERROR");
 #ifdef __WIN32__
     fprintf(stderr, "Fatal error: %s\n", Tcl_GetStringResult(interp));
     fflush(stderr);

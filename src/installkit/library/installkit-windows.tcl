@@ -7,9 +7,6 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
-package require registry
-package require twapi
-
 namespace eval installkit::Windows {
 
     variable Wow64FsRedirectionDisabledState 0
@@ -29,6 +26,17 @@ namespace eval installkit::Windows {
 
 }
 
+proc installkit::Windows::loadTwapi {} {
+    if { [catch [list package present twapi]] } {
+        package require twapi
+    }
+}
+
+proc installkit::Windows::loadRegistry {} {
+    if { [catch [list package present registry]] } {
+        package require registry
+    }
+}
 
 proc installkit::Windows::WrongNumArgs { command { string "" } } {
     set msg "wrong # args: should be \"installkit::Windows::$command "
@@ -43,6 +51,7 @@ proc installkit::Windows::WrongNumArgs { command { string "" } } {
 
 proc installkit::Windows::GetKey { key {value ""} } {
     variable RootKeys
+    loadRegistry
     set list [split $key \\]
     if { [info exists RootKeys([lindex $key 0])] } {
         set list [lreplace 0 0 $RootKeys([lindex $key 0])]
@@ -58,6 +67,8 @@ proc installkit::Windows::FileExtension { option extension args } {
 
     set root HKEY_CLASSES_ROOT
     set key "$root\\$extension"
+
+    loadRegistry
 
     switch -- $option {
         "exists" {
@@ -85,6 +96,8 @@ proc installkit::Windows::FileType { option fileType args } {
 
     set root HKEY_CLASSES_ROOT
     set key "$root\\$fileType"
+
+    loadRegistry
 
     switch -- $option {
         "exists" {
@@ -246,6 +259,7 @@ proc installkit::Windows::File { option file args } {
             if { ![regsub {%1} $cmd $file cmd] } {
                 append cmd " \"$file\""
             }
+            loadTwapi
             ::twapi::create_process "" -cmdline $cmd -detached 1
         }
         "print" {
@@ -254,6 +268,7 @@ proc installkit::Windows::File { option file args } {
             if { ![regsub {%1} $cmd $file cmd] } {
                 append cmd " \"$file\""
             }
+            loadTwapi
             ::twapi::create_process "" -cmdline $cmd -detached 1
         }
         default {
@@ -267,11 +282,13 @@ proc installkit::Windows::File { option file args } {
 }
 
 proc installkit::Windows::guid { } {
+    loadTwapi
     tailcall ::twapi::new_guid
 }
 
 proc installkit::Windows::drive { option args } {
 
+    loadTwapi
     switch -- $option {
         "list" {
             if { [llength $args] } {
@@ -340,6 +357,7 @@ proc installkit::Windows::trash { args } {
             "?options? file ?file ...?"]
     }
 
+    loadTwapi
     # twapi::recycle_files supports only -confirm and -showerror
     # flags. Let's call low level twapi functions directly to
     # support all options from installkit 1.3.0.
@@ -394,6 +412,7 @@ proc installkit::Windows::trash { args } {
 }
 
 proc installkit::Windows::getFolder { folder } {
+    loadTwapi
     tailcall ::twapi::get_shell_folder $folder
 }
 
@@ -403,6 +422,8 @@ proc installkit::Windows::shellExecute { args } {
         return -code error [WrongNumArgs shellExecute \
             "?options? command file ?arguments?"]
     }
+
+    loadTwapi
 
     set flags [list]
     set wait 0
@@ -498,6 +519,8 @@ proc installkit::Windows::createShortcut { shortcutPath args } {
             $shortcutPath"
     }
 
+    loadTwapi
+
     set flags [list]
     set objexists 0
 
@@ -561,6 +584,8 @@ proc installkit::Windows::disableWow64FsRedirection { } {
     variable Wow64FsRedirectionDisabledState
     variable Wow64FsRedirectionDisabledPointer
 
+    loadTwapi
+
     if { !$Wow64FsRedirectionDisabledState } {
         if { [catch {
             set Wow64FsRedirectionDisabledPointer [::twapi::Wow64DisableWow64FsRedirection]
@@ -582,6 +607,8 @@ proc installkit::Windows::revertWow64FsRedirection { } {
     if { !$Wow64FsRedirectionDisabledState } {
         return 0
     }
+
+    loadTwapi
 
     if { [catch {
         ::twapi::Wow64RevertWow64FsRedirection $Wow64FsRedirectionDisabledPointer

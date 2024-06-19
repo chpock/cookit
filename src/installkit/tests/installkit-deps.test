@@ -46,7 +46,7 @@ set expected [dict create {*}{
             }
         }
         installkit-glibc {
-            installkit_raw { 2.11 2.7 2.3.4 2.3.2 2.3 2.2 2.1 2.0 }
+            installkit_raw { 2.11 2.7 2.3 2.2 2.1 2.0 }
             libtk*.so      { 2.7 2.3 2.1.3 2.1 2.0 }
         }
         libs-deps {
@@ -100,7 +100,7 @@ set expected [dict create {*}{
             }
         }
         installkit-glibc {
-            installkit_raw { 2.11 2.7 2.3.4 2.3.2 2.3 2.2.5 }
+            installkit_raw { 2.11 2.7 2.3 2.2.5 }
             libtk*.so      { 2.7 2.3 2.2.5 }
         }
         libs-deps {

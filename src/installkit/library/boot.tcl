@@ -18,10 +18,18 @@ namespace eval ::installkit {
         -smallfilesize [expr { 1024 * 512 }] \
     ]
 
+    variable root "/installkitvfs"
+
 }
 
 # This procedure will be called before Tcl/Tk initialization
 proc ::installkit::preInit {} {
+
+    variable root
+    variable cookfshandle
+    variable cookfsindex
+    variable cookfspages
+    variable wrapped
 
     rename ::installkit::preInit {}
 
@@ -29,22 +37,22 @@ proc ::installkit::preInit {} {
         return
     }
 
-    set ::installkit::cookfshandle [file attributes $::installkit::root -handle]
-    set ::installkit::cookfsindex [$::installkit::cookfshandle getindex]
-    set ::installkit::cookfspages [$::installkit::cookfshandle getpages]
+    set cookfshandle [file attributes $root -handle]
+    set cookfsindex [$cookfshandle getindex]
+    set cookfspages [$cookfshandle getpages]
 
-    if { $::installkit::main_interp } {
-        set ::installkit::wrapped [file exists [file join $::installkit::root main.tcl]]
+    if { [info exists ::installkit::main_interp] } {
+        set wrapped [file exists [file join $root main.tcl]]
     } else {
-        set ::installkit::wrapped 0
+        set wrapped 0
     }
 
-    if { $::installkit::wrapped } {
+    if { $wrapped } {
         set ::tcl_interactive 0
-        set ::argv0 [file join $::installkit::root main.tcl]
+        set ::argv0 [file join $root main.tcl]
     }
 
-    set libDir [file join $::installkit::root lib]
+    set libDir [file join $root lib]
 
     # unset TCLLIBPATH variable so init.tcl will not try directories there.
     unset -nocomplain ::env(TCLLIBPATH)
@@ -66,19 +74,22 @@ proc ::installkit::preInit {} {
 # This procedure will be called after Tcl/Tk initialization
 proc ::installkit::postInit {} {
 
+    variable root
+    variable wrapped
+
     rename ::installkit::postInit {}
 
     # init.tcl initializes ::auto_path with a directory value relative to
     # the current executable. This can be a security hole as malicious code
     # can be loaded from this directory. Let's override this variable so
     # that only a known location is used to download packages.
-    set ::auto_path [list [file join $::installkit::root lib] $::tcl_library]
+    set ::auto_path [list [file join $root lib] $::tcl_library]
 
     # However, let's allow to load from $exename/../lib directory if
     # installkit is not an envelope for application and INSTALLKIT_TESTMODE
     # environment variable defined. This is developer mode, and we may
     # need to load packages from there.
-    if { !$::installkit::wrapped && [info exists ::env(INSTALLKIT_TESTMODE)] } {
+    if { !$wrapped && [info exists ::env(INSTALLKIT_TESTMODE)] } {
         # We assume the following tree structure:
         #   <root_dir>/bin/<our exe here>
         #   <root_dir>/lib/<package dir>
@@ -95,7 +106,7 @@ proc ::installkit::postInit {} {
     # Override the default paths
     set ::tcl::tm::paths [list]
     ::tcl::tm::add {*}[glob -directory \
-        [file join $::installkit::root lib tcl[lindex [split [info tclversion] .] 0]] \
+        [file join $root lib tcl[lindex [split [info tclversion] .] 0]] \
         -type d *]
 
     # Other places where Tcl can load something from unexpected locations:
@@ -105,11 +116,11 @@ proc ::installkit::postInit {} {
     package require installkit
 
     # if we haven't wrapped up and not in thread, try checking out the simple commands
-    if { $::installkit::main_interp && !$::installkit::wrapped && ![info exists ::parentThread] } {
+    if { [info exists ::installkit::main_interp] && !$wrapped && ![info exists ::parentThread] } {
         installkit::rawStartup
     }
 
-    unset ::installkit::main_interp
+    unset -nocomplain ::installkit::main_interp
 
 }
 
