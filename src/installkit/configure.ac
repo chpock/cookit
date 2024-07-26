@@ -213,7 +213,15 @@ AC_SUBST(bin_BINARIES)
 #--------------------------------------------------------------------
 
 TEA_PUBLIC_TCL_HEADERS
+# Save TCL_INCLUDES to add it later.
+# TEA_PRIVATE_TCL_HEADERS will remove Tcl public headers from TCL_INCLUDES.
+# But we want this path included because it contains header files from
+# Tcl packages (cookfs, Thread). So, we will do a hack add this directory
+# again after TEA_PRIVATE_TCL_HEADERS.
+__TCL_INCLUDES="$TCL_INCLUDES"
 TEA_PRIVATE_TCL_HEADERS
+TCL_INCLUDES="$__TCL_INCLUDES $TCL_INCLUDES"
+AC_SUBST(TCL_INCLUDES)
 
 # Tk is statically linked only on Windows
 if test "${TEA_PLATFORM}" = "windows" ; then

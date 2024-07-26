@@ -8,6 +8,11 @@
  (at your option) any later version. */
 
 #include <tclInt.h>
+#include <tclCookfs.h>
+
+#ifdef TCL_THREADS
+#include <tclThread.h>
+#endif /* TCL_THREADS */
 
 #ifdef __WIN32__
 #include <tk.h>
@@ -58,15 +63,7 @@ int g_isMainInterp = 1;
 
 #define TCL_SCRIPT_HERE(...) #__VA_ARGS__
 
-static char preInitScript[] = TCL_SCRIPT_HERE(
-    set v "/installkitvfs";
-    if { [catch {file attribute $v -vfs}] } {
-        load {} Cookfs;
-        ::cookfs::Mount [info nameofexecutable] $v -readonly -volume;
-    };
-    source $v/boot.tcl;
-    unset v
-);
+static char *preInitScript = "source /installkitvfs/boot.tcl";
 
 static char getStartupScript[] = TCL_SCRIPT_HERE(
     if { ![info exists ::argc] || ![info exists ::argv] || !$::argc } { return -code error };
@@ -75,19 +72,6 @@ static char getStartupScript[] = TCL_SCRIPT_HERE(
     incr ::argc -1;
     return $::argv0
 );
-
-Tcl_AppInitProc Cookfs_Init;
-
-int Cookfs_Mount(Tcl_Interp *interp, Tcl_Obj *archive, Tcl_Obj *local,
-    void *props);
-void *Cookfs_VfsPropsInit(void *p);
-void Cookfs_VfsPropsFree(void *p);
-void Cookfs_VfsPropSetVolume(void *p, int volume);
-void Cookfs_VfsPropSetReadonly(void *p, int readonly);
-
-#ifdef TCL_THREADS
-Tcl_AppInitProc Thread_Init;
-#endif /* TCL_THREADS */
 
 #ifdef __WIN32__
 Tcl_AppInitProc Tk_Init;
@@ -258,14 +242,12 @@ static int Installkit_Startup(Tcl_Interp *interp) {
         goto error;
     }
 
-    void *props = Cookfs_VfsPropsInit(NULL);
-    if (props == NULL) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("failed to alloc"
-            " cookfs props", -1));
-        goto error;
-    }
+    void *props = Cookfs_VfsPropsInit();
     Cookfs_VfsPropSetVolume(props, 1);
     Cookfs_VfsPropSetReadonly(props, 1);
+#ifdef TCL_THREADS
+    Cookfs_VfsPropSetShared(props, 1);
+#endif /* TCL_THREADS */
     IkDebug("Installkit_Startup: mount root vfs");
     int isVFSAvailable = Cookfs_Mount(interp, exename, local, props) == TCL_OK
         ? 1 : 0;

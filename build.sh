@@ -224,8 +224,12 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows" ]; then
     case "$PLATFORM" in
         MacOS-X)
             # Use PATH for macports
-            PATH="$PATH:/opt/local/bin"
+            PATH="/opt/local/bin:/opt/local/libexec/llvm-16/bin:$PATH"
             export PATH
+            CC="clang"
+            export CC
+            CXX="clang"
+            export CXX
             ;;
         Windows)
             if [ -n "$IS_WSL" ]; then

@@ -163,6 +163,7 @@ work/stamp-cookfs: work/stamp-tcl
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
 		--enable-lzma \
+		--disable-bz2 --disable-zstd \
 		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/cookfs && $(MAKE) all install

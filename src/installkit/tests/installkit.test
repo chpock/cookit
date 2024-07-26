@@ -764,15 +764,47 @@ test ik-4.9.1 {::installkit::newThread} -constraints threaded -setup {
         list $::parentThread $::argv $::argv0 $::tcl_interactive [info script]
     } res
     lreplace $res 0 0 [expr { [lindex $res 0] eq [::thread::id]?"+":"-" }]
-} -result {+ {\{ var foo {"}} bar false bar} -cleanup {
+} -result [list + [list "\{" "var" foo "\""] bar false bar] -cleanup {
     foreach { k v } $save { set $k $v }
     ::thread::release $tid
 }
+
+test ik-4.9.2 {Test that cookfs package is present in new threads} -constraints threaded -setup {
+} -body {
+    set tid [::thread::create thread::wait]
+    ::thread::send $tid { package present cookfs }
+} -cleanup {
+    ::thread::release $tid
+    unset -nocomplain tid
+} -result [package present cookfs]
 
 # If VFS is mounted not as volume, then it is mounted relative to
 # the current volume. On Windows it means that the root mount point will be
 # unavailable when volume (drive) for pwd is changed. In order to avoid that,
 # the root mount point should be registered as a volume.
+#
+# Also, when VFS is mounted as a volume, then 'file normalize' works
+# as expected on Windows. For example, if VFS mount point is '/cvfs'
+# and VFS is not a volume, then 'file normalize' adds current volume during
+# normalization:
+#
+# (168) 1 % pwd
+# D:/168
+# (168) 2 % file normalize /cvfs
+# D:/cvfs
+# (168) 3 % file normalize /cvfs/some/file/here
+# D:/cvfs/some/file/here
+# (168) 4 %
+#
+# But it works as expected, when VFS is mounted as a volume:
+#
+# (168) 4 % file volumes
+# /installkitvfs C:/ D:/ E:/ G:/ S:/ W:/
+# (168) 5 % file normalize /installkitvfs
+# /installkitvfs
+# (168) 6 % file normalize /installkitvfs/some/file/here
+# /installkitvfs/some/file/here
+# (168) 7 %
 #
 # On the other hand, it is possible that the root file system is mounted
 # several times. To avoid multiple mounts, here we check that there is exactly

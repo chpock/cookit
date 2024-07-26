@@ -33,13 +33,21 @@ proc ::installkit::preInit {} {
 
     rename ::installkit::preInit {}
 
+    # Load the cookfs package if it does not already exist. This is possible if
+    # we initialize a new thread.
+    if { ![llength [info commands ::cookfs::Mount]] } {
+        load {} Cookfs
+    }
+
     if { [info exists ::installkit::init_vfs] } {
         return
     }
 
     set cookfshandle [file attributes $root -handle]
-    set cookfsindex [$cookfshandle getindex]
-    set cookfspages [$cookfshandle getpages]
+    if { $cookfshandle ne "" } {
+        set cookfsindex [$cookfshandle getindex]
+        set cookfspages [$cookfshandle getpages]
+    }
 
     if { [info exists ::installkit::main_interp] } {
         set wrapped [file exists [file join $root main.tcl]]

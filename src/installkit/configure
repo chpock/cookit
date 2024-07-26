@@ -6115,6 +6115,12 @@ printf "%s\n" "${ac_cv_c_tclh}" >&6; }
 
 
 
+# Save TCL_INCLUDES to add it later.
+# TEA_PRIVATE_TCL_HEADERS will remove Tcl public headers from TCL_INCLUDES.
+# But we want this path included because it contains header files from
+# Tcl packages (cookfs, Thread). So, we will do a hack add this directory
+# again after TEA_PRIVATE_TCL_HEADERS.
+__TCL_INCLUDES="$TCL_INCLUDES"
 
     # Allow for --with-tclinclude to take effect and define ${ac_cv_c_tclh}
 
@@ -6172,6 +6178,8 @@ printf %s "checking for Tcl private include files... " >&6; }
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${result}" >&5
 printf "%s\n" "${result}" >&6; }
+
+TCL_INCLUDES="$__TCL_INCLUDES $TCL_INCLUDES"
 
 
 # Tk is statically linked only on Windows
