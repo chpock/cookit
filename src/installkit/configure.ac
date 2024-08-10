@@ -80,7 +80,7 @@ TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\" -I\"`${CYGPATH} ${src
 TEA_ADD_LIBS([])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
-TEA_ADD_TCL_SOURCES([library/jammerTheme.tcl library/installkit.tcl library/wzipvfs.tcl library/installkit-compat.tcl library/installkit-stats.tcl])
+TEA_ADD_TCL_SOURCES([library/installkit.tcl library/wzipvfs.tcl library/installkit-stats.tcl])
 
 #--------------------------------------------------------------------
 # __CHANGE__
@@ -256,9 +256,6 @@ TEA_CONFIG_CFLAGS
 TEA_ADD_SOURCES([tclx/generic/tclXutil.c])
 
 if test "${TEA_PLATFORM}" = "windows" ; then
-
-    # Add installkit::Windows package
-    TEA_ADD_TCL_SOURCES([library/installkit-windows.tcl])
 
     AC_MSG_CHECKING([for manifest version])
     # Version number for manifest. It must be 4 dotted pair Windows version format.

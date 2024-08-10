@@ -32,12 +32,9 @@ foreach { pkgName pkgVersion constraints } {
     registry            1.3.5  {win}
     Tktable             2.11.1 {}
     twapi               4.7.2  {win}
-    Ffidl               0.8    {win}
     tkdnd               2.9.4  {}
-    ttk::theme::jammer  0.1    {}
     vfs                 1.4.2  {}
     cookfs              1.6.0  {}
-    installkit::Windows 1.1    {win}
 } {
     test content-3.[incr count] [list package require $pkgName $pkgVersion] \
         -constraints $constraints \
@@ -45,24 +42,6 @@ foreach { pkgName pkgVersion constraints } {
         -returnCodes ok -match glob -result *
 }
 unset count
-
-# installkit expects twapi/ffidl packages in specific locations
-
-test content-4.1  {Check twapi package location} -constraints win -setup {
-    set ij_libpath [file join [file dirname [interpreter]] .. lib]
-} -body {
-    file exists [file join $ij_libpath twapi]
-} -result 1 -cleanup {
-    unset ij_libpath
-}
-
-test content-4.2 {Check ffidl package location} -constraints win -setup {
-    set ij_libpath [file join [file dirname [interpreter]] .. lib]
-} -body {
-    file exists [file join $ij_libpath ffidl]
-} -result 1 -cleanup {
-    unset ij_libpath
-}
 
 # installkit removed encoding files lager than 4096 bytes.
 # Here we check that vfs contains expected set of encodings.

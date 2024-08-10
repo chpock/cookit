@@ -237,7 +237,7 @@ doc:
 
 install: all install-binaries install-libraries install-doc
 
-install-binaries: binaries install-bin-binaries install-lib-fake
+install-binaries: binaries install-bin-binaries
 
 #========================================================================
 # This rule installs platform-independent files, such as header files.
@@ -479,15 +479,6 @@ dist: dist-clean $(srcdir)/manifest.uuid
 	done
 
 	(cd $(DIST_ROOT); $(COMPRESS);)
-
-install-lib-fake:
-ifeq ($(EXEEXT),.exe)
-# Install twapi/ffidl fake libraries only on Windows
-	mkdir -p "$(libdir)/twapi"
-	cp "$(srcdir)"/library/twapi/* "$(libdir)/twapi"
-	mkdir -p "$(libdir)/ffidl"
-	cp "$(srcdir)"/library/ffidl/* "$(libdir)/ffidl"
-endif
 
 #========================================================================
 # End of user-definable section

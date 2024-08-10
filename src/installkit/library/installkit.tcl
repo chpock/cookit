@@ -904,31 +904,3 @@ proc ::installkit::rawStartup { } {
         exit 0
     }
 }
-
-if { $::tcl_platform(platform) eq "windows" } {
-    package require installkit::Windows
-}
-
-if { ![llength [info procs ::namespace]] } {
-
-    interp hide {} namespace
-    proc ::namespace { args } {
-        if { [lindex $args 0] eq "eval" && [lindex $args 1] eq "::InstallJammer" } {
-            rename ::namespace ""
-            interp expose {} namespace
-            if { [catch [list package present installkit::compat]] } {
-                package require installkit::compat
-            }
-            tailcall ::namespace {*}$args
-        } else {
-            tailcall interp invokehidden {} namespace {*}$args
-        }
-    }
-
-}
-
-
-
-
-
-
