@@ -299,6 +299,25 @@ proc addMtls { { optional 0 } } {
     genStaticPkgIndex $dir mtls [package present mtls]
 }
 
+proc addTkcon { { optional 0 } } {
+    puts "* prepare the tkcon package:"
+    set dir [glob -nocomplain -type d -directory $::rootLibDirectory "tkcon*"]
+    if { ![llength $dir] } {
+        directoryExists [file join $::rootLibdirectory "tkcon*"]
+        return
+    }
+
+    # detect tkcon version
+    set fd [open [file join $dir tkcon.tcl] r]
+    set data [read $fd]
+    close $fd
+    regexp {variable VERSION "(.+?)"} $data -> tkcon_version
+
+    addFile [file join $dir tkcon.tcl]
+    addFile [file join $dir pkgIndex.tcl] "package ifneeded tkcon\
+        $tkcon_version \[list source \[file join \$dir tkcon.tcl\]\]"
+}
+
 proc addInstallkit { { optional 0 } } {
 
     puts "* prepare the installkit package:"
@@ -309,6 +328,7 @@ proc addInstallkit { { optional 0 } } {
     addFile [file join $::installkitLibDirectory installkit.tcl] "" $dst
     addFile [file join $::installkitLibDirectory wzipvfs.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit-stats.tcl] "" $dst
+    addFile [file join $::installkitLibDirectory installkit-console.tcl] "" $dst
 
     addFile [file join $::installkitLibDirectory boot.tcl] "" ""
 
@@ -358,6 +378,7 @@ addVfs
 addMtls
 if { [::tcl::pkgconfig get threaded] } addThread
 addInstallkit
+addTkcon
 
 if { $::tcl_platform(platform) eq "windows" } {
     addTwapi

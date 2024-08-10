@@ -8,7 +8,7 @@ export STRIP
 export PKG_CONFIG
 
 CHECK_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi tclmtls
-ALL_TARGETS   = $(CHECK_TARGETS) zlib
+ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon
 
 ifeq ($(IJ_PLATFORM),Windows)
     ALL_TARGETS += thread
@@ -202,8 +202,21 @@ work/stamp-tclmtls:
 	cd work/tclmtls && $(MAKE) all install
 	touch $@
 
+tkcon: work/stamp-tkcon
+work/stamp-tkcon:
+	mkdir -p work/tkcon
+	cd work/tkcon || exit; \
+	 test -f config.status \
+	 || PKG_CONFIG= $(TOP_SRCDIR)/src/tkcon/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/tkcon && $(MAKE) all install
+	touch $@
+
 installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-thread work/stamp-twapi)
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-thread work/stamp-twapi)
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
@@ -339,6 +352,8 @@ clean-zlib:
 	rm -rf work/zlib work/stamp-zlib
 clean-tclmtls:
 	rm -rf work/tclmtls work/stamp-tclmtls
+clean-tkcon:
+	rm -rf work/tkcon work/stamp-tkcon
 
 clean:
 	rm -rf kit out work

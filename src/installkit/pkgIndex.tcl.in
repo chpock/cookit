@@ -1,4 +1,5 @@
 package ifneeded installkit::stats 1.0.0 [list source [file join $dir installkit-stats.tcl]]
+package ifneeded installkit::console 1.0.0 [list source [file join $dir installkit-console.tcl]]
 package ifneeded vfs::wzip 0.1.0 [list source [file join $dir wzipvfs.tcl]]
 
 package ifneeded installkit @PACKAGE_VERSION@ [list ::apply {{ dir } {

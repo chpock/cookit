@@ -5693,7 +5693,7 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 
 
 
-    vars="library/installkit.tcl library/wzipvfs.tcl library/installkit-stats.tcl"
+    vars="library/installkit.tcl library/wzipvfs.tcl library/installkit-stats.tcl library/installkit-console.tcl"
     for i in $vars; do
 	# check for existence, be strict because it is installed
 	if test ! -f "${srcdir}/$i" ; then

@@ -80,7 +80,7 @@ TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\" -I\"`${CYGPATH} ${src
 TEA_ADD_LIBS([])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
-TEA_ADD_TCL_SOURCES([library/installkit.tcl library/wzipvfs.tcl library/installkit-stats.tcl])
+TEA_ADD_TCL_SOURCES([library/installkit.tcl library/wzipvfs.tcl library/installkit-stats.tcl library/installkit-console.tcl])
 
 #--------------------------------------------------------------------
 # __CHANGE__

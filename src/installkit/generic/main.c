@@ -329,12 +329,14 @@ static int Installkit_Startup(Tcl_Interp *interp) {
         if (Tk_Init(interp) != TCL_OK)
             goto error;
         // Create console if we run without script and in GUI mode.
-        if (Tk_CreateConsoleWindow(interp) != TCL_OK)
-            goto error;
+        // if (Tk_CreateConsoleWindow(interp) != TCL_OK)
+        //    goto error;
 #else
         if (Tcl_EvalEx(interp, "package require Tk", -1, TCL_EVAL_GLOBAL) != TCL_OK)
             goto error;
 #endif /* __WIN32__ */
+        if (Tcl_EvalEx(interp, "package require installkit::console", -1, TCL_EVAL_GLOBAL) != TCL_OK)
+            goto error;
     }
 
     IkDebug("Installkit_Startup: ok");

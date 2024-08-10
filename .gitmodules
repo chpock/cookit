@@ -34,3 +34,6 @@
 [submodule "src/tclmtls"]
 	path = src/tclmtls
 	url = https://github.com/chpock/tclmtls
+[submodule "src/tkcon"]
+	path = src/tkcon
+	url = https://github.com/wjoye/tkcon.git
