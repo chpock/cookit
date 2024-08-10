@@ -306,10 +306,8 @@ proc addInstallkit { { optional 0 } } {
 
     set dst "lib/installkit"
 
-    addFile [file join $::installkitLibDirectory jammerTheme.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit.tcl] "" $dst
     addFile [file join $::installkitLibDirectory wzipvfs.tcl] "" $dst
-    addFile [file join $::installkitLibDirectory installkit-compat.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit-stats.tcl] "" $dst
 
     addFile [file join $::installkitLibDirectory boot.tcl] "" ""
@@ -318,8 +316,6 @@ proc addInstallkit { { optional 0 } } {
     genStaticPkgIndex $dir cookfs [package present cookfs]
 
     if { $::tcl_platform(platform) eq "windows" } {
-
-        addFile [file join $::installkitLibDirectory installkit-windows.tcl] "" $dst
 
         load {} Registry
         genStaticPkgIndex $dir registry [package present registry]
