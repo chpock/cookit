@@ -2,9 +2,6 @@ installkit:
     * binaries still depend on shared zlib on some platforms. Remove this
       dependancy.
 cookfs:
-    * add support for zstd.
-    * add support for option for compression engine. Currently there is only
-      hardcoded level 9 compression for zlib/xz.
     * add support for pre-analyzing files before adding.
       - check the first 64kb (or whole file if it is small) of file with
         the fastest compression method. If the compression ratio is less
