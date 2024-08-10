@@ -1,5 +1,7 @@
 #!/bin/sh
 
+USE_SCI_LINUX6_DEV_TOOLSET=1
+
 set -e
 
 SELF_HOME="$(cd "$(dirname "$0")"; pwd)"
@@ -12,6 +14,10 @@ if [ "$SELF_HOME" = "$BUILD_HOME" ]; then
     BUILD_HOME="$SELF_HOME"/build
 fi
 
+if uname -r | grep -q -- '-WSL2'; then
+    IS_WSL=1
+fi
+
 COLORS="33 34 35 36 92 93 94 95 96"
 
 progress() {
@@ -19,13 +25,70 @@ progress() {
     COLOR="$2"
     while IFS= read -r line; do
         case "$line" in
+# Hide known and expected warnings:
+#
+# /home/vagrant/installkit-source-Linux-x86/src/cookfs/7zip/C/Sha256.c:445:5: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+# /home/vagrant/installkit-source-Linux-x86/src/cookfs/7zip/C/Sha256.c:446:5: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+# /home/vagrant/installkit-source-Linux-x86/src/cookfs/7zip/C/Sha1.c:366:5: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+# /home/vagrant/installkit-source-Linux-x86/src/cookfs/7zip/C/Sha1.c:367:5: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+            */cookfs/7zip/*Wstrict-aliasing*) : noop;;
+# /Users/vagrant/installkit-source-MacOS-X/src/cookfs/7zip/C/Threads.c:546:36: warning: unknown warning group '-Watomic-implicit-seq-cst', ignored [-Wunknown-warning-option]
+            */cookfs/7zip/*Wunknown-warning-option*) : noop;;
+# /home/vagrant/installkit-source-Linux-x86/src/installkit/tclx/generic/tclXutil.c:358:17: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+# /home/vagrant/installkit-source-Linux-x86/src/installkit/tclx/generic/tclXutil.c:994:60: warning: unused parameter 'offType' [-Wunused-parameter]
+# /home/vagrant/installkit-source-Linux-x86/src/installkit/tclx/unix/tclXunixId.c:601:27: warning: unused parameter 'clientData' [-Wunused-parameter]
+            */installkit/tclx/*Wunused-parameter*) : noop;;
+            */installkit/tclx/*Wsign-compare*) : noop;;
+# /Users/vagrant/installkit-source-MacOS-X/src/tk/unix/../macosx/ttkMacOSXTheme.c:1397:47: warning: incompatible pointer types passing 'SInt *' (aka 'int *') to parameter of type 'SInt32 *' (aka 'long *') [-Wincompatible-pointer-types]
+            */tk/unix/*Wincompatible-pointer-types*) : noop;;
+# ld: warning: text-based stub file /System/Library/Frameworks//QuartzCore.framework/QuartzCore.tbd and library file /System/Library/Frameworks//QuartzCore.framework/QuartzCore are out of sync. Falling back to library file for linking.
+# ld: warning: text-based stub file /System/Library/Frameworks//QuartzCore.framework/QuartzCore.tbd and library file /System/Library/Frameworks//QuartzCore.framework/QuartzCore are out of sync. Falling back to library file for linking.
+            *QuartzCore.framework/QuartzCore\ are\ out\ of\ sync*) : noop;;
+# multiple warnings from tktable
+            */src/tktable/generic/*warning:*) : noop;;
+# multiple warnings from tkdnd
+            */src/tkdnd/macosx/macdnd.m*warning:*) : noop;;
+# /Users/vagrant/installkit-source-MacOS-X/src/installkit/generic/main.c:67:73: warning: '$' in identifier [-Wdollar-in-identifier-extension]
+            */src/installkit/generic/main.c:*Wdollar-in-identifier-extension*) : noop;;
+# <command-line>: warning: "BUILD_vfs" redefined
+            *BUILD_vfs*redefined*) : noop;;
+# <command-line>: warning: "BUILD_tkdnd" redefined
+            *BUILD_tkdnd*redefined*) : noop;;
+# ldd: warning: you do not have execution permission for `/tmp/work/Linux-x86/kit/Linux-x86/lib/Tktable2.11.1/libTktable2.11.1.so'
+# ldd: warning: you do not have execution permission for `/tmp/work/Linux-x86/kit/Linux-x86/lib/tkdnd2.9.4/libtkdnd2.9.4.so'
+            *you\ do\ not\ have\ execution\ permission*lib*.so*) : noop;;
+# /tmp/work/Linux-x86_64/out/include/tcl.h:2553:55: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+            */include/tcl.h*Wint-to-pointer-cast*) : noop;;
+# /w/projects/installkit/src/twapi/twapi/base/tclobjs.c:4823:16: warning: ‘nenc’ may be used uninitialized [-Wmaybe-uninitialized]
+            */src/twapi/twapi/*Wmaybe-uninitialized*) : noop;;
+# /w/projects/installkit/src/twapi/twapi/base/twapi.c:288:9: warning: unused variable ‘compressed’ [-Wunused-variable]
+            */src/twapi/twapi/*Wunused-variable*) : noop;;
+# /w/projects/installkit/src/twapi/twapi/etw/etw.c:795:35: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+            */src/twapi/twapi/*Wint-to-pointer-cast*) : noop;;
+# /w/projects/installkit/src/twapi/twapi/etw/etw.c:849:31: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+            */src/twapi/twapi/*Wpointer-to-int-cast*) : noop;;
             \[OK\]*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[32m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
                 ;;
-            \[ERROR\]*)
+            *Total*Passed*Skipped*Failed*0*)
+                : ignore test results with "Failed: 0"
+                ;;
+            *Total*Passed*Skipped*Failed*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
                 ;;
-            make\[*|\[*|mkdir\ *)
+            *Total*0*Passed*Skipped*Failed*0*)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            \[ERROR\]*|Test\ file\ error:*)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            make\[*|*Tests\ running\ in\ working\ dir:*)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m %s\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            *\ warning:\ *)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[33m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
+            \[INFO\]*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m %s\n' "$COLOR" "$LABEL" "$line"
                 ;;
         esac
@@ -39,20 +102,29 @@ getcolor() {
     [ "$WORKING_COLORS" = "$_TMP_COLORS" ] && unset WORKING_COLORS || WORKING_COLORS="$_TMP_COLORS"
 }
 
-[ -n "$1" ] || set -- all
-
 if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
 
-    BUILD_ALL="$BUILD_HOME/all"
+    BUILD_PLATFORMS=
+    while true; do
+        [ -n "$1" ] || break
+        case "$1" in
+            --*) break;;
+        esac
+        [ -z "$BUILD_PLATFORMS" ] || BUILD_PLATFORMS="$BUILD_PLATFORMS "
+        BUILD_PLATFORMS="$BUILD_PLATFORMS$1"
+        shift
+    done
 
-    rm -rf "$BUILD_ALL" "$BUILD_HOME/installkit"-*
-
-    [ "$1" != "all" ] && unset BUILD_ALL || set -- Windows MacOS-X Linux-x86 Linux-x86_64
+    if [ -z "$BUILD_PLATFORMS" ]; then
+        BUILD_PLATFORMS="Windows MacOS-X Linux-x86 Linux-x86_64"
+        BUILD_ALL="$BUILD_HOME/all"
+        rm -rf "$BUILD_ALL" "$BUILD_HOME/installkit"-*
+    fi
 
     # Kill all child processes on ctrl-c or exit
-    trap "trap - SIGTERM && echo 'Caught SIGTERM, terminating child processes...' && kill -- -$$" SIGINT SIGTERM EXIT
+    trap "trap - TERM && echo 'Caught SIGTERM, terminating child processes...' && kill -- -$$" INT TERM EXIT
 
-    for PLATFORM; do
+    for PLATFORM in $BUILD_PLATFORMS; do
         rm -f "$BUILD_HOME/$PLATFORM".*
         rm -rf "$BUILD_HOME/$PLATFORM"
         LOG_OUT="$BUILD_HOME/$PLATFORM.log"
@@ -62,15 +134,15 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
         #    } 2>&1 1>&3 | tee "$LOG_ERR" | progress err "$PLATFORM"
         #} 3>&1 1>&2 &
         getcolor
-        "$SELF_FILE" build "$PLATFORM" 2>&1 | tee "$LOG_OUT" | progress "$PLATFORM" "$CURRENT_COLOR" &
+        "$SELF_FILE" build "$PLATFORM" "$@" 2>&1 | tee "$LOG_OUT" | progress "$PLATFORM" "$CURRENT_COLOR" &
     done
 
     wait
 
-    trap - SIGINT SIGTERM EXIT
+    trap - INT TERM EXIT
 
     # Check that build is successful
-    for PLATFORM; do
+    for PLATFORM in $BUILD_PLATFORMS; do
         if [ ! -e "$BUILD_HOME/$PLATFORM.zip" ]; then
             echo "Error: platform '$PLATFORM' failed."
             BUILD_FAILED=1
@@ -82,7 +154,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     echo
     if [ -n "$BUILD_ALL" ]; then
         mkdir -p "$BUILD_ALL"
-        for PLATFORM; do
+        for PLATFORM in $BUILD_PLATFORMS; do
             cp -r "$BUILD_HOME/$PLATFORM/kit"/* "$BUILD_ALL"
         done
         VERSION="$(cat "$SELF_HOME"/version)"
@@ -114,13 +186,31 @@ logcmd() {
     "$@"
 }
 
-if [ "$1" = "build-local" ] || [ "$2" = "Windows" ]; then
-    PLATFORM="$2"
-fi
+[ "$1" != "build-local" ] || BUILD_LOCAL=1
+PLATFORM="$2"
+shift
+shift
 
-if [ -n "$PLATFORM" ]; then
+if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows" ]; then
 
     log "Start local build..."
+
+    if [ "$PLATFORM" = "Linux-x86" -o "$PLATFORM" = "Linux-x86_64" ]; then
+        CENTOS_VER="$(rpm -E %{rhel} 2>/dev/null)"
+        if [ "$CENTOS_VER" = "6" -a "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
+            echo "CentOS 6 detected. Scientific Linux CERN 6 Developer Toolset is enabled."
+            if [ ! -f /etc/yum.repos.d/slc6-devtoolset-i386.repo ]; then
+                sudo wget -O /etc/yum.repos.d/slc6-devtoolset-i386.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
+                sudo sed -i -e 's/\(\]$\)/-i386\1/' -e 's/\$basearch/i386/' /etc/yum.repos.d/slc6-devtoolset-i386.repo
+                sudo rpm --import http://linuxsoft.cern.ch/cern/slc6X/i386/RPM-GPG-KEY-cern
+                sudo wget -O /etc/yum.repos.d/slc6-devtoolset-x86_64.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
+                sudo sed -i -e 's/\(\]$\)/-x86_64\1/' -e 's/\$basearch/x86_64/' /etc/yum.repos.d/slc6-devtoolset-x86_64.repo
+                sudo rpm --import http://linuxsoft.cern.ch/cern/slc6X/x86_64/RPM-GPG-KEY-cern
+            fi
+        else
+            unset USE_SCI_LINUX6_DEV_TOOLSET
+        fi
+    fi
 
     BUILD_DIR="$BUILD_HOME/$PLATFORM"
     if [ -d "$BUILD_DIR" ]; then
@@ -132,40 +222,63 @@ if [ -n "$PLATFORM" ]; then
     cd "$BUILD_DIR"
 
     case "$PLATFORM" in
-        Windows)
-            # dependencies
-            # mingw64-i686-libffi - for ffidl
-            for DEP in mingw64-i686-libffi mingw64-i686-gcc-core mingw64-i686-gcc-g++; do
-                if [ "$(cygcheck -c -n "$DEP" 2>/dev/null)" = "$DEP" ]; then
-                    log "dependency '$DEP' - OK"
-                else
-                    error "Error: dependency '$DEP' - not installed"
-                    error "Please run: setup-x86_64.exe -q -P $DEP"
-                    exit 1
-                fi
-            done
-            ARCH_TOOLS_PREFIX="/usr/bin/i686-w64-mingw32-" "$SELF_HOME/configure"
-            [ "$MAKE_PARALLEL" != "true" ] || _MAKE_PARALLEL="-j8"
-            ;;
         MacOS-X)
-            PLATFORM="$PLATFORM" "$SELF_HOME/configure"
+            # Use PATH for macports
+            PATH="/opt/local/bin:/opt/local/libexec/llvm-16/bin:$PATH"
+            export PATH
+            CC="clang"
+            export CC
+            CXX="clang"
+            export CXX
+            ;;
+        Windows)
+            if [ -n "$IS_WSL" ]; then
+                # WSL env
+                # dependencies
+                sudo apt-get install -y tcl make gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686
+                sudo apt-get install -y ccache 2>/dev/null || true
+            else
+                # Cygwin env
+                # dependencies
+                for DEP in mingw64-i686-gcc-core mingw64-i686-gcc-g++; do
+                    if [ "$(cygcheck -c -n "$DEP" 2>/dev/null)" = "$DEP" ]; then
+                        log "dependency '$DEP' - OK"
+                    else
+                        error "Error: dependency '$DEP' - not installed"
+                        error "Please run: setup-x86_64.exe -q -P $DEP"
+                        exit 1
+                    fi
+                done
+            fi
+            set -- "$@" --toolchain-prefix "/usr/bin/i686-w64-mingw32-"
+            [ "$MAKE_PARALLEL" != "true" ] || _MAKE_PARALLEL="-j8"
             ;;
         Linux-x86)
             # dependencies
             # libXcursor-devel - for tkdnd
+            if [ "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
+                sudo yum install -y devtoolset-2-gcc.i686 devtoolset-2-gcc-c++.i686 devtoolset-2-binutils.i686
+                # the strip utility doesn't use arch-specific prefix there
+                set -- "$@" --toolchain-prefix "/opt/rh/devtoolset-2/root/usr/bin/i686-redhat-linux-" \
+                    --strip-utility "/opt/rh/devtoolset-2/root/usr/bin/strip"
+            fi
             sudo yum install -y libgcc.i686 glibc-devel.i686 libX11-devel.i686 libXext-devel.i686 libXt-devel.i686 libXcursor-devel.i686
-            PLATFORM="$PLATFORM" "$SELF_HOME/configure"
+            sudo yum install -y ccache 2>/dev/null || true
             ;;
         Linux-x86_64)
             # dependencies
             # libXcursor-devel - for tkdnd
+            if [ "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
+                sudo yum install -y devtoolset-2-gcc.x86_64 devtoolset-2-gcc-c++.x86_64 devtoolset-2-binutils.x86_64
+                # the strip utility doesn't use arch-specific prefix there
+                set -- "$@" --toolchain-prefix "/opt/rh/devtoolset-2/root/usr/bin/x86_64-redhat-linux-" \
+                    --strip-utility "/opt/rh/devtoolset-2/root/usr/bin/strip"
+            fi
             sudo yum install -y libgcc.x86_64 glibc-devel.x86_64 libX11-devel.x86_64 libXext-devel.x86_64 libXt-devel.x86_64 libXcursor-devel.x86_64
-            PLATFORM="$PLATFORM" "$SELF_HOME/configure"
-            ;;
-        *)
-            "$SELF_HOME/configure"
+            sudo yum install -y ccache 2>/dev/null || true
             ;;
     esac
+    "$SELF_HOME/configure" "$@" --platform "$PLATFORM"
 
     if [ "$MAKE_PARALLEL" = "true" ]; then
         [ -n "$_MAKE_PARALLEL" ] && MAKE_PARALLEL="$_MAKE_PARALLEL" || MAKE_PARALLEL="-j2"
@@ -173,7 +286,7 @@ if [ -n "$PLATFORM" ]; then
     fi
 
     make $MAKE_PARALLEL
-    make $MAKE_PARALLEL check
+    make $MAKE_PARALLEL test
     make $MAKE_PARALLEL dist
 
     if [ "$PLATFORM" = "Windows" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
@@ -189,8 +302,6 @@ fi
 
 log "Start remote build..."
 
-PLATFORM="$2"
-
 BUILD_DIR="$BUILD_HOME/$PLATFORM"
 rm -rf "$BUILD_DIR"
 
@@ -205,6 +316,8 @@ vagrant_ssh() {
     if [ -z "$VAGRANT_KEY" ]; then
         V_INFO="$(vagrant ssh-config | grep '^  ' | sed 's/^[[:space:]]\+//')"
         V_HOST="$(echo "$V_INFO" | grep -m 1 '^HostName ' | awk '{print $2}')"
+        # In WSL set VM hostname as Windows host, which is the default routing gateway in WSL.
+        [ -z "$IS_WSL" ] || V_HOST="$(ip route | grep default | awk '{print $3}')"
         V_PORT="$(echo "$V_INFO" | grep -m 1 '^Port ' | awk '{print $2}')"
         V_USER="$(echo "$V_INFO" | grep -m 1 '^User ' | awk '{print $2}')"
         V_KEY="$(echo "$V_INFO" | grep '^IdentityFile ' | \
@@ -218,10 +331,22 @@ vagrant_ssh() {
             tr '\n' '\t' | \
             sed -e 's/\t$//' -e 's/\t/ -o /g' -e 's/^/-o /'
         )"
+        if [ -n "$IS_WSL" ]; then
+            V_KEY="$(wslpath -u "$(echo "$V_KEY" | awk '{print $NF}')")"
+            cp "$V_KEY" "/tmp/$PLATFORM-ssh.key"
+            chmod 0600 "/tmp/$PLATFORM-ssh.key"
+            V_KEY="-i /tmp/$PLATFORM-ssh.key"
+        fi
         VAGRANT_OPTS="$V_OPTS"
         VAGRANT_KEY="$V_KEY"
         VAGRANT_HOST="$V_USER@$V_HOST"
         VAGRANT_PORT="$V_PORT"
+        # In WSL we must use the first forwarded port. The second forwarded port
+        # is bound to the loopback interface and is not available for WSL VM.
+        if [ -n "$IS_WSL" ]; then
+            VAGRANT_PORT="$(vagrant port | grep '^forwarded_port ' | head -n 1 | \
+                awk '{print $2}' | cut -d, -f2)"
+        fi
     fi
 }
 
@@ -273,28 +398,58 @@ fi
 
 vagrant_lock hard
 
+unset VM_ACTION
+
 while [ "$STATE" != "running" ]; do
     log "Check VM state..."
     STATE="$(vagrant status | grep '^state ' | awk '{print $2}')"
     log "The VM state is: '$STATE'"
-    if [ "$STATE" = "poweroff" ] || [ "$STATE" = "saved" ]; then
+    if [ "$STATE" = "poweroff" ]; then
+        if [ -n "$VM_ACTION" ]; then
+            error "Error: could not start the VM."
+            exit 1
+        fi
         log "Start the VM..."
-        vagrant up | grep -E '^ui (output|info),' | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
+        VM_ACTION="up"
+    elif [ "$STATE" = "saved" ]; then
+        if [ -z "$VM_ACTION" ]; then
+            log "Start the VM..."
+            VM_ACTION="up"
+        elif [ "$VM_ACTION" = "up" ]; then
+            log "Start failed. Try to reload the VM..."
+            VM_ACTION="reload"
+        else
+            error "Error: could not start the VM."
+            exit 1
+        fi
+    elif [ "$STATE" = "gurumeditation" ]; then
+        if [ -n "$VM_ACTION" ]; then
+            error "Error: could not start the VM."
+            exit 1
+        fi
+        log "VM is meditating. Let's try to reload it..."
+        VM_ACTION="reload"
+    elif [ -z "$STATE" ]; then
+        log "Warning: VM state is empty. Retry."
+        unset VM_ACTION
     elif [ "$STATE" != "running" ]; then
         error "Error: unexpected VM state."
         exit 1
+    else
+        break
     fi
+    vagrant "$VM_ACTION" | grep -E '^ui (output|info|error),' | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
 done
 
 log "Get SSH config..."
 vagrant_ssh
 log "Sync sources..."
-logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$SELF_HOME"/* "$VAGRANT_HOST:installkit-source"
+logcmd rsync -a --exclude '.git' --exclude 'build' --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$SELF_HOME"/* "$VAGRANT_HOST:installkit-source-$PLATFORM"
 
 vagrant_lock soft
 
 log "Start build..."
-logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && IK_DEBUG=\"$IK_DEBUG\" MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source/build.sh build-local $PLATFORM" && R=0 || R=$?
+logcmd ssh $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT -o StrictHostKeyChecking=no "$VAGRANT_HOST" "mkdir -p /tmp/work && cd /tmp/work && MAKE_PARALLEL=\"$MAKE_PARALLEL\" ~/installkit-source-$PLATFORM/build.sh build-local $PLATFORM $@" && R=0 || R=$?
 log "Sync build results..."
 [ -d "$BUILD_DIR" ] || mkdir -p "$BUILD_DIR"
 logcmd rsync -a --delete -e "ssh -o StrictHostKeyChecking=no $VAGRANT_OPTS $VAGRANT_KEY -p $VAGRANT_PORT" "$VAGRANT_HOST:/tmp/work/$PLATFORM/*" "$BUILD_DIR"

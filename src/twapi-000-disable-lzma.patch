@@ -1,0 +1,69 @@
+Don't link twapi with lzma procedures
+
+diff -rubBaN twapi.orig/configure twapi/configure
+--- twapi.orig/configure	2024-03-12 03:30:26.791507200 +0200
++++ twapi/configure	2024-03-12 04:15:18.192224700 +0200
+@@ -5398,8 +5398,6 @@
+ 	    twapi/base/errors.c
+ 	    twapi/base/ffi.c
+ 	    twapi/base/keylist.c
+-	    twapi/base/lzmadec.c
+-	    twapi/base/lzmainterface.c
+ 	    twapi/base/memlifo.c
+ 	    twapi/base/mycrt.c
+ 	    twapi/base/parseargs.c
+diff -rubBaN twapi.orig/twapi/base/twapi.c twapi/twapi/base/twapi.c
+--- twapi.orig/twapi/base/twapi.c	2024-03-12 03:30:26.129504400 +0200
++++ twapi/twapi/base/twapi.c	2024-03-12 04:15:53.293935400 +0200
+@@ -288,51 +288,6 @@
+     int compressed;
+     Tcl_Obj *pathObj;
+ 
+-    /*
+-     * Locate the twapi resource and load it if found. First check for
+-     * compressed type. Then uncompressed.
+-     */
+-    compressed = 1;
+-    hres = FindResourceA(dllH,
+-                         name,
+-                         TWAPI_SCRIPT_RESOURCE_TYPE_LZMA);
+-    if (!hres) {
+-        hres = FindResourceA(dllH,
+-                             name,
+-                             TWAPI_SCRIPT_RESOURCE_TYPE);
+-        compressed = 0;
+-    }
+-
+-    if (hres) {
+-        sz = SizeofResource(dllH, hres);
+-        hglob = LoadResource(dllH, hres);
+-        if (sz && hglob) {
+-            dataP = LockResource(hglob);
+-            if (dataP) {
+-                /* If compressed, we need to uncompress it first */
+-                if (compressed) {
+-                    dataP = TwapiLzmaUncompressBuffer(interp, dataP, sz, &sz);
+-                    if (dataP == NULL) {
+-                        Tcl_AppendResult(interp, "Could not uncompress resource.", NULL);
+-                        return TCL_ERROR; /* interp already has error */
+-                    }
+-                }
+-                
+-                /* The resource is expected to be UTF-8 (actually strict ASCII) */
+-                /* TBD - double check use of GLOBAL and DIRECT */
+-                result = Tcl_EvalEx(interp, (char *)dataP, sz, TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
+-                if (compressed)
+-                    TwapiLzmaFreeBuffer(dataP);
+-                if (result == TCL_OK)
+-                    Tcl_ResetResult(interp);
+-                else
+-                    Tcl_AppendResult(interp, "Eval of script resource failed.", NULL);
+-                return result;
+-            }
+-        }
+-        return Twapi_AppendSystemError(interp, GetLastError());
+-    }
+-
+     if (!try_file) {
+         Tcl_AppendResult(interp, "Resource ", name,  " not found.", NULL);
+         return TCL_ERROR;

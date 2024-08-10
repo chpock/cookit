@@ -16,3 +16,21 @@
 [submodule "src/zlib"]
 	path = src/zlib
 	url = https://github.com/madler/zlib.git
+[submodule "src/cookfs"]
+	path = src/cookfs
+	url = https://github.com/chpock/cookfs.git
+[submodule "src/tclvfs"]
+	path = src/tclvfs
+	url = https://github.com/chpock/tclvfs.git
+[submodule "src/installkit/tclconfig"]
+	path = src/installkit/tclconfig
+	url = https://github.com/tcltk/tclconfig
+[submodule "src/twapi"]
+	path = src/twapi
+	url = https://github.com/chpock/twapi.git
+[submodule "src/installkit/tclx"]
+	path = src/installkit/tclx
+	url = https://github.com/flightaware/tclx.git
+[submodule "src/tclmtls"]
+	path = src/tclmtls
+	url = https://github.com/chpock/tclmtls

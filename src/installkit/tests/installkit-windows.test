@@ -1,0 +1,569 @@
+# installkit tests - installkit::Windows package
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+source [file join [tcltest::testsDirectory] helper.tcl]
+
+package require installkit
+
+catch { package require registry }
+set ik_ext ".installkittest"
+set ik_ft "InstallKitTest"
+
+# installkit::Windows::FileExtension
+
+test installkit::Windows-1.1 {installkit::Windows::FileExtension, exists} -constraints win -body {
+    set result [list]
+    # known existing extension
+    lappend result [installkit::Windows::FileExtension exists .exe]
+    lappend result [installkit::Windows::FileExtension exists .wrong-extension]
+} -result [list 1 0]
+
+test installkit::Windows-1.2 {installkit::Windows::FileExtension, set} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+} -body {
+    set result [list]
+    # known existing extension
+    lappend result [installkit::Windows::FileExtension set .exe]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    lappend result [installkit::Windows::FileExtension set $ik_ext]
+} -result [list exefile $ik_ft] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+}
+
+test installkit::Windows-1.3 {installkit::Windows::FileExtension, bad option} -constraints win -body {
+    installkit::Windows::FileExtension foo bar
+} -returnCodes error -result {bad option "foo": must be exists or set}
+
+# installkit::Windows::FileType
+
+test installkit::Windows-2.1 {installkit::Windows::FileType, exists} -constraints win -body {
+    set result [list]
+    # known existing ft
+    lappend result [installkit::Windows::FileType exists exefile]
+    lappend result [installkit::Windows::FileType exists wrong-file-type]
+} -result [list 1 0]
+
+test installkit::Windows-2.2 {installkit::Windows::FileType, set} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileType set $ik_ft "IKTest"
+    lappend result [installkit::Windows::FileType set wrong-file-type]
+    # known existing ft
+    lappend result [installkit::Windows::FileType set exefile]
+    lappend result [installkit::Windows::FileType set $ik_ft]
+} -result [list {} Application IKTest] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+test installkit::Windows-2.3 {installkit::Windows::FileType, icon} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileType icon $ik_ft "c:\\some\\path.exe,1"
+    lappend result [installkit::Windows::FileType icon wrong-file-type]
+    # known existing ft
+    lappend result [installkit::Windows::FileType icon batfile]
+    lappend result [installkit::Windows::FileType icon $ik_ft]
+} -match glob -result [string map {\\ \\\\} [list {} {%SystemRoot%\System32\*} {c:\some\path.exe,1}]] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+test installkit::Windows-2.4 {installkit::Windows::FileType, command} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileType command $ik_ft open "c:\\some\\path.exe %1"
+    installkit::Windows::FileType command $ik_ft edit "c:\\some\\edit.exe"
+    lappend result [installkit::Windows::FileType command wrong-file-type]
+    lappend result [installkit::Windows::FileType command wrong-file-type wrong-command]
+    # known existing ft
+    lappend result [expr { "open" in [installkit::Windows::FileType command batfile] }]
+    lappend result [installkit::Windows::FileType command batfile open]
+    lappend result [installkit::Windows::FileType command $ik_ft]
+    lappend result [installkit::Windows::FileType command $ik_ft open]
+} -result [list {} {} 1 {"%1" %*} {edit open} {c:\some\path.exe %1}] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+test installkit::Windows-2.5 {installkit::Windows::FileType, defaultcommand} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileType defaultcommand $ik_ft "open"
+    lappend result [installkit::Windows::FileType defaultcommand wrong-file-type]
+    # known existing ft
+    lappend result [installkit::Windows::FileType defaultcommand VBSFile]
+    lappend result [installkit::Windows::FileType defaultcommand $ik_ft]
+} -result [list {} Open open] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+test installkit::Windows-2.6 {installkit::Windows::FileType, menu} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileType menu $ik_ft "open" "Open Me"
+    lappend result [installkit::Windows::FileType menu wrong-file-type open]
+    # known existing ft
+    lappend result [installkit::Windows::FileType menu $ik_ft "open"]
+} -result [list {} {Open Me}] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+test installkit::Windows-2.7 {installkit::Windows::FileType, showextension} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileType showextension $ik_ft always 1
+    installkit::Windows::FileType showextension $ik_ft never 0
+    lappend result [installkit::Windows::FileType showextension wrong-file-type always]
+    # known existing ft
+    lappend result [installkit::Windows::FileType showextension "Directory" "always"]
+    lappend result [installkit::Windows::FileType showextension "InternetShortcut" "never"]
+    lappend result [installkit::Windows::FileType showextension $ik_ft "always"]
+    lappend result [installkit::Windows::FileType showextension $ik_ft "never"]
+} -result [list 0 1 1 1 0] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+# installkit::Windows::File
+
+test installkit::Windows-3.1 {installkit::Windows::File, type} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    # known existing ft
+    lappend result [installkit::Windows::File type blabla.bat]
+    lappend result [installkit::Windows::File type "c:\\test\\file$ik_ext"]
+    lappend result [installkit::Windows::File type blabla.wrong-extension]
+} -result [list batfile $ik_ft {}] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+}
+
+test installkit::Windows-3.2 {installkit::Windows::File, command} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType command $ik_ft open "c:\\some\\foo.exe %1"
+    # known existing ft
+    lappend result [installkit::Windows::File command blabla.bat open]
+    lappend result [installkit::Windows::File command blabla.bat wrong-command]
+    lappend result [installkit::Windows::File command "c:\\test\\file$ik_ext" open]
+    lappend result [installkit::Windows::File command blabla.wrong-extension open]
+} -result [list {"%1" %*} {} {c:\some\foo.exe %1} {}] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+test installkit::Windows-3.3 {installkit::Windows::File, commands} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType command $ik_ft open "c:\\some\\foo.exe %1"
+    installkit::Windows::FileType command $ik_ft edit "c:\\some\\foo.exe %1"
+    # known existing ft
+    lappend result [expr { "open" in [installkit::Windows::File commands blabla.bat] }]
+    lappend result [lsort [installkit::Windows::File commands "c:\\test\\file$ik_ext"]]
+    lappend result [installkit::Windows::File commands blabla.wrong-extension]
+} -result [list 1 {edit open} {}] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+test installkit::Windows-3.4 {installkit::Windows::File, defaultcommand} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType defaultcommand $ik_ft "open"
+    # known existing ft
+    lappend result [installkit::Windows::File defaultcommand some.vbs]
+    lappend result [installkit::Windows::File defaultcommand "c:\\test\\file$ik_ext"]
+    lappend result [installkit::Windows::File defaultcommand blabla.wrong-extension]
+} -result [list Open open {}] -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+}
+
+test installkit::Windows-3.5 {installkit::Windows::File, open} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    set file1 [makeFile {} "success"]
+    file delete -force $file1
+    set file2 [makeFile "puts -nonewline \[set f \[open [list [file normalize $file1]] w\]\] OK\$argv;close \$f" "file1$ik_ext"]
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType command $ik_ft open "\"[file nativename [interpreter]]\" \"%1\" open"
+    installkit::Windows::File open $file2
+    set timeout 50
+    set count 0
+    while { $count < $timeout } {
+        if { [file exists $file1] } break
+        after 100
+        incr count
+    }
+    if { $count == $timeout } {
+        error "timeout while waiting file: $file1"
+    }
+    getfile $file1
+} -result {OKopen} -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    file delete -force $file1 $file2
+}
+
+test installkit::Windows-3.6 {installkit::Windows::File, print} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    set file1 [makeFile {} "success"]
+    file delete -force $file1
+    set file2 [makeFile "puts -nonewline \[set f \[open [list [file normalize $file1]] w\]\] OK\$argv;close \$f" "file1$ik_ext"]
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType command $ik_ft print "\"[file nativename [interpreter]]\""
+    installkit::Windows::File print $file2
+    set timeout 50
+    set count 0
+    while { $count < $timeout } {
+        if { [file exists $file1] } break
+        after 100
+        incr count
+    }
+    if { $count == $timeout } {
+        error "timeout while waiting file: $file1"
+    }
+    getfile $file1
+} -result {OK} -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    file delete -force $file1 $file2
+}
+
+# installkit::Windows::guid
+
+test installkit::Windows-4.1 {installkit::Windows::guid} -constraints win -body {
+    installkit::Windows::guid
+} -result {^\{[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}\}$} -match regexp
+
+# installkit::Windows::drive
+
+test installkit::Windows-5.1.1 {installkit::Windows::drive, list} -constraints win -body {
+    set list [installkit::Windows::drive list]
+    expr { "C" in $list }
+} -result 1
+
+test installkit::Windows-5.1.2 {installkit::Windows::drive, list, wrong args} -constraints win -body {
+    installkit::Windows::drive list foo
+} -returnCodes error -result {wrong # args: should be "installkit::Windows::drive list"}
+
+test installkit::Windows-5.2.1 {installkit::Windows::drive, type} -constraints win -body {
+    installkit::Windows::drive type c
+} -result fixed
+
+test installkit::Windows-5.2.2 {installkit::Windows::drive, type, no args} -constraints win -body {
+    installkit::Windows::drive type
+} -returnCodes error -result {wrong # args: should be "installkit::Windows::drive type drive"}
+
+test installkit::Windows-5.2.3 {installkit::Windows::drive, type, wrong drive} -constraints win -body {
+    installkit::Windows::drive type t
+} -result {no root dir}
+
+test installkit::Windows-5.3.1 {installkit::Windows::drive, size} -constraints win -body {
+    installkit::Windows::drive size c
+} -result {^\d+$} -match regexp
+
+test installkit::Windows-5.3.2 {installkit::Windows::drive, size, no args} -constraints win -body {
+    installkit::Windows::drive size
+} -returnCodes error -result {wrong # args: should be "installkit::Windows::drive size drive"}
+
+test installkit::Windows-5.3.3 {installkit::Windows::drive, size, wrong drive} -constraints win -body {
+    installkit::Windows::drive size t
+    # error message depends on the locale
+} -returnCodes error -result * -match glob
+
+test installkit::Windows-5.4.1 {installkit::Windows::drive, freespace} -constraints win -body {
+    installkit::Windows::drive freespace c
+} -result {^\d+$} -match regexp
+
+test installkit::Windows-5.4.2 {installkit::Windows::drive, freespace, no args} -constraints win -body {
+    installkit::Windows::drive freespace
+} -returnCodes error -result {wrong # args: should be "installkit::Windows::drive freespace ?-user? drive"}
+
+test installkit::Windows-5.4.3 {installkit::Windows::drive, freespace, wrong drive} -constraints win -body {
+    installkit::Windows::drive freespace t
+    # error message depends on the locale
+} -returnCodes error -result * -match glob
+
+test installkit::Windows-5.4.4 {installkit::Windows::drive, with flag, no args} -constraints win -body {
+    installkit::Windows::drive freespace -user
+} -returnCodes error -result {wrong # args: should be "installkit::Windows::drive freespace ?-user? drive"}
+
+test installkit::Windows-5.4.5 {installkit::Windows::drive, with flag} -constraints win -body {
+    installkit::Windows::drive freespace -user c
+} -result {^\d+$} -match regexp
+
+test installkit::Windows-5.4.6 {installkit::Windows::drive, with wrong flag} -constraints win -body {
+    installkit::Windows::drive freespace -badflag c
+} -returnCodes error -result {unknown flag "-badflag", -user is expected}
+
+test installkit::Windows-5.5 {installkit::Windows::drive, with command} -constraints win -body {
+    installkit::Windows::drive foo
+} -returnCodes error -result {unknown or ambiguous option "foo": must be list, type, size or freespace}
+
+# installkit::Windows::trash
+
+test installkit::Windows-6.1 {installkit::Windows::trash, no args} -constraints win -body {
+    installkit::Windows::trash
+} -returnCodes error -result {wrong # args: should be "installkit::Windows::trash ?options? file ?file ...?"}
+
+test installkit::Windows-6.2 {installkit::Windows::trash, non-existing file} -constraints win -body {
+    installkit::Windows::trash somefile
+} -returnCodes error -result {failed to move files to recycle bin: SHFileOperation failed}
+
+test installkit::Windows-6.3 {installkit::Windows::trash, one file} -constraints win -setup {
+    set file [makeFile {} "test"]
+} -body {
+    installkit::Windows::trash $file
+} -result {true} -cleanup {
+    file delete -force $file
+}
+
+test installkit::Windows-6.4 {installkit::Windows::trash, file+dirs} -constraints win -setup {
+    set file [makeFile {} "test"]
+    set dir1 [makeDirectory dir1]
+    makeFile {} [file join $dir1 "test"]
+    set dir2 [makeDirectory dir2]
+} -body {
+    installkit::Windows::trash $file $dir1 $dir2
+} -result {true} -cleanup {
+    file delete -force $file $dir1 $dir2
+}
+
+test installkit::Windows-6.3 {installkit::Windows::trash -noconfirmation} -constraints win -setup {
+    set file [makeFile {} "test"]
+} -body {
+    installkit::Windows::trash -noconfirmation $file
+} -result {true} -cleanup {
+    file delete -force $file
+}
+
+test installkit::Windows-6.4 {installkit::Windows::trash -noerrorui} -constraints win -setup {
+    set file [makeFile {} "test"]
+} -body {
+    installkit::Windows::trash -noconfirmation $file
+} -result {true} -cleanup {
+    file delete -force $file
+}
+
+test installkit::Windows-6.5 {installkit::Windows::trash -silent} -constraints win -setup {
+    set file [makeFile {} "test"]
+} -body {
+    installkit::Windows::trash -noconfirmation $file
+} -result {true} -cleanup {
+    file delete -force $file
+}
+
+test installkit::Windows-6.6 {installkit::Windows::trash -simpleprogress} -constraints win -setup {
+    set file [makeFile {} "test"]
+} -body {
+    installkit::Windows::trash -noconfirmation $file
+} -result {true} -cleanup {
+    file delete -force $file
+}
+
+test installkit::Windows-6.7 {installkit::Windows::trash -simpleprogress, no args} -constraints win -body {
+    installkit::Windows::trash -noconfirmation
+} -returnCodes error -result {no files were specified}
+
+# installkit::Windows::getFolder
+
+test installkit::Windows-7.1 {installkit::Windows::getFolder, no args} -constraints win -body {
+    installkit::Windows::getFolder
+} -returnCodes error -result {wrong # args: should be "installkit::Windows::getFolder folder"}
+
+test installkit::Windows-7.2 {installkit::Windows::getFolder, wrong folder} -constraints win -body {
+    installkit::Windows::getFolder wrong-folder
+} -returnCodes error -result {Invalid CSIDL value 'wrong-folder'}
+
+test installkit::Windows-7.3 {installkit::Windows::getFolder, CSIDL_PROGRAM_FILES} -constraints win -body {
+    installkit::Windows::getFolder CSIDL_PROGRAM_FILES
+} -match glob -result {C:\\Program Files*}
+
+test installkit::Windows-7.4 {installkit::Windows::getFolder, WINDOWS} -constraints win -body {
+    installkit::Windows::getFolder WINDOWS
+} -result {C:\windows}
+
+test installkit::Windows-7.5 {installkit::Windows::getFolder, COMMON_APPDATA} -constraints win -body {
+    installkit::Windows::getFolder COMMON_APPDATA
+} -result {C:\ProgramData}
+
+# installkit::Windows::shellExecute
+
+test installkit::Windows-8.1 {installkit::Windows::shellExecute} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    set file1 [makeFile {} "success"]
+    file delete -force $file1
+    set file2 [makeFile "puts -nonewline \[set f \[open [list [file normalize $file1]] w\]\] OK\$argv;close \$f" "file1$ik_ext"]
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType command $ik_ft open "\"[file nativename [interpreter]]\" \"%1\" open8.1"
+    installkit::Windows::shellExecute open $file2
+    set timeout 50
+    set count 0
+    while { $count < $timeout } {
+        if { [file exists $file1] } break
+        after 100
+        incr count
+    }
+    if { $count == $timeout } {
+        error "timeout while waiting file: $file1"
+    }
+    getfile $file1
+} -result {OKopen8.1} -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    file delete -force $file1 $file2
+}
+
+test installkit::Windows-8.2 {installkit::Windows::shellExecute, -wait} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    set file1 [makeFile {} "success"]
+    file delete -force $file1
+    set file2 [makeFile "puts -nonewline \[set f \[open [list [file normalize $file1]] w\]\] OK\$argv;close \$f" "file1$ik_ext"]
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType command $ik_ft print "\"[file nativename [interpreter]]\" \"%1\" open8.2"
+    installkit::Windows::shellExecute -wait print $file2
+    if { ![file exists $file1] } {
+        error "file $file1 does not exist"
+    }
+    getfile $file1
+} -result {OKopen8.2} -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    file delete -force $file1 $file2
+}
+
+test installkit::Windows-8.3 {installkit::Windows::shellExecute, -workingdirectory} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    set dir [makeDirectory foo]
+    set file1 [makeFile {} [file join $dir "success"]]
+    file delete -force $file1
+    set file2 [makeFile "puts -nonewline \[set f \[open [list [file tail $file1]] w\]\] OK\$argv;close \$f" "file1$ik_ext"]
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType command $ik_ft print "\"[file nativename [interpreter]]\" \"%1\" open8.3"
+    installkit::Windows::shellExecute -workingdirectory $dir -wait print $file2
+    if { ![file exists $file1] } {
+        error "file $file1 does not exist"
+    }
+    getfile $file1
+} -result {OKopen8.3} -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    file delete -force $dir $file2
+}
+
+test installkit::Windows-8.4.1 {installkit::Windows::shellExecute, -windowstate hidden} -constraints {win elevated} -setup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    set file1 [makeFile {} success]
+    file delete -force $file1
+    set file2 [makeFile "puts -nonewline \[set f \[open [list [file normalize $file1]] w\]\] OK\$argv;close \$f" "file1$ik_ext"]
+} -body {
+    set result [list]
+    installkit::Windows::FileExtension set $ik_ext $ik_ft
+    installkit::Windows::FileType command $ik_ft print "\"[file nativename [interpreter]]\" \"%1\" open8.4"
+    installkit::Windows::shellExecute -windowstate hidden -wait print $file2
+    if { ![file exists $file1] } {
+        error "file $file1 does not exist"
+    }
+    getfile $file1
+} -result {OKopen8.4} -cleanup {
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ext"
+    registry delete "HKEY_CLASSES_ROOT\\$ik_ft"
+    file delete -force $file1 $file2
+}
+
+test installkit::Windows-8.4.2 {installkit::Windows::shellExecute, -windowstate, bad option} -constraints win -body {
+    installkit::Windows::shellExecute -windowstate foo -wait print some-file
+} -returnCodes error -result {invalid argument "foo" for -windowstate option: must be hidden, maximized, minimized or normal}
+
+# installkit::Windows::createShortcut
+
+test installkit::Windows-9.1 {installkit::Windows::createShortcut} -constraints win -setup {
+    set lnk [makeFile {} temp.lnk]
+} -body {
+    installkit::Windows::createShortcut $lnk -objectpath [interpreter]
+    if { ![file exists $lnk] } {
+        error "lnk file does not exist: $lnk"
+    }
+    dict get [twapi::read_shortcut $lnk] -path
+} -result [file nativename [interpreter]] -cleanup {
+    file delete -force $lnk
+}
+
+test installkit::Windows-9.2 {installkit::Windows::createShortcut, all parameters} -constraints win -setup {
+    set lnk [makeFile {} temp.lnk]
+} -body {
+    installkit::Windows::createShortcut $lnk -objectpath [interpreter] -arguments "arg1 arg2" \
+        -description "descr" -showcommand hidden -workingdirectory [pwd] -icon [interpreter] 1
+    if { ![file exists $lnk] } {
+        error "lnk file does not exist: $lnk"
+    }
+    set l [twapi::read_shortcut $lnk]
+    set r [list]
+    lappend r [file normalize [dict get $l -path]]
+    lappend r [dict get $l -desc]
+    lappend r [file normalize [dict get $l -iconpath]]
+    lappend r [dict get $l -iconindex]
+    lappend r [dict get $l -args]
+    lappend r [file normalize [dict get $l -workdir]]
+} -result [list \
+    [interpreter] \
+    "descr" \
+    [interpreter] \
+    1 \
+    "arg1 arg2" \
+    [pwd] \
+] -cleanup {
+    file delete -force $lnk
+}
+
+# installkit::Windows::disableWow64FsRedirection
+# installkit::Windows::revertWow64FsRedirection
+
+test installkit::Windows-10.1 {installkit::Windows::disableWow64FsRedirection and installkit::Windows::revertWow64FsRedirection} -constraints win -body {
+    installkit::Windows::disableWow64FsRedirection
+    installkit::Windows::revertWow64FsRedirection
+} -result 1
+
+# cleanup
+::tcltest::cleanupTests
+return

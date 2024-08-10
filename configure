@@ -1,118 +1,260 @@
 #!/bin/sh
 
-ABS_TOP_BUILDDIR=`/bin/pwd`
+ABS_TOP_BUILDDIR="$(/bin/pwd)"
 
-TOP_SRCDIR=`dirname "$0"`
-ABS_TOP_SRCDIR=`cd "$TOP_SRCDIR" && /bin/pwd`
+TOP_SRCDIR="$(dirname "$0")"
+ABS_TOP_SRCDIR="$(cd "$TOP_SRCDIR" && /bin/pwd)"
 
-help ( ) {
-  echo "configure commands available:"
+help() {
+  echo "configure parameters available:"
   echo ""
-  echo "--help             displays this page"
-  echo "--debug            Enable additional Tcl debugging features"
+  echo "--help                Displays this page"
+  echo "--debug               Enable additional Tcl debugging features"
+  echo "--platform <platform> Build specific platform"
+  echo "--toolchain-prefix <prefix>"
+  echo "                      Use the prefix for the build toolchain"
+  echo "                      (gcc/g++/windres etc.)"
+  echo "--strip-utility <path>"
+  echo "                      Use the specified command to remove debugging"
+  echo "                      information from binaries"
+  echo "--buildtype dev|debug|release"
+  echo "                      Apply a specific set of parameters"
   echo
   exit 0
 }
 
-IJ_PLATFORM=`$TOP_SRCDIR/helper.sh platform`
+# debug / dev / release
+: ${BUILD_TYPE:=dev}
+
+CONFIGURE_CMDLINE="$@"
+
+while [ "$#" != 0 ]; do
+  case "$1" in
+      -h|--help)
+          help
+          ;;
+      --platform)
+          shift
+          IJ_PLATFORM="$1"
+          ;;
+      --toolchain-prefix)
+          shift
+          TOOLCHAIN_PREFIX="$1"
+          ;;
+      --buildtype)
+          shift
+          case "$1" in
+              debug)
+                  BUILD_TYPE="debug"
+                  IK_DEBUG=1
+                  ;;
+              dev)
+                  BUILD_TYPE="dev"
+                  ;;
+              release)
+                  BUILD_TYPE="release"
+                  ;;
+              *)
+                  echo "Unknown build type: '$1'"
+                  echo
+                  help
+                  exit 1
+                  ;;
+          esac
+          ;;
+      --debug)
+          IK_DEBUG=1
+          BUILD_TYPE="debug"
+          echo "Extra debugging features enabled"
+          ;;
+      --strip-utility)
+          shift
+          STRIP="$1"
+          ;;
+      *)
+          echo "Invalid configure option $i"
+          help
+          exit 1
+          ;;
+  esac
+  shift
+done
+
+[ -n "$IJ_PLATFORM" ] || IJ_PLATFORM="$($TOP_SRCDIR/helper.sh platform)"
 
 echo
 echo "Platform is $IJ_PLATFORM"
-
-SYMBOLS_FLAG=
-
-for i in $@
-do
-  case $i in
-  -h|--help)       help ;;
-  --debug)         IK_DEBUG=1
-                   echo "Extra debugging features enabled"
-                   ;;
-  *) echo "Invalid configure option $i" ; help ; exit 1 ;;
-  esac
-done
-
 echo
 
 TCL_SYSTEM=unix
-TARGETS="tcl tk"
+TARGETS="installkit"
 TCLSH="\$(PREFIX)/bin/tclsh8.6"
+SYMBOLS_FLAG=
 AQUA_FLAG=
-SHARED_FLAG="--disable-shared --enable-static"
+TK_SHARED_FLAG="--enable-shared --disable-static"
 THREADS_FLAG="--disable-threads"
+# -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--as-needed
+#     help to avoid unused code in binary
+# -fno-unwind-tables
+#     disable .eh_frame section which is for stacktraces/debugging
+GCC_CFLAGS="-fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections"
+GCC_LDFLAGS="-Wl,--gc-sections -Wl,--as-needed"
+# -Wl,-dead_strip
+#     help to avoid unused code in binary
+# -Wl,-x,-S
+#     strip debug info
+#         -S Do not put debug information (STABS or DWARF) in the output file
+#         -x Do not put non-global symbols in the output file's symbol table
+CLANG_CFLAGS=""
+CLANG_LDFLAGS="-Wl,-dead_strip,-x,-S"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
 SEDI="sed -i"
+UPX="$ABS_TOP_SRCDIR/src/installkit/tools/$IJ_PLATFORM/upx"
+STRIPFLAGS="--strip-all"
+if [ "$BUILD_TYPE" = "dev" ]; then
+    UPX_ARGS="--lzma --overlay=strip"
+else
+    UPX_ARGS="--ultra-brute --overlay=strip"
+fi
+COMPILER="GCC"
 
 case "$IJ_PLATFORM" in
   Windows)
+    UPX="$ABS_TOP_SRCDIR/src/installkit/tools/$IJ_PLATFORM/upx.exe"
     TCL_SYSTEM=win
     TCLSH="\$(PREFIX)/bin/tclsh86s"
     TARGETS="$TARGETS thread"
     THREADS_FLAG="--enable-threads"
-    CFLAGS="-D__MINGW_EXCPT_DEFINE_PSDK $CFLAGS"
-    CYGPATH="cygpath -m"
+    TK_SHARED_FLAG="--disable-shared --enable-static"
+    if uname -r | grep -q -- '-WSL2'; then
+        WINDOWS_SYSTEM=WSL
+        CYGPATH="wslpath -w"
+        if ! command -v tclsh >/dev/null 2>&1; then
+            echo "Error: could not find native tclsh command. It is required for Tcl build."
+            echo "Install it using native package manager"
+            exit 1
+        fi
+    else
+        WINDOWS_SYSTEM=Cygwin
+        CYGPATH="cygpath -m"
+    fi
+    AC_HOST="i686-w64-mingw32"
+    SO_EXT=".dll"
     ;;
 
   Linux-x86)
-    CFLAGS="-m32"
-    LDFLAGS="-m32"
+    CFLAGS="-m32 $CFLAGS"
+    LDFLAGS="-m32 $LDFLAGS"
+    AC_HOST="i686-pc-linux-gnu"
+    STRIPFLAGS="$STRIPFLAGS --remove-section=.comment --remove-section=.note"
+    SO_EXT=".so"
     ;;
 
   Linux-x86_64)
-    CFLAGS="-m64"
-    LDFLAGS="-m64"
+    CFLAGS="-m64 $CFLAGS"
+    LDFLAGS="-m64 $LDFLAGS"
+    AC_HOST="x86_64-pc-linux-gnu"
+    STRIPFLAGS="$STRIPFLAGS --remove-section=.comment --remove-section=.note"
+    SO_EXT=".so"
     ;;
 
   MacOS-X)
+    COMPILER="CLANG"
     # NS_BUILD_32_LIKE_64 is required to build Tk8.6.13 on i383 platform. See:
     # http://theocacao.com/document.page/552
     CFLAGS="-arch i386 -mmacosx-version-min=10.6 -DNS_BUILD_32_LIKE_64 $CFLAGS"
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
+    # don't use UPX on MacOS for now due to multiple issues, like:
+    # https://github.com/upx/upx/issues/777
+    UPX="echo"
+    AC_HOST="i386-apple-darwin10.6"
+    STRIPFLAGS="-Sx"
+    SO_EXT=".dylib"
     ;;
 
   MacOS-X-arm64)
+    COMPILER="CLANG"
     CFLAGS="-arch arm64 -mmacosx-version-min=10.6 $CFLAGS"
     CFLAGS="-DSTDC_HEADERS $CFLAGS"
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
+    # don't use UPX on MacOS for now due to multiple issues, like:
+    # https://github.com/upx/upx/issues/777
+    UPX="echo"
+    AC_HOST="x86_64-apple-darwin10.6"
+    STRIPFLAGS="-Sx"
+    SO_EXT=".dylib"
     ;;
 
   MacOS-X-ppc)
+    COMPILER="CLANG"
     CFLAGS="-arch ppc -mmacosx-version-min=10.6 $CFLAGS"
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
-    ;;
-esac
-
-TARGETS="$TARGETS zlib miniarc installkit tktable tkdnd"
-
-case "$IJ_PLATFORM" in
-  Windows)
-    TARGETS="$TARGETS ffidl twapi"
+    # don't use UPX on MacOS for now due to multiple issues, like:
+    # https://github.com/upx/upx/issues/777
+    UPX="echo"
+    AC_HOST="powerpc-apple-darwin10.6"
+    STRIPFLAGS="-Sx"
+    SO_EXT=".dylib"
     ;;
 esac
 
 if [ -n "$IK_DEBUG" ]; then
-    SYMBOLS_FLAG="--enable-symbols"
+    SYMBOLS_FLAG="--enable-symbols=all"
+    GCC_LDFLAGS=""
+    GCC_CFLAGS=""
     STRIP="echo"
+    UPX="echo"
+    CFLAGS="-DPURIFY -fsanitize=undefined -fsanitize=address $CFLAGS"
+    LDFLAGS="-fsanitize=undefined -fsanitize=address $LDFLAGS"
 fi
 
-: ${CC:=${ARCH_TOOLS_PREFIX}gcc}
-: ${CXX:=${ARCH_TOOLS_PREFIX}g++}
-: ${PKG_CONFIG:=${ARCH_TOOLS_PREFIX}pkg-config}
-: ${STRIP:=${ARCH_TOOLS_PREFIX}strip}
-: ${RC:=${ARCH_TOOLS_PREFIX}windres}
+if [ "$COMPILER" = "GCC" ]; then
+    CFLAGS="$GCC_CFLAGS $CFLAGS"
+    LDFLAGS="$GCC_LDFLAGS $LDFLAGS"
+elif [ "$COMPILER" = "CLANG" ]; then
+    CFLAGS="$CLANG_CFLAGS $CFLAGS"
+    LDFLAGS="$CLANG_LDFLAGS $LDFLAGS"
+else
+    echo "Error: unknown compiler '$COMPILER'"
+fi
+
+UPX="$UPX $UPX_ARGS"
+
+TARGETS="$TARGETS tktable tkdnd"
+
+case "$IJ_PLATFORM" in
+  Windows)
+    TARGETS="$TARGETS twapi"
+    ;;
+esac
+
+if command -v ccache >/dev/null 2>&1; then
+    CCACHE="ccache "
+    echo "Info: ccache is enabled"
+else
+    unset CCACHE
+fi
+
+: ${CC:=${CCACHE}${TOOLCHAIN_PREFIX}gcc}
+: ${CXX:=${CCACHE}${TOOLCHAIN_PREFIX}g++}
+: ${PKG_CONFIG:=${TOOLCHAIN_PREFIX}pkg-config}
+: ${STRIP:=${TOOLCHAIN_PREFIX}strip}
+: ${RC:=${TOOLCHAIN_PREFIX}windres}
 
 CC="${CC}" CXX="${CXX}" "$TOP_SRCDIR/helper.sh" environment > build.conf
 
 cat > environment.conf << EOF
 ## General build configuration
-## Created with $0 $@
+## Created with $0 $CONFIGURE_CMDLINE
+
+CONFIGURE_CMDLINE = $CONFIGURE_CMDLINE
 
 IK_DEBUG        = $IK_DEBUG
 
@@ -127,17 +269,22 @@ PKG_CONFIG      = $PKG_CONFIG
 STRIP           = $STRIP
 RC              = $RC
 
+UPX             = $UPX
+
 CFLAGS          = $CFLAGS
 LDFLAGS         = $LDFLAGS
+STRIPFLAGS      = $STRIPFLAGS
 AQUA_FLAG       = $AQUA_FLAG
-SHARED_FLAG     = $SHARED_FLAG
+TK_SHARED_FLAG  = $TK_SHARED_FLAG
 THREADS_FLAG    = $THREADS_FLAG
 SYMBOLS_FLAG    = $SYMBOLS_FLAG
 
 TCL_SYSTEM      = $TCL_SYSTEM
 IJ_PLATFORM     = $IJ_PLATFORM
+AC_HOST         = $AC_HOST
 TCLSH           = $TCLSH
 CYGPATH         = $CYGPATH
+WINDOWS_SYSTEM  = $WINDOWS_SYSTEM
 
 TARGETS         = $TARGETS
 
@@ -153,12 +300,22 @@ cat > Makefile << EOF
 PREFIX          = \$(TOP_BUILDDIR)/out
 KIT_PREFIX      = \$(TOP_BUILDDIR)/kit/\$(IJ_PLATFORM)
 
+# Platform-specific
 SEDI            = $SEDI
+SO_EXT          = $SO_EXT
 
 EOF
 
 cat >> Makefile < environment.conf
 cat >> Makefile < "$TOP_SRCDIR/Makefile.in"
+
+if [ "$WINDOWS_SYSTEM" = "WSL" ] && ! net.exe session >/dev/null 2>&1; then
+    echo ""
+    echo "WARNING: current shell is not running in elevated mode. This will cause some"
+    echo "         of installkit tests to be skipped. Install gsudo ( https://gerardog.github.io/gsudo/docs/install )"
+    echo "         and use elevated shell to build."
+    echo ""
+fi
 
 echo "Now type: make"
 echo

@@ -1,0 +1,13 @@
+package ifneeded ttk::theme::jammer 0.1 [list source [file join $dir jammerTheme.tcl]]
+package ifneeded installkit::compat 1.0.0 [list source [file join $dir installkit-compat.tcl]]
+package ifneeded installkit::stats 1.0.0 [list source [file join $dir installkit-stats.tcl]]
+package ifneeded vfs::wzip 0.1.0 [list source [file join $dir wzipvfs.tcl]]
+
+package ifneeded installkit @PACKAGE_VERSION@ [list ::apply {{ dir } {
+    source [file join $dir installkit.tcl]
+    package provide installkit @PACKAGE_VERSION@
+}} $dir]
+
+if { $::tcl_platform(platform) eq "windows" } {
+    package ifneeded installkit::Windows 1.1.1 [list source [file join $dir installkit-windows.tcl]]
+}

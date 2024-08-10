@@ -1,0 +1,80 @@
+# installkit tests - check procedures from TclX
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+source [file join [tcltest::testsDirectory] helper.tcl]
+
+package require installkit
+
+test installkit-tclX-1 {id host} -body {
+    id host
+} -result [string trimright [info hostname] .]
+
+test installkit-tclX-unix-1 {id user} -constraints unix -setup {
+    set expected [list [exec id -run] [exec id -un]]
+} -body {
+    set test [list [id user] [id effective user]]
+    expr { $test == $expected ? {ok} : "$test != $expected" }
+} -result ok -cleanup {
+    unset expected test
+}
+
+test installkit-tclX-unix-2 {id userid} -constraints unix -setup {
+    set expected [list [exec id -ru] [exec id -u]]
+} -body {
+    set test [list [id userid] [id effective userid]]
+    expr { $test == $expected ? {ok} : "$test != $expected" }
+} -result ok -cleanup {
+    unset expected test
+}
+
+test installkit-tclX-unix-3 {id group} -constraints unix -setup {
+    set expected [list [exec id -rgn] [exec id -gn]]
+} -body {
+    set test [list [id group] [id effective group]]
+    expr { $test == $expected ? {ok} : "$test != $expected" }
+} -result ok -cleanup {
+    unset expected test
+}
+
+test installkit-tclX-unix-4 {id groupid} -constraints unix -setup {
+    set expected [list [exec id -rg] [exec id -g]]
+} -body {
+    set test [list [id groupid] [id effective groupid]]
+    expr { $test == $expected ? {ok} : "$test != $expected" }
+} -result ok -cleanup {
+    unset expected test
+}
+
+test installkit-tclX-unix-5 {id process} -constraints unix -setup {
+    set expected [exec sh -c {echo $PPID}]
+} -body {
+    set test [id process]
+    expr { $test == $expected ? {ok} : "$test != $expected" }
+} -result ok -cleanup {
+    unset expected test
+}
+
+test installkit-tclX-win-1 {id process} -constraints win -setup {
+    package require twapi
+    set expected [twapi::get_current_process_id]
+} -body {
+    set test [id process]
+    expr { $test == $expected ? {ok} : "$test != $expected" }
+} -result ok -cleanup {
+    unset expected test
+}
+
+# cleanup
+::tcltest::cleanupTests
+return

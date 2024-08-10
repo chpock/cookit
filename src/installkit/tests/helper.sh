@@ -24,15 +24,40 @@ notfile() {
 }
 
 case "$1" in
-    check-thread)
+    test-tclmtls)
+        # Skip unstable tests
+        skip "mtls-badssl-*"
+        ;;
+    test-installkit)
         case "$PLATFORM" in
-            Windows)
-                # This test generates an error that appears as a GUI message in Tk.
-                notfile tkt-84be1b5a73.test
+            Linux*)
+                # Don't check dependencies in Ubuntu24.04 environment.
+                # Real linux build environment is Centos6
+                if test -e /etc/lsb-release && grep -q -F DISTRIB_RELEASE=24.04 /etc/lsb-release; then
+                    skip "installkit-deps-*"
+                fi
             ;;
         esac
         ;;
-    check-tcl)
+    test-tclvfs)
+        # Tests 4.1 and 4.2 depend on vfs::ns, which we don't ship
+        skip vfs-4.1 vfs-4.2
+        case "$PLATFORM" in
+            Linux-*)
+                # vfsTar-1.2 - attempt to delete mounted file is successful on Linux
+                skip vfsTar-1.2
+                # vfsZip-9.0 - attempt to delete mounted file is successful on Linux
+                skip vfsZip-9.0
+            ;;
+            MacOS-X)
+                # vfsTar-1.2 - attempt to delete mounted file is successful on Linux
+                skip vfsTar-1.2
+                # vfsZip-9.0 - attempt to delete mounted file is successful on Linux
+                skip vfsZip-9.0
+            ;;
+        esac
+        ;;
+    test-tcl)
         # installkit does not contain tzdata files and clock.test fails to
         # run with an error about the time zone ':America/Detroit' not being
         # available.

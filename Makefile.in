@@ -1,88 +1,172 @@
-BUILD_ENV = \
-	LDFLAGS="$(LDFLAGS)" CFLAGS="$(CFLAGS)" \
-	CC="$(CC)" CXX="$(CXX)" RC="$(RC)" STRIP="$(STRIP)" \
-	PKG_CONFIG="$(PKG_CONFIG)"
 
-ALL_TARGETS = tcl tk miniarc thread installkit tktable tkdnd ffidl twapi
+export LDFLAGS
+export CFLAGS
+export CC
+export CXX
+export RC
+export STRIP
+export PKG_CONFIG
+
+CHECK_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi tclmtls
+ALL_TARGETS   = $(CHECK_TARGETS) zlib
+
+ifeq ($(IJ_PLATFORM),Windows)
+    ALL_TARGETS += thread
+endif
+
+# Required for WSL
+ifeq ($(IJ_PLATFORM),Windows)
+
+    WSLENV = TCL_LIBRARY/p:INSTALLKIT_CONSOLE:INSTALLKIT_GUI:INSTALLKIT_BOOTSTRAP:TCLTEST_OPTIONS:INSTALLKIT_TESTMODE:INSTALLKIT_VERSION
+    export WSLENV
+
+    EXE_EXT = .exe
+
+endif
 
 .PHONY: $(ALL_TARGETS)
 
-.PHONY: $(patsubst %,check-%,$(ALL_TARGETS))
+.PHONY: $(patsubst %,test-%,$(ALL_TARGETS))
 
 .PHONY: $(patsubst %,clean-%,$(ALL_TARGETS))
 
-.PHONY: all clean check dist distclean
+.PHONY: all clean test dist distclean
 
-all: $(TARGETS)
+all: $(TARGETS) $(KIT_PREFIX)/libs-deps.txt
 	@echo
 	@echo "Now type: make dist"
 	@echo
 
+$(KIT_PREFIX)/libs-deps.txt: $(TARGETS)
+	"$(TOP_SRCDIR)/src/installkit"/tools/gendeps.sh $(AC_HOST) "$(KIT_PREFIX)/lib" > "$@"
+
+# We want to link Tcl with our specific zlib for the following reasons:
+#   1. Our zlib is static. We will be sure that the binaries are
+#      independent of the system shared zlib.
+#   2. We want to update the zlib version as we need it
+#   3. We want to share zlib procedures between Tcl and other
+#      packages/libraries
+
+# Unfortunatelly, the Tcl autoconf system does not allow us to specify
+# the location of the zlib used. Below, we will use hacky ways to achive that.
+
 tcl: work/stamp-tcl
-work/stamp-tcl:
+work/stamp-tcl: work/stamp-zlib
 	mkdir -p work/tcl
+# Use our zlib. Specify paths to zlib by CFLAGS/LDFLAGS
 	cd work/tcl || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tcl/$(TCL_SYSTEM)/configure \
+	 || CFLAGS="$(CFLAGS) -I$(PREFIX)/include" LDFLAGS="$(LDFLAGS) -L$(PREFIX)/lib -lz" \
+	    $(TOP_SRCDIR)/src/tcl/$(TCL_SYSTEM)/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
-		$(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
-ifeq ($(IJ_PLATFORM),Windows)
-# Fix for the build with MinGW in Cygwin. Tclsh doesn't understand cygwin's paths.
-	$(SEDI) -E \
-		-e 's#(\$\(ROOT_DIR)(\)/tools/installData.tcl)#\1_NATIVE\2#' \
-		-e 's#("\$$\(ROOT_DIR)(\)/library/(tzdata|msgs)")#\1_NATIVE\2#' \
-		work/tcl/Makefile
+		--with-encoding=utf-8 \
+		--disable-shared --enable-static \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+ifeq ($(WINDOWS_SYSTEM),Cygwin)
+	patch -N -p1 -d work/tcl < "$(TOP_SRCDIR)"/src/tcl-000-Windows-Cygwin.patch
 endif
 # Match Makefile to avoid an error during parallel builds
 	$(SEDI) -E \
 		-e 's/(install-msgs|install-tzdata):/& $$(TCLSH)/' \
 		work/tcl/Makefile
-# Use our zlib
-	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/src/zlib#' \
+# Use our zlib: remove zlib objs from the list of linking objects
+	$(SEDI) -e 's#^\([[:space:]]*ZLIB_OBJS\)#\1_MASKED#' \
 		work/tcl/Makefile
-	cd work/tcl \
-	 && $(BUILD_ENV) $(MAKE) all install-binaries install-libraries
+#	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/src/zlib#' \
+#		work/tcl/Makefile
+ifeq ($(IJ_PLATFORM),Windows)
+# On Windows, Tcl uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking tclsh,
+# but ignores LDFLAGS. This means that our zlib will be ignored in tclsh.
+# Let's fix that by adding $(LDFLAGS) to LDFLAGS_CONSOLE / LDFLAGS_WINDOW.
+	$(SEDI) -E -e 's/^[[:space:]]*LDFLAGS_(CONSOLE|WINDOW).*/& $$(LDFLAGS)/' \
+		work/tcl/Makefile
+endif
+	cd work/tcl && $(MAKE) all install-binaries install-libraries
 # Tcl installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tcl/Makefile && \
-		cd work/tcl && $(BUILD_ENV) $(MAKE) install-headers || : no-op
+		cd work/tcl && $(MAKE) install-headers || : no-op
+ifeq ($(IJ_PLATFORM),Windows)
+# Fix for the build with MinGW. Library is specified in wrong format.
+	$(SEDI) -e 's/ lib\(tcl[^.]\+\)\.a/ -l\1/g' $(PREFIX)/lib/tclConfig.sh
+endif
 	touch $@
 
 tk: work/stamp-tk
 work/stamp-tk: work/stamp-tcl
 	mkdir -p work/tk
+# Tk doesn't depent on zlib directly. However, whish binary depends on Tcl static
+# library and the Tcl static library needs zlib. We should specify our zlib
+# via LDFLAGS.
 	cd work/tk || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tk/$(TCL_SYSTEM)/configure \
+	 || LDFLAGS="$(LDFLAGS) -L$(PREFIX)/lib -lz" \
+	     $(TOP_SRCDIR)/src/tk/$(TCL_SYSTEM)/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST)  \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
-		$(AQUA_FLAG) $(SHARED_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
+		$(if $(filter unix,$(TCL_SYSTEM)),--disable-rpath) \
+		$(TK_SHARED_FLAG) \
+		$(AQUA_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # see details in the patch
 	patch -N -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
+endif
+ifeq ($(IJ_PLATFORM),Windows)
+# On Windows, Tk uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking wish,
+# but ignores LDFLAGS. This means that our zlib will be ignored in wish.
+# Let's fix that by adding $(LDFLAGS) to LDFLAGS_CONSOLE / LDFLAGS_WINDOW.
+	$(SEDI) -E -e 's/^[[:space:]]*LDFLAGS_(CONSOLE|WINDOW).*/& $$(LDFLAGS)/' \
+		work/tk/Makefile
 endif
 	cd work/tk \
 	 && $(MAKE) all install-binaries install-libraries
 # Tk installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tk/Makefile && \
-		cd work/tk && $(BUILD_ENV) $(MAKE) install-headers || : no-op
+		cd work/tk && $(MAKE) install-headers || : no-op
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # revert the patch to keep source tree clean
 	patch -R -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
 endif
+	test -e $(PREFIX)/lib/libtk*$(SO_EXT) && \
+	 $(STRIP) $(STRIPFLAGS) "$(PREFIX)"/lib/libtk*$(SO_EXT) || true
 	touch $@
 
-miniarc: work/stamp-miniarc
-work/stamp-miniarc: work/stamp-tcl
-	mkdir -p work/miniarc
-	cd work/miniarc || exit; \
+tclvfs: work/stamp-tclvfs
+work/stamp-tclvfs: work/stamp-tcl
+	mkdir -p work/tclvfs
+# These files are necessary for installation. See:
+	cd "$(TOP_SRCDIR)"/src/tclvfs && tar xzf ../thread.files.tar.gz
+	cd work/tclvfs || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/miniarc/configure \
+	 || $(TOP_SRCDIR)/src/tclvfs/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
-		--with-tcl=$(PREFIX)/lib
+		--with-tcl=$(PREFIX)/lib \
+		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/miniarc && $(MAKE) all install
+	cd work/tclvfs && $(MAKE) all install install-lib-binaries
+	rm -rf "$(TOP_SRCDIR)"/src/tclvfs/tclconfig
+	touch $@
+
+# --enable-internal-debug
+# --disable-tcl-commands
+cookfs: work/stamp-cookfs
+work/stamp-cookfs: work/stamp-tcl
+	mkdir -p work/cookfs
+	cd work/cookfs || exit; \
+	 test -f config.status \
+	 || $(TOP_SRCDIR)/src/cookfs/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--enable-lzma \
+		--disable-bz2 --disable-zstd \
+		--enable-shared=no \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/cookfs && $(MAKE) all install
 	touch $@
 
 thread: work/stamp-thread
@@ -90,10 +174,12 @@ work/stamp-thread: work/stamp-tcl
 	mkdir -p work/thread
 	cd work/thread || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/thread/configure \
+	 || $(TOP_SRCDIR)/src/thread/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
-		$(SHARED_FLAG)
+		--enable-shared=no \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 # These files are necessary for installation. See:
 # https://github.com/tcltk/thread/blob/0b17425018a6cd3a0fdca30ce3c5fced28d25033/.travis.yml#L124-L127
 	cd "$(TOP_SRCDIR)"/src/thread && tar xzf ../thread.files.tar.gz
@@ -101,22 +187,41 @@ work/stamp-thread: work/stamp-tcl
 	rm -rf "$(TOP_SRCDIR)"/src/thread/tclconfig
 	touch $@
 
+tclmtls: work/stamp-tclmtls
+work/stamp-tclmtls:
+	mkdir -p work/tclmtls
+	cd work/tclmtls || exit; \
+	 test -f config.status \
+	 || PKG_CONFIG= $(TOP_SRCDIR)/src/tclmtls/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--enable-client --disable-server \
+		--enable-shared=no \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/tclmtls && $(MAKE) all install
+	touch $@
+
 installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-miniarc
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-thread work/stamp-twapi)
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/installkit/configure \
-		--version="$(KIT_VERSION)" \
+	 || $(TOP_SRCDIR)/src/installkit/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(KIT_PREFIX) \
-		--debug=$(IK_DEBUG) \
-		--with-upx=$(TOP_SRCDIR)/src/installkit/tools/$(IJ_PLATFORM)/upx \
-		--with-miniarc-src=$(TOP_SRCDIR)/src/miniarc \
-		--with-lzma-src=$(TOP_SRCDIR)/src/miniarc/generic/LzmaC \
+		--exec-prefix=$(KIT_PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
 		--with-tk=$(PREFIX)/lib \
-		--with-zlib=$(PREFIX)
-	cd work/installkit && $(MAKE) all install
+		--with-lib-thread=`echo $(PREFIX)/lib/thread*/*thread*.a` \
+		--with-lib-twapi=`echo $(PREFIX)/lib/twapi*/*twapi*.a` \
+		--with-lib-cookfs=`echo $(PREFIX)/lib/cookfs*/*cookfs*.a` \
+		--with-lib-vfs=`echo $(PREFIX)/lib/vfs*/*vfs*.a` \
+		--with-lib-mtls=`echo $(PREFIX)/lib/mtls*/*mtls*.a` \
+		--with-strip-command="$(STRIP) $(STRIPFLAGS)" \
+		--with-upx-command="$(UPX)" \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/installkit && $(MAKE) all install-binaries
 	touch $@
 
 tktable: work/stamp-tktable
@@ -124,7 +229,8 @@ work/stamp-tktable: work/stamp-tcl work/stamp-tk
 	mkdir -p work/tktable
 	cd work/tktable || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tktable/configure \
+	 || $(TOP_SRCDIR)/src/tktable/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(KIT_PREFIX) \
 		--exec-prefix=$(KIT_PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
@@ -135,7 +241,7 @@ work/stamp-tktable: work/stamp-tcl work/stamp-tk
 # Don't include python source code
 	$(SEDI) 's/[^[:space:]]*tktable.py//' work/tktable/Makefile
 	cd work/tktable && $(MAKE) all install-binaries
-	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/Tktable*
+	$(STRIP) $(STRIPFLAGS) "$(KIT_PREFIX)"/lib/Tktable*/*$(SO_EXT)
 	touch $@
 
 tkdnd: work/stamp-tkdnd
@@ -143,7 +249,8 @@ work/stamp-tkdnd: work/stamp-tcl work/stamp-tk
 	mkdir -p work/tkdnd
 	cd work/tkdnd || exit; \
 	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/tkdnd/configure \
+	 || $(TOP_SRCDIR)/src/tkdnd/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
 		--prefix=$(KIT_PREFIX) \
 		--exec-prefix=$(KIT_PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
@@ -167,46 +274,57 @@ endif
 # Make dll file executable on windows
 	$(if $(filter Windows,$(IJ_PLATFORM)),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tkdnd/Makefile,@:)
 	cd work/tkdnd && $(MAKE) all install-binaries
-	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/tkdnd*
-	touch $@
-
-ffidl: work/stamp-ffidl
-work/stamp-ffidl: work/stamp-tcl
-	mkdir -p work/ffidl
-	cd work/ffidl || exit; \
-	 test -f config.status \
-	 || $(BUILD_ENV) $(CONFIG_SHELL) $(TOP_SRCDIR)/src/ffidl/configure \
-		--prefix=$(KIT_PREFIX) \
-		--exec-prefix=$(KIT_PREFIX) \
-		--with-tcl=$(PREFIX)/lib \
-		--enable-libffi_static \
-		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/ffidl && $(MAKE) all install-binaries
-	mv $(KIT_PREFIX)/lib/Ffidl* $(KIT_PREFIX)/lib/ffidl
-	$(BUILD_ENV) $(TOP_SRCDIR)/helper.sh strip-dir "$(KIT_PREFIX)"/lib/ffidl
+	$(STRIP) $(STRIPFLAGS) "$(KIT_PREFIX)"/lib/tkdnd*/*$(SO_EXT)
 	touch $@
 
 twapi: work/stamp-twapi
-work/stamp-twapi:
-	mkdir -p "$(KIT_PREFIX)"/lib/twapi
-	cp -r "$(TOP_SRCDIR)/src/twapi"/* "$(KIT_PREFIX)"/lib/twapi
-	rm -rf "$(KIT_PREFIX)"/lib/twapi/tests
+work/stamp-twapi: work/stamp-tcl
+	mkdir -p work/twapi
+# see details in the patch
+	patch -N -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/twapi" \
+	 < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
+	cd work/twapi || exit; \
+	 test -f config.status \
+	 || $(TOP_SRCDIR)/src/twapi/configure \
+		--build=$(AC_HOST) --host=$(AC_HOST) \
+		--prefix=$(PREFIX) \
+		--with-tcl=$(PREFIX)/lib \
+		--enable-shared=no \
+		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+	cd work/twapi && $(MAKE) all install install-lib-binaries
+	cp -f work/twapi/twapi_entry.tcl work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
+	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
+# revert the patch to keep source tree clean
+	patch -R -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/twapi" \
+	 < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
+	touch $@
+
+zlib: work/stamp-zlib
+work/stamp-zlib:
+	mkdir -p work/zlib
+	cd work/zlib || exit; \
+	 test -f Makefile \
+	 || $(TOP_SRCDIR)/src/zlib/configure \
+		--prefix=$(PREFIX) --static
+	cd work/zlib && $(MAKE) all install
 	touch $@
 
 dist:
+	rm -f "$(IJ_PLATFORM).zip"
 	cp -fp $(TOP_SRCDIR)/version kit/$(IJ_PLATFORM)
-	cat build.conf environment.conf work/installkit/environment.conf > kit/$(IJ_PLATFORM)/environment
-	cd kit && "`echo "$(PREFIX)/bin/tclsh"*`" \
-		`$(CYGPATH) $(TOP_SRCDIR)/src/tools/makezip.tcl` \
-		../$(IJ_PLATFORM).zip \
-		`find $(IJ_PLATFORM) -type f | sort`
+	cat build.conf environment.conf > kit/$(IJ_PLATFORM)/environment
+	cd kit && INSTALLKIT_CONSOLE=1 "$(KIT_PREFIX)/bin/installkit$(EXE_EXT)" \
+		`$(CYGPATH) $(TOP_SRCDIR)/src/installkit/library/make-zip.tcl` \
+		../$(IJ_PLATFORM).zip "$(IJ_PLATFORM)"
 
 clean-tcl:
 	rm -rf work/tcl work/stamp-tcl
 clean-tk:
 	rm -rf work/tk work/stamp-tk
-clean-miniarc:
-	rm -rf work/miniarc work/stamp-miniarc
+clean-cookfs:
+	rm -rf work/cookfs work/stamp-cookfs
+clean-tclvfs:
+	rm -rf work/tclvfs work/stamp-tclvfs
 clean-thread:
 	rm -rf work/thread work/stamp-thread
 clean-installkit:
@@ -215,48 +333,72 @@ clean-tktable:
 	rm -rf work/tktable work/stamp-tktable
 clean-tkdnd:
 	rm -rf work/tkdnd work/stamp-tkdnd
-clean-ffidl:
-	rm -rf work/ffidl work/stamp-ffidl
 clean-twapi:
 	rm -rf work/twapi work/stamp-twapi
+clean-zlib:
+	rm -rf work/zlib work/stamp-zlib
+clean-tclmtls:
+	rm -rf work/tclmtls work/stamp-tclmtls
 
 clean:
 	rm -rf kit out work
 	rm -f $(IJ_PLATFORM).zip
 
-# CHECK_VERBOSE = -verbose "body error start"
-
-CHECK_CMD = cd tests && \
-    DISPLAY=:0 \
-    TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/src/installkit/tests/helper.sh $@`" \
-    TCL8_0_TM_PATH=`$(CYGPATH) "$(TOP_SRCDIR)/src/installkit/tests"` \
-    $(KIT_PREFIX)/bin/installkit
+ifeq ($(WINDOWS_SYSTEM),WSL)
+# Use native temporary directory for builds for Windows platform on WSL
+    CHECK_WORK_DIR := $(shell wslpath -u "$$(cmd.exe /c 'echo %TEMP%\\installkit-test' 2>/dev/null)")
+else
+    CHECK_WORK_DIR := $(TOP_BUILDDIR)/test
+endif
 
 define run-check
-    $(if $(if $(CHECK_UNSAFE),1,$(filter $1,1)),mkdir -p tests && $(CHECK_CMD) `$(CYGPATH) $2` $(CHECK_VERBOSE) | tr -d '\r' | tee $@.output && grep -q 'Failed[[:space:]]\+0$$' $@.output,@echo Skipping unsafe check $@)
+    $(if $(if $(CHECK_UNSAFE),1,$(filter $1,1)),
+        mkdir -p "$(CHECK_WORK_DIR)"
+        rm -rf "$(CHECK_WORK_DIR)/$@"
+        cp -r "$(TOP_SRCDIR)/$(strip $3)" "$(CHECK_WORK_DIR)/$@"
+        cd "$(CHECK_WORK_DIR)" && \
+            $(if $(filter $2,tcl),INSTALLKIT_CONSOLE=1,INSTALLKIT_GUI=1) \
+            INSTALLKIT_TESTMODE=1 \
+            INSTALLKIT_VERSION="`cat "$(TOP_SRCDIR)/version"`" \
+            DISPLAY=:0 \
+            TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/src/installkit/tests/helper.sh $@`" \
+            $(KIT_PREFIX)/bin/installkit$(EXE_EXT) \
+            `$(CYGPATH) "$(CHECK_WORK_DIR)/$@/all.tcl"` -verbose "body error start" $(TESTFLAGS) | \
+            tr -d '\r' | \
+            tee $@.output && \
+            grep -q 'Failed[[:space:]]\+0$$' $@.output
+    ,
+        @echo Skipping unsafe check $@
+    )
 endef
 
-check: $(patsubst %,check-%,$(TARGETS))
+test: $(patsubst %,test-%,$(CHECK_TARGETS))
 
-check-tcl:
-	$(call run-check, 0, $(TOP_SRCDIR)/src/tcl/tests/all.tcl)
-check-tk:
-	$(call run-check, 0, $(TOP_SRCDIR)/src/tk/tests/all.tcl)
-check-miniarc:
-	@: no-op
-check-thread:
-	$(call run-check, 1, $(TOP_SRCDIR)/src/thread/tests/all.tcl)
-check-installkit:
-	$(call run-check, 1, $(TOP_SRCDIR)/src/installkit/tests/all.tcl)
-check-tktable:
-	$(call run-check, 1, $(TOP_SRCDIR)/src/tktable/tests/all.tcl)
-check-tkdnd:
-	@: no-op
-check-ffidl:
-	@: no-op
-check-twapi:
-	$(call run-check, 0, $(TOP_SRCDIR)/src/twapi/tests/all.tcl)
+test-tcl:
+	$(call run-check, 0, tcl, src/tcl/tests)
+test-tk:
+	$(call run-check, 0, tk, src/tk/tests)
+test-cookfs:
+	$(call run-check, 1, tcl, src/cookfs/tests)
+test-tclvfs:
+	$(call run-check, 1, tcl, src/tclvfs/tests)
+test-thread:
+	$(call run-check, 1, tcl, src/thread/tests)
+test-installkit:
+	$(call run-check, 1, tcl, src/installkit/tests)
+test-tktable:
+	$(call run-check, 1, tk, src/tktable/tests)
+test-tkdnd:
+	$(call run-check, 1, tk, src/tkdnd/tests)
+test-twapi:
+	$(call run-check, 0, tcl, src/twapi/tests)
+test-tclmtls:
+	$(call run-check, 1, tcl, src/tclmtls/tests)
 
 distclean: clean
 	rm -f Makefile
 	rm -f *.zip
+
+.PHONY: reconfig
+reconfig:
+	$(TOP_SRCDIR)/configure $(CONFIGURE_CMDLINE)
