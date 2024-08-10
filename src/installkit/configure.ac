@@ -315,9 +315,6 @@ else
         TEA_ADD_LIBS([-framework Security])
     fi
 
-    # pthreads is needed for threading support in XZ
-    TEA_ADD_LIBS([-lpthread])
-
     # Add platform-specific TclX
     TEA_ADD_SOURCES([tclx/unix/tclXunixId.c])
     TEA_ADD_INCLUDES([-I\"`${CYGPATH} ${srcdir}/tclx/unix`\"])

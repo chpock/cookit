@@ -290,7 +290,7 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     // Check if we have a wrapped script in VFS
     int isWrappedInt;
     Tcl_Obj *isWrappedObj = Tcl_ObjGetVar2(interp,
-        Tcl_NewStringObj("::installkit::wrapped", -1 ), NULL, TCL_GLOBAL_ONLY);
+        Tcl_NewStringObj("::installkit::wrapped", -1), NULL, TCL_GLOBAL_ONLY);
 
     if (isWrappedObj != NULL &&
             Tcl_GetIntFromObj(interp, isWrappedObj, &isWrappedInt) != TCL_ERROR
@@ -319,9 +319,19 @@ static int Installkit_Startup(Tcl_Interp *interp) {
             // Resetting the error state in the interpreter.
             Tcl_ResetResult(interp);
             IkDebug("Installkit_Startup: no startup script in cmd line args");
+            goto skipNonInteractive;
         }
 
     }
+
+    // If we are here, it means we found the main.tcl file in VFS or we need
+    // to use a command line startup script. Otherwise, we have juped
+    // to the skipNonInteractive: label.
+
+    // Make sure we work in non-interactive mode
+    Tcl_SetVar2Ex(interp, "tcl_interactive", NULL, Tcl_NewBooleanObj(0), TCL_GLOBAL_ONLY);
+
+skipNonInteractive:
 
     if (!g_isConsoleMode) {
         IkDebug("Installkit_Startup: init GUI...");
@@ -335,8 +345,12 @@ static int Installkit_Startup(Tcl_Interp *interp) {
         if (Tcl_EvalEx(interp, "package require Tk", -1, TCL_EVAL_GLOBAL) != TCL_OK)
             goto error;
 #endif /* __WIN32__ */
-        if (Tcl_EvalEx(interp, "package require installkit::console", -1, TCL_EVAL_GLOBAL) != TCL_OK)
-            goto error;
+        // Create GUI console only if we are runing in interactive mode.
+        // We expect that Tcl variable tcl_interactive is defined by Tcl_Main() / Tk_Main().
+        if (strcmp(Tcl_GetVar(interp, "tcl_interactive", TCL_GLOBAL_ONLY), "1") == 0) {
+            if (Tcl_EvalEx(interp, "package require installkit::console", -1, TCL_EVAL_GLOBAL) != TCL_OK)
+                goto error;
+        }
     }
 
     IkDebug("Installkit_Startup: ok");

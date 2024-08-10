@@ -8,11 +8,7 @@ export STRIP
 export PKG_CONFIG
 
 CHECK_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi tclmtls
-ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon
-
-ifeq ($(IJ_PLATFORM),Windows)
-    ALL_TARGETS += thread
-endif
+ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon thread
 
 # Required for WSL
 ifeq ($(IJ_PLATFORM),Windows)
@@ -216,7 +212,7 @@ work/stamp-tkcon:
 	touch $@
 
 installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-thread work/stamp-twapi)
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-twapi)
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \

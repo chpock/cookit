@@ -1,3 +1,4 @@
 2024-08-10 Konstantin Kushnir <chpock@gmail.com>
 	* Remove packages and code related to compatibility
 	* Add tkcon as a console and use it on all platforms
+	* Enable threads for all platforms
