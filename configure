@@ -95,9 +95,17 @@ TK_SHARED_FLAG="--enable-shared --disable-static"
 THREADS_FLAG="--enable-threads"
 # -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--as-needed
 #     help to avoid unused code in binary
-# -fno-unwind-tables
+# -fno-unwind-tables -fno-asynchronous-unwind-tables
 #     disable .eh_frame section which is for stacktraces/debugging
-GCC_CFLAGS="-fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections"
+# -fno-stack-protector
+#     save some space by disabling the stack protector
+# -fomit-frame-pointer
+#     this flag is enabled for optimized Tcl, enable it everywhere
+# -fmerge-all-constants
+#     save some space by merging all constants
+# -fno-unroll-loops
+#     make sure we don't unroll loops
+GCC_CFLAGS="-Os -fno-unroll-loops -fmerge-all-constants -fno-stack-protector -fomit-frame-pointer -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections"
 GCC_LDFLAGS="-Wl,--gc-sections -Wl,--as-needed"
 # -Wl,-dead_strip
 #     help to avoid unused code in binary
@@ -105,7 +113,15 @@ GCC_LDFLAGS="-Wl,--gc-sections -Wl,--as-needed"
 #     strip debug info
 #         -S Do not put debug information (STABS or DWARF) in the output file
 #         -x Do not put non-global symbols in the output file's symbol table
-CLANG_CFLAGS=""
+# -fno-stack-protector
+#     save some space by disabling the stack protector
+# -fomit-frame-pointer
+#     this flag is enabled for optimized Tcl, enable it everywhere
+# -fmerge-all-constants
+#     save some space by merging all constants
+# -fno-unroll-loops
+#     make sure we don't unroll loops
+CLANG_CFLAGS="-Os -fno-unroll-loops -fmerge-all-constants -fno-stack-protector -fomit-frame-pointer"
 CLANG_LDFLAGS="-Wl,-dead_strip,-x,-S"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"

@@ -1,0 +1,24 @@
+The order of CFLAGS differs on Windows and Unix platforms.
+
+On Unix, CFLAGS comes after CFLAGS_DEFAULT, and on Windows, CFLAGS comes
+before CFLAGS_DEFAULT.
+
+Due to this, CFLAGS_DEFAULT overrides CFLAGS on Windows.
+
+In our case, this will override our -Os compiler switch with -O2 compiler
+switch from CFLAGS_DEFAULT.
+
+This patch provides consistent behavior for Windows and Unix platforms.
+
+diff -rubBaN tcl.orig/win/Makefile.in tcl/win/Makefile.in
+--- tcl.orig/win/Makefile.in	2024-08-11 03:00:19.580729865 +0000
++++ tcl/win/Makefile.in	2024-08-11 03:00:46.633563402 +0000
+@@ -85,7 +85,7 @@
+ #CFLAGS = 		$(CFLAGS_DEBUG)
+ #CFLAGS = 		$(CFLAGS_OPTIMIZE)
+ #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D_ATL_XP_TARGETING=1 -D__USE_MINGW_ANSI_STDIO=0 -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
++CFLAGS = 		@CFLAGS_DEFAULT@ @CFLAGS@ -D_ATL_XP_TARGETING=1 -D__USE_MINGW_ANSI_STDIO=0 -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
+
+ # To compile without backward compatibility and deprecated code uncomment the
+ # following

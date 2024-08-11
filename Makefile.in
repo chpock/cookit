@@ -36,6 +36,8 @@ all: $(TARGETS) $(KIT_PREFIX)/libs-deps.txt
 $(KIT_PREFIX)/libs-deps.txt: $(TARGETS)
 	"$(TOP_SRCDIR)/src/installkit"/tools/gendeps.sh $(AC_HOST) "$(KIT_PREFIX)/lib" > "$@"
 
+# Note #1.
+
 # We want to link Tcl with our specific zlib for the following reasons:
 #   1. Our zlib is static. We will be sure that the binaries are
 #      independent of the system shared zlib.
@@ -46,9 +48,30 @@ $(KIT_PREFIX)/libs-deps.txt: $(TARGETS)
 # Unfortunatelly, the Tcl autoconf system does not allow us to specify
 # the location of the zlib used. Below, we will use hacky ways to achive that.
 
+# Note #2.
+
+# TEA scripts scripts have a bug when CFLAGS are defined as:
+#     <package defined CFLAGS> ${CFLAGS_DEFAULT} ${CFLAGS_WARNING}
+# and the compile variable defined to use:
+#     $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) $(CFLAGS)
+# as a result, the compiler flags will be as follows:
+#     $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) <package defined CFLAGS> ${CFLAGS_DEFAULT} ${CFLAGS_WARNING}
+# Normally, duplicating compiler flags does not cause problems.
+# However, we want to set -Os optimization in <package defined CFLAGS>,
+# and the -O2 switch in ${CFLAGS_DEFAULT} overrides it. To avoid this behavior,
+# we will set CFLAGS explicitly for extensions that are built using TEA scripts.
+# By doing this, we will override CFLAGS in generated Makefile.
+# This does not work with tkdnd because its Makefile.in is not updated and
+# the COMPILE variable does not contain the $(CFLAGS_DEFAULT) variable.
+
 tcl: work/stamp-tcl
 work/stamp-tcl: work/stamp-zlib
 	mkdir -p work/tcl
+ifeq ($(IJ_PLATFORM),Windows)
+# See details about this patch in its file.
+	patch -N -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tcl" \
+	  < "$(TOP_SRCDIR)"/src/tcl-010-Windows-fix-CFLAGS.patch
+endif
 # Use our zlib. Specify paths to zlib by CFLAGS/LDFLAGS
 	cd work/tcl || exit; \
 	 test -f config.status \
@@ -59,7 +82,13 @@ work/stamp-tcl: work/stamp-zlib
 		--with-encoding=utf-8 \
 		--disable-shared --enable-static \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
+ifeq ($(IJ_PLATFORM),Windows)
+# Revert the patch to keep source tree clean
+	patch -R -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tcl" \
+	  < "$(TOP_SRCDIR)"/src/tcl-010-Windows-fix-CFLAGS.patch
+endif
 ifeq ($(WINDOWS_SYSTEM),Cygwin)
+# See details about this patch in its file.
 	patch -N -p1 -d work/tcl < "$(TOP_SRCDIR)"/src/tcl-000-Windows-Cygwin.patch
 endif
 # Match Makefile to avoid an error during parallel builds
@@ -92,6 +121,11 @@ endif
 tk: work/stamp-tk
 work/stamp-tk: work/stamp-tcl
 	mkdir -p work/tk
+ifeq ($(IJ_PLATFORM),Windows)
+# See details about this patch in its file.
+	patch -N -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tk" \
+	  < "$(TOP_SRCDIR)"/src/tk-010-Windows-fix-CFLAGS.patch
+endif
 # Tk doesn't depent on zlib directly. However, whish binary depends on Tcl static
 # library and the Tcl static library needs zlib. We should specify our zlib
 # via LDFLAGS.
@@ -105,6 +139,11 @@ work/stamp-tk: work/stamp-tcl
 		$(if $(filter unix,$(TCL_SYSTEM)),--disable-rpath) \
 		$(TK_SHARED_FLAG) \
 		$(AQUA_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
+ifeq ($(IJ_PLATFORM),Windows)
+# Revert the patch to keep source tree clean
+	patch -R -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tk" \
+	  < "$(TOP_SRCDIR)"/src/tk-010-Windows-fix-CFLAGS.patch
+endif
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # see details in the patch
 	patch -N -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
@@ -127,7 +166,8 @@ ifeq ($(IJ_PLATFORM),MacOS-X)
 	patch -R -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
 endif
 	test -e $(PREFIX)/lib/libtk*$(SO_EXT) && \
-	 $(STRIP) $(STRIPFLAGS) "$(PREFIX)"/lib/libtk*$(SO_EXT) || true
+	  chmod +w "$(PREFIX)"/lib/libtk*$(SO_EXT) && \
+	  $(STRIP) $(STRIPFLAGS) "$(PREFIX)"/lib/libtk*$(SO_EXT) || true
 	touch $@
 
 tclvfs: work/stamp-tclvfs
@@ -143,7 +183,7 @@ work/stamp-tclvfs: work/stamp-tcl
 		--with-tcl=$(PREFIX)/lib \
 		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/tclvfs && $(MAKE) all install install-lib-binaries
+	cd work/tclvfs && $(MAKE) all install install-lib-binaries CFLAGS="$(CFLAGS)"
 	rm -rf "$(TOP_SRCDIR)"/src/tclvfs/tclconfig
 	touch $@
 
@@ -162,7 +202,7 @@ work/stamp-cookfs: work/stamp-tcl
 		--disable-bz2 --disable-zstd \
 		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/cookfs && $(MAKE) all install
+	cd work/cookfs && $(MAKE) all install CFLAGS="$(CFLAGS)"
 	touch $@
 
 thread: work/stamp-thread
@@ -179,7 +219,7 @@ work/stamp-thread: work/stamp-tcl
 # These files are necessary for installation. See:
 # https://github.com/tcltk/thread/blob/0b17425018a6cd3a0fdca30ce3c5fced28d25033/.travis.yml#L124-L127
 	cd "$(TOP_SRCDIR)"/src/thread && tar xzf ../thread.files.tar.gz
-	cd work/thread && $(MAKE) all install
+	cd work/thread && $(MAKE) all install CFLAGS="$(CFLAGS)"
 	rm -rf "$(TOP_SRCDIR)"/src/thread/tclconfig
 	touch $@
 
@@ -195,7 +235,7 @@ work/stamp-tclmtls:
 		--enable-client --disable-server \
 		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/tclmtls && $(MAKE) all install
+	cd work/tclmtls && $(MAKE) all install CFLAGS="$(CFLAGS)"
 	touch $@
 
 tkcon: work/stamp-tkcon
@@ -208,7 +248,7 @@ work/stamp-tkcon:
 		--prefix=$(PREFIX) \
 		--with-tcl=$(PREFIX)/lib \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/tkcon && $(MAKE) all install
+	cd work/tkcon && $(MAKE) all install CFLAGS="$(CFLAGS)"
 	touch $@
 
 installkit: work/stamp-installkit
@@ -230,7 +270,7 @@ work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp
 		--with-strip-command="$(STRIP) $(STRIPFLAGS)" \
 		--with-upx-command="$(UPX)" \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/installkit && $(MAKE) all install-binaries
+	cd work/installkit && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)" LDFLAGS_DEFAULT="-flto -fwhole-program"
 	touch $@
 
 tktable: work/stamp-tktable
@@ -249,7 +289,7 @@ work/stamp-tktable: work/stamp-tcl work/stamp-tk
 	$(if $(filter $(IJ_PLATFORM),Windows),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tktable/Makefile,@:)
 # Don't include python source code
 	$(SEDI) 's/[^[:space:]]*tktable.py//' work/tktable/Makefile
-	cd work/tktable && $(MAKE) all install-binaries
+	cd work/tktable && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)"
 	$(STRIP) $(STRIPFLAGS) "$(KIT_PREFIX)"/lib/Tktable*/*$(SO_EXT)
 	touch $@
 
@@ -300,7 +340,7 @@ work/stamp-twapi: work/stamp-tcl
 		--with-tcl=$(PREFIX)/lib \
 		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/twapi && $(MAKE) all install install-lib-binaries
+	cd work/twapi && $(MAKE) all install install-lib-binaries CFLAGS="$(CFLAGS)"
 	cp -f work/twapi/twapi_entry.tcl work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
 	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
 # revert the patch to keep source tree clean
