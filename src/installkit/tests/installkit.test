@@ -772,7 +772,7 @@ test ik-4.9.1 {::installkit::newThread} -constraints threaded -setup {
 test ik-4.9.2 {Test that cookfs package is present in new threads} -constraints threaded -setup {
 } -body {
     set tid [::thread::create thread::wait]
-    ::thread::send $tid { package present cookfs }
+    ::thread::send $tid { package require cookfs }
 } -cleanup {
     ::thread::release $tid
     unset -nocomplain tid

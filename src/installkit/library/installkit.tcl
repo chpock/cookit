@@ -7,7 +7,24 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
-namespace eval ::installkit {}
+namespace eval ::installkit {
+
+    # -pagesize: Use 1MB as the page size.
+    # -smallfilesize: If the file is larger than 512 KB, consider it a non-text
+    #                 file and place it on a separate page.
+    variable mount_options [list \
+        -compression lzma \
+        -pagesize [expr { 1024 * 1024 }] \
+        -smallfilesize [expr { 1024 * 512 }] \
+    ]
+
+    # We set the ::installkit::root variable during application initialization
+    # in the main.c file. However, the application is initialized only for
+    # the main interpreter. Thus, let's set it here to be sure that this
+    # variable is available for child/threaded interpreters.
+    variable root "/installkitvfs"
+
+}
 
 if { [::tcl::pkgconfig get threaded] } {
     proc ::installkit::newThread { args } {
@@ -20,7 +37,6 @@ if { [::tcl::pkgconfig get threaded] } {
             lappend script [list set ::argv0 $::argv0]
             lappend script [list info script $::argv0]
             lappend script [list set ::tcl_interactive $::tcl_interactive]
-            lappend script [list ::installkit::postInit]
             lappend script [lindex $args end]
             set args [lreplace $args end end [join $script \n]]
         }
@@ -896,9 +912,11 @@ proc ::installkit::rawStartup { } {
     if { ![info exists ::argv] } return
     set cmd [lindex $::argv 0]
     if { $cmd eq "wrap" } {
+        set ::tcl_interactive 0
         ::installkit::wrap {*}[lrange $::argv 1 end]
         exit 0
     } elseif { $cmd eq "stats" } {
+        set ::tcl_interactive 0
         package require installkit::stats
         ::installkit::stats {*}[lrange $::argv 1 end]
         exit 0

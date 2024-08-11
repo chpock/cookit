@@ -15,11 +15,9 @@ puts "Initialize VFS..."
 puts "  content from: $vfs_content"
 puts "  destination: $vfs_out"
 
-namespace eval ::installkit {
-    variable init_vfs 1
-}
-
-source [file join $vfs_content "boot.tcl"]
+# We need to get the default mount options for installkit (compression, smallfilesize)
+lappend auto_path [file normalize [file join $vfs_content lib]]
+package require installkit
 
 proc addFilesFrom { dir { level 0 } } {
     if { ![info exists ::strip_count] } {

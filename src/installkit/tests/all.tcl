@@ -9,6 +9,9 @@
 
 package require Tcl 8.5
 package require tcltest 2.2
+
+lappend auto_path [file join [file dirname [info nameofexecutable]] .. lib]
+
 namespace import tcltest::*
 configure {*}$argv -testdir [file dir [info script]]
 runAllTests

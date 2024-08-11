@@ -14,6 +14,8 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
     namespace import -force ::tcltest::*
 }
 
+lappend auto_path [file join [file dirname [info nameofexecutable]] .. lib]
+
 testConstraint darwin [expr {[testConstraint unix] && $tcl_platform(os) eq "Darwin"}]
 testConstraint notDarwin [expr {![testConstraint darwin]}]
 testConstraint installkitVersionDefined [info exists ::env(INSTALLKIT_VERSION)]

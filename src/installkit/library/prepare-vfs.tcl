@@ -330,8 +330,6 @@ proc addInstallkit { { optional 0 } } {
     addFile [file join $::installkitLibDirectory installkit-stats.tcl] "" $dst
     addFile [file join $::installkitLibDirectory installkit-console.tcl] "" $dst
 
-    addFile [file join $::installkitLibDirectory boot.tcl] "" ""
-
     load {} Cookfs
     genStaticPkgIndex $dir cookfs [package present cookfs]
 

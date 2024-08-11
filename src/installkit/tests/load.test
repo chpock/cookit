@@ -14,6 +14,8 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
     namespace import -force ::tcltest::*
 }
 
+lappend auto_path [file join [file dirname [info nameofexecutable]] .. lib]
+
 test load-1 {Prepare VFS with SO file(s)} -setup {} -body {
     set vfs [tcltest::makeFile {} load.vfs]
     ::cookfs::Mount $vfs $vfs

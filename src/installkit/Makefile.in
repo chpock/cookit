@@ -199,7 +199,7 @@ BUILD_PLATFORM  = @build_alias@
 #========================================================================
 
 # Required for WSL
-WSLENV = TCL_LIBRARY/p:INSTALLKIT_CONSOLE:INSTALLKIT_GUI:INSTALLKIT_BOOTSTRAP:TCLTEST_OPTIONS:INSTALLKIT_TESTMODE
+WSLENV = TCL_LIBRARY/p:INSTALLKIT_CONSOLE:INSTALLKIT_GUI:INSTALLKIT_BOOTSTRAP:TCLTEST_OPTIONS
 export WSLENV
 
 #========================================================================

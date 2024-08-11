@@ -59,20 +59,6 @@ TCHAR **g_argv;
 char **g_argv;
 #endif /* __WIN32__ */
 
-int g_isMainInterp = 1;
-
-#define TCL_SCRIPT_HERE(...) #__VA_ARGS__
-
-static char *preInitScript = "source /installkitvfs/boot.tcl";
-
-static char getStartupScript[] = TCL_SCRIPT_HERE(
-    if { ![info exists ::argc] || ![info exists ::argv] || !$::argc } { return -code error };
-    set ::argv0 [lindex $::argv 0];
-    set ::argv [lrange $::argv 1 end];
-    incr ::argc -1;
-    return $::argv0
-);
-
 #ifdef __WIN32__
 Tcl_AppInitProc Tk_Init;
 #endif /* __WIN32__ */
@@ -178,6 +164,7 @@ static int Installkit_Startup(Tcl_Interp *interp) {
 
     Tcl_Obj *argvObj = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(argvObj);
+    int argvLength = 0;
     while (g_argc--) {
         IkDebug("Installkit_Startup: add arg...");
 #ifdef UNICODE
@@ -187,9 +174,9 @@ static int Installkit_Startup(Tcl_Interp *interp) {
 #endif /* UNICODE */
         Tcl_ListObjAppendElement(interp, argvObj,
             Tcl_NewStringObj(Tcl_DStringValue(&ds), -1));
+        argvLength++;
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvObj, TCL_GLOBAL_ONLY);
-    Tcl_DecrRefCount(argvObj);
     Tcl_DStringFree(&ds);
 
     // Reset the start script, from a possible AI-based detection in Tcl_Main.
@@ -218,20 +205,10 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     Tcl_StaticPackage(0, "twapi", Twapi_Init, NULL);
 #endif /* __WIN32__ */
 
-    Tcl_CreateNamespace(interp, "::installkit", NULL, NULL);
-
-    Tcl_SetVar2Ex(interp, "::installkit::main_interp", NULL,
-        Tcl_NewIntObj(g_isMainInterp), TCL_GLOBAL_ONLY);
-    if (g_isMainInterp) {
-        IkDebug("Installkit_Startup: is main interp");
-        g_isMainInterp = 0;
-    } else {
-        IkDebug("Installkit_Startup: is slave interp");
-    }
-
     Tcl_Obj *local = Tcl_NewStringObj(VFS_MOUNT, -1);
     Tcl_IncrRefCount(local);
 
+    Tcl_CreateNamespace(interp, "::installkit", NULL, NULL);
     Tcl_SetVar2Ex(interp, "::installkit::root", NULL, local, TCL_GLOBAL_ONLY);
 
     IkDebug("Installkit_Startup: init cookfs");
@@ -259,12 +236,50 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     Tcl_DecrRefCount(local);
 
     if (isVFSAvailable) {
-        // If VFS available, then use boot script from it
-        //if (Tcl_EvalFile(interp, VFS_MOUNT "/boot.tcl") != TCL_OK) {
-        //    goto error;
-        //}
-        IkDebug("Installkit_Startup: set boot.tcl as a pre-init script");
-        TclSetPreInitScript(preInitScript);
+
+        // If VFS is available, then configure environment variables to load
+        // Tcl runtime/packages from it.
+        // See also: ./src/tcl-020-All-do-not-use-exe-directory.patch
+
+        // Ignore the TCLLIBPATH environment variable when searching for packages.
+        // We cannot do just Tcl_PutEnv("TCLLIBPATH=") here. In this case,
+        // [info exists env(TCLLIBPATH)] will be true, but accessing $env(TCLLIBPATH)
+        // element array results in a "no such variable" error.
+        // Thus, here we will unset the array element.
+        Tcl_UnsetVar2(interp, "env", "TCLLIBPATH", TCL_GLOBAL_ONLY);
+
+        // Ignore the TK_LIBRARY environment variable. We should be able to find
+        // Tk automatically from auto_path.
+        Tcl_UnsetVar2(interp, "env", "TK_LIBRARY", TCL_GLOBAL_ONLY);
+
+        // Ignore variables in formats TCL<X>.<Y>_TM_PATH and TCL<X>_<Y>_TM_PATH,
+        // where <X> is Tcl major version and <Y> is all previous minor versions.
+        // These variables are used to specify the location of Tcl modules.
+        // We don't allow you to use anything outside of VFS.
+        for (int i = 0; i <= TCL_MINOR_VERSION; i++) {
+            for (int j = 0; j < 2; j++) {
+                Tcl_Obj *varName = Tcl_ObjPrintf("TCL" STRINGIFY(TCL_MAJOR_VERSION)
+                    "%s%d_TM_PATH", (j ? "." : "_"), i);
+                Tcl_IncrRefCount(varName);
+                Tcl_UnsetVar2(interp, "env", Tcl_GetString(varName), TCL_GLOBAL_ONLY);
+                Tcl_DecrRefCount(varName);
+            }
+        }
+
+        // Now let's specify the path in VFS. Comments in source code say this:
+        //
+        // $tcl_library - can specify a primary location, if set, no other locations
+        // will be checked. This is the recommended way for a program that embeds
+        // Tcl to specifically tell Tcl where to find an init.tcl file.
+        //
+        // $env(TCL_LIBRARY) - highest priority so user can always override the search
+        // path unless the application has specified an exact directory above.
+        //
+        // We cannot set the $tcl_library variable here because it will only be set
+        // for this Tcl interpreter and not for child/threaded interpreters.
+        // Thus, we choose to set environment variable TCL_LIBRARY.
+        Tcl_PutEnv("TCL_LIBRARY=" VFS_MOUNT "/lib/tcl" TCL_VERSION);
+
     } else if (!g_isBootstrap) {
         IkDebug("Installkit_Startup: FATAL! vfs is not available");
         // If VFS unavailable and we are not in VFS bootstrap, throw an error.
@@ -276,53 +291,97 @@ static int Installkit_Startup(Tcl_Interp *interp) {
         goto error;
     }
 
-    // ::installkit::postInit is from boot.tcl and is only available when
-    // VFS is present
-    if (isVFSAvailable) {
-        IkDebug("Installkit_Startup: call postInit ...");
-        if (Tcl_EvalEx(interp, "::installkit::postInit", -1, TCL_EVAL_GLOBAL
-            | TCL_EVAL_DIRECT) != TCL_OK)
-        {
-            goto error;
-        }
-    }
-
     // Check if we have a wrapped script in VFS
-    int isWrappedInt;
-    Tcl_Obj *isWrappedObj = Tcl_ObjGetVar2(interp,
-        Tcl_NewStringObj("::installkit::wrapped", -1), NULL, TCL_GLOBAL_ONLY);
-
-    if (isWrappedObj != NULL &&
-            Tcl_GetIntFromObj(interp, isWrappedObj, &isWrappedInt) != TCL_ERROR
-            && isWrappedInt)
-    {
+    Tcl_Obj *wrappedScript = Tcl_NewStringObj(VFS_MOUNT "/main.tcl", -1);
+    // Tcl_FSAccess() must be called on object an with refcount >= 1.
+    // Thus, we need to increment refcount for wrappedScript here.
+    Tcl_IncrRefCount(wrappedScript);
+    if (Tcl_FSAccess(wrappedScript, F_OK) == 0) {
 
         // We have wrapped script in VFS. Use it as startup script.
         IkDebug("Installkit_Startup: have wrapped script, use main.tcl");
 
-        Tcl_SetStartupScript(Tcl_NewStringObj(VFS_MOUNT "/main.tcl", -1), NULL);
+        Tcl_SetStartupScript(wrappedScript, NULL);
 
-    } else {
-
-        IkDebug("Installkit_Startup: not wrapped");
-        // Try searching for the startup script on the command line. If it is
-        // found, a successful result will be returned.
-        if (Tcl_EvalEx(interp, getStartupScript, -1,
-            TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT) == TCL_OK)
-        {
-            // We found a startup script, let's use it. It can be retrieved from
-            // the script result.
-            Tcl_SetStartupScript(Tcl_GetObjResult(interp), NULL);
-            IkDebug("Installkit_Startup: found startup script in cmd line args");
-        } else {
-            // No startup script is specified on the command line.
-            // Resetting the error state in the interpreter.
-            Tcl_ResetResult(interp);
-            IkDebug("Installkit_Startup: no startup script in cmd line args");
-            goto skipNonInteractive;
-        }
+        goto setNonInteractive;
 
     }
+
+    IkDebug("Installkit_Startup: not wrapped");
+
+    // Try to detect simple command like 'wrap' and 'stats' in command
+    // line arguments.
+    if (argvLength > 0) {
+
+        // We do not check the error from Tcl_ListObjIndex() or check if
+        // firstArg is NULL, since we made argvObj at the beginning of this
+        // function and are sure that it is a list and contains at least
+        // one element (because argvLength > 0).
+        Tcl_Obj *firstArgObj;
+        Tcl_ListObjIndex(NULL, argvObj, 0, &firstArgObj);
+        const char *firstArgStr = Tcl_GetString(firstArgObj);
+        if (strcmp(firstArgStr, "wrap") == 0 || strcmp(firstArgStr, "stats") == 0) {
+            // We found a simple command. Let's load the installkit package and run
+            // simple command processing (rawStartup). Report error an if it failed.
+            if (Tcl_EvalEx(interp, "package require installkit;"
+                " ::installkit::rawStartup", -1, TCL_EVAL_GLOBAL |
+                TCL_EVAL_DIRECT) != TCL_OK)
+            {
+                goto error;
+            }
+            // ::installkit::rawStartup should call exit. Go to to done here.
+            goto done;
+        }
+
+        IkDebug("Installkit_Startup: found startup script in cmd line args");
+
+        // If the first argument is not a simple command, assume it is a script file.
+        Tcl_SetStartupScript(firstArgObj, NULL);
+        Tcl_SetVar2Ex(interp, "argv0", NULL, firstArgObj, TCL_GLOBAL_ONLY);
+        // Remove it from $argv. The original argvObj also belongs to Tcl $argv
+        // variable. We have to duplicate it.
+        Tcl_Obj *argvObjDup = Tcl_DuplicateObj(argvObj);
+        Tcl_ListObjReplace(NULL, argvObjDup, 0, 1, 0, NULL);
+        Tcl_SetVar2Ex(interp, "argv", NULL, argvObjDup, TCL_GLOBAL_ONLY);
+        // Decrease the number of arguments
+        Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argvLength - 1),
+            TCL_GLOBAL_ONLY);
+
+        goto setNonInteractive;
+
+    }
+
+    // No startup script is specified on the command line.
+    IkDebug("Installkit_Startup: no startup script in cmd line args");
+
+    // Set the same startup file that tclsh/wish normally uses in case we are
+    // running interactively
+    if (g_isConsoleMode) {
+#ifdef __WIN32__
+        Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
+            Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
+#else
+        Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
+            Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
+#endif /* __WIN32__ */
+    } else {
+#ifdef __WIN32__
+        Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
+            Tcl_NewStringObj("~/wishrc.tcl", -1), TCL_GLOBAL_ONLY);
+#else
+        Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
+            Tcl_NewStringObj("~/.wishrc", -1), TCL_GLOBAL_ONLY);
+#endif /* __WIN32__ */
+    }
+    // In Tcl9+ we need to manually expand the tilde
+#if TCL_MAJOR_VERSION > 8
+    Tcl_EvalEx(interp, "set tcl_rcFileName [file tildeexpand $tcl_rcFileName]",
+        -1, TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
+#endif /* TCL_MAJOR_VERSION > 8 */
+
+    goto skipNonInteractive;
+
+setNonInteractive:
 
     // If we are here, it means we found the main.tcl file in VFS or we need
     // to use a command line startup script. Otherwise, we have juped
@@ -332,6 +391,12 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL, Tcl_NewBooleanObj(0), TCL_GLOBAL_ONLY);
 
 skipNonInteractive:
+
+    // Release wrappedScript object that was created above.
+    Tcl_DecrRefCount(wrappedScript);
+
+    // Release argvObj object that was created above. We don't need it anymore.
+    Tcl_DecrRefCount(argvObj);
 
     if (!g_isConsoleMode) {
         IkDebug("Installkit_Startup: init GUI...");
@@ -353,6 +418,8 @@ skipNonInteractive:
         }
     }
 
+done:
+
     IkDebug("Installkit_Startup: ok");
     return TCL_OK;
 
@@ -368,6 +435,7 @@ error:
     }
     ExitProcess(1);
 #endif /* __WIN32__ */
+    Tcl_DeleteInterp(interp);
     return TCL_ERROR;
 }
 

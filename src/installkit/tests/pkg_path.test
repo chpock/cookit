@@ -1,0 +1,204 @@
+# installkit tests - paths for Tcl packages
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# These tests check the expected content in installkit vfs
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+test ikPkgPath-1.1 {Check ::auto_path} -body {
+    lsort $::auto_path
+} -result [lsort [list \
+    [file join $::installkit::root lib] \
+    [file join $::installkit::root lib tcl$tcl_version] \
+]]
+
+test ikPkgPath-1.2 {Check ::tcl_library} -body {
+    set ::tcl_library
+} -result [file join $::installkit::root lib tcl$tcl_version]
+
+test ikPkgPath-1.3 {Check [info library]} -body {
+    info library
+} -result [file join $::installkit::root lib tcl$tcl_version]
+
+test ikPkgPath-2.1 {Check paths for Tcl Modules} -setup {
+    # Make sure that Tcl Modules are initialized by loading the http module
+    package require http
+    # Generate the expected string
+    lassign [split $tcl_version .] major minor
+    set expected [list [file join $::installkit::root lib tcl$major site-tcl]]
+    for { set i 0 } { $i <= $minor } { incr i } {
+        lappend expected [file join $::installkit::root lib tcl$major "${major}.$i"]
+    }
+    set expected [lsort $expected]
+} -body {
+    set result [lsort $::tcl::tm::paths]
+    if { $result ne $expected } {
+        return -code error "actual  : $result\nexpected: $expected"
+    }
+    set ok ok
+} -result ok
+
+# Run Tk tests in a separate process to avoid its impact on the current process
+
+test ikPkgPath-3.1 {Check ::tk_library} -setup {
+    set script [makeFile {
+        package require Tk
+        puts -nonewline [list $tk_library [lsort $auto_path]]
+        exit
+    } temp.tcl]
+} -body {
+    set result [exec [interpreter] $script]
+} -cleanup {
+    file delete -force $script
+    unset -nocomplain script result
+} -result [list \
+    [file join $::installkit::root lib tk$tcl_version] \
+    [lsort [list \
+        [file join $::installkit::root lib] \
+        [file join $::installkit::root lib tcl$tcl_version] \
+        [file join $::installkit::root lib tk$tcl_version] \
+        [file join $::installkit::root lib tk$tcl_version ttk] \
+    ]] \
+]
+
+test ikPkgPath-4.1 {Check that environment variables TCL*_TM_PATH are unset} -setup {
+
+    lassign [split $tcl_version .] major minor
+
+    set envset [list]
+
+    for { set i 0 } { $i <= $minor } { incr i } {
+        lappend envset [set key "TCL${major}.${i}_TM_PATH"]
+        set ::env($key) /foo/bar
+        lappend envset [set key "TCL${major}_${i}_TM_PATH"]
+        set ::env($key) /foo/bar
+    }
+    # These environment variables must not be unset
+    lappend envset [set key "TCL${major}.99_TM_PATH"]
+    set ::env($key) /foo/bar
+    lappend envset [set key "TCL${major}_99_TM_PATH"]
+    set ::env($key) /foo/bar
+
+    set script [makeFile {
+        package require http
+        # 1. Make sure we don't have /foo/bar in Tcl Modules path
+        # 2. Make sure we have the environment variables we set above that are larger
+        # than the current version of Tcl
+        puts [list [string first /foo/bar $::tcl::tm::paths] [lsort [array names ::env TCL*_TM_PATH]]]
+        exit
+    } temp.tcl]
+
+} -body {
+    set result [exec [interpreter] $script]
+} -cleanup {
+    file delete -force $script
+    foreach key $envset { unset ::env($key) }
+    unset -nocomplain script result major minor envset key
+} -result [list -1 [lsort [list "TCL[lindex [split $tcl_version .] 0].99_TM_PATH" "TCL[lindex [split $tcl_version .] 0]_99_TM_PATH"]]]
+
+test ikPkgPath-5.1 {Make sure that TCLLIBPATH environment variable is ignored} -setup {
+
+    if { [info exists ::env(TCLLIBPATH)] } {
+        set save_env $::env(TCLLIBPATH)
+    } else {
+        unset -nocomplain save_env
+    }
+
+    set ::env(TCLLIBPATH) /foo/bar
+
+    set script [makeFile {
+        puts [list [info exists ::env(TCLLIBPATH)] $::tcl_library [lsort $::auto_path]]
+        exit
+    } temp.tcl]
+
+} -body {
+    set result [exec [interpreter] $script]
+} -cleanup {
+    if { [info exists save_env] } { set ::env(TCLLIBPATH) $save_env } { unset ::env(TCLLIBPATH) }
+    file delete -force $script
+    unset -nocomplain script result save_env
+} -result [list \
+    0 \
+    [file join $::installkit::root lib tcl$tcl_version] \
+    [lsort [list \
+        [file join $::installkit::root lib] \
+        [file join $::installkit::root lib tcl$tcl_version] \
+    ]] \
+]
+
+test ikPkgPath-6.1 {Make sure that TCL_LIBRARY environment variable is ignored} -setup {
+
+    if { [info exists ::env(TCL_LIBRARY)] } {
+        set save_env $::env(TCL_LIBRARY)
+    } else {
+        unset -nocomplain save_env
+    }
+
+    set ::env(TCL_LIBRARY) /foo/bar
+
+    set script [makeFile {
+        puts [list [info exists ::env(TCL_LIBRARY)] $::tcl_library [lsort $::auto_path]]
+        exit
+    } temp.tcl]
+
+} -body {
+    set result [exec [interpreter] $script]
+} -cleanup {
+    if { [info exists save_env] } { set ::env(TCL_LIBRARY) $save_env } { unset ::env(TCL_LIBRARY) }
+    file delete -force $script
+    unset -nocomplain script result save_env
+} -result [list \
+    1 \
+    [file join $::installkit::root lib tcl$tcl_version] \
+    [lsort [list \
+        [file join $::installkit::root lib] \
+        [file join $::installkit::root lib tcl$tcl_version] \
+    ]] \
+]
+
+test ikPkgPath-7.1 {Make sure that TK_LIBRARY environment variable is ignored} -setup {
+
+    if { [info exists ::env(TK_LIBRARY)] } {
+        set save_env $::env(TK_LIBRARY)
+    } else {
+        unset -nocomplain save_env
+    }
+
+    set ::env(TK_LIBRARY) /foo/bar
+
+    set script [makeFile {
+        package require Tk
+        puts [list [info exists ::env(TK_LIBRARY)] $::tk_library [lsort $::auto_path]]
+        exit
+    } temp.tcl]
+
+} -body {
+    set result [exec [interpreter] $script]
+} -cleanup {
+    if { [info exists save_env] } { set ::env(TK_LIBRARY) $save_env } { unset ::env(TK_LIBRARY) }
+    file delete -force $script
+    unset -nocomplain script result save_env
+} -result [list \
+    0 \
+    [file join $::installkit::root lib tk$tcl_version] \
+    [lsort [list \
+        [file join $::installkit::root lib] \
+        [file join $::installkit::root lib tcl$tcl_version] \
+        [file join $::installkit::root lib tk$tcl_version] \
+        [file join $::installkit::root lib tk$tcl_version ttk] \
+    ]] \
+]
+
+
+# cleanup
+::tcltest::cleanupTests
+return

@@ -10,10 +10,12 @@ export PKG_CONFIG
 CHECK_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi tclmtls
 ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon thread
 
+INSTALLKIT_ROOT = /installkitvfs
+
 # Required for WSL
 ifeq ($(IJ_PLATFORM),Windows)
 
-    WSLENV = TCL_LIBRARY/p:INSTALLKIT_CONSOLE:INSTALLKIT_GUI:INSTALLKIT_BOOTSTRAP:TCLTEST_OPTIONS:INSTALLKIT_TESTMODE:INSTALLKIT_VERSION
+    WSLENV = TCL_LIBRARY/p:INSTALLKIT_CONSOLE:INSTALLKIT_GUI:INSTALLKIT_BOOTSTRAP:TCLTEST_OPTIONS:INSTALLKIT_VERSION
     export WSLENV
 
     EXE_EXT = .exe
@@ -107,7 +109,23 @@ ifeq ($(IJ_PLATFORM),Windows)
 	$(SEDI) -E -e 's/^[[:space:]]*LDFLAGS_(CONSOLE|WINDOW).*/& $$(LDFLAGS)/' \
 		work/tcl/Makefile
 endif
-	cd work/tcl && $(MAKE) all install-binaries install-libraries
+# Tcl hardcodes the library path in the tclUnixInit.c file according to
+# the TCL_LIBRARY and TCL_PACKAGE_PATH variables. This is not what we need,
+# as the current installation is being done to a temporary location that
+# should never be used. To get around this issue, we will override these
+# variables to the library path within VFS. This only needs to be done for
+# the compile step, not the install steps. Install steps should be able
+# to install libraries to the temporary location.
+	cd work/tcl && $(MAKE) all \
+	  TCL_LIBRARY="$(INSTALLKIT_ROOT)/lib/tcl\$$(VERSION)" \
+	  TCL_PACKAGE_PATH="$(INSTALLKIT_ROOT)/lib"
+# See description about this patch in the patch file
+	patch -N -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tcl" \
+	  < "$(TOP_SRCDIR)"/src/tcl-020-All-do-not-use-exe-directory.patch
+	cd work/tcl && $(MAKE) install-binaries install-libraries
+# Revert the patch to keep source tree clean
+	patch -R -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tcl" \
+	  < "$(TOP_SRCDIR)"/src/tcl-020-All-do-not-use-exe-directory.patch
 # Tcl installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tcl/Makefile && \
@@ -409,7 +427,6 @@ define run-check
         cp -r "$(TOP_SRCDIR)/$(strip $3)" "$(CHECK_WORK_DIR)/$@"
         cd "$(CHECK_WORK_DIR)" && \
             $(if $(filter $2,tcl),INSTALLKIT_CONSOLE=1,INSTALLKIT_GUI=1) \
-            INSTALLKIT_TESTMODE=1 \
             INSTALLKIT_VERSION="`cat "$(TOP_SRCDIR)/version"`" \
             DISPLAY=:0 \
             TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/src/installkit/tests/helper.sh $@`" \

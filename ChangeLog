@@ -1,5 +1,9 @@
 2024-08-11 Konstantin Kushnir <chpock@gmail.com>
 	* Improve compiler optimization options
+	* Improve startup and remove bootstrap code. Initialize interp only by
+	environment variables.
+	* Make installkit lauched without arguments (in interactive mode) to use
+	standard tclsh/wish RC files.
 
 2024-08-10 Konstantin Kushnir <chpock@gmail.com>
 	* Remove packages and code related to compatibility

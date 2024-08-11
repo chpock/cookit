@@ -1,0 +1,103 @@
+Tcl adds paths to auto_path based on the directory where the executable is
+located.
+
+This is good for tclsh. It should be located somewhere in /usr/bin/tclsh,
+and a path like /usr/lib can be added without significant issues.
+
+However, we are building an application that can be located in any directory.
+
+In this case, parent directory for executable home can be available for writing
+to malicious persons. If they create "lib" directory and place Tcl files there,
+they will be loaded by Tcl interpreter.
+
+This opens up a huge security hole, and that is not what we want.
+Basically, we have to rely only on Tcl runtime in VFS.
+
+Thus, with this patch we will disable adding directories relative to
+the current executables to the auto_path and ::tcl::tm::paths lists.
+
+diff -rubBaN tcl.orig/library/auto.tcl tcl/library/auto.tcl
+--- tcl.orig/library/auto.tcl	2024-08-11 18:39:14.631429738 +0000
++++ tcl/library/auto.tcl	2024-08-11 18:40:35.941434468 +0000
+@@ -107,17 +107,17 @@
+ 	# ../../../foo1.0.1/library
+ 	#		(From unix/arch directory in parallel build hierarchy)
+
+-	set parentDir [file dirname [file dirname [info nameofexecutable]]]
+-	set grandParentDir [file dirname $parentDir]
+-	lappend dirs [file join $parentDir lib $basename$version]
+-	lappend dirs [file join $grandParentDir lib $basename$version]
+-	lappend dirs [file join $parentDir library]
+-	if {0} {
+-	    lappend dirs [file join $grandParentDir library]
+-	    lappend dirs [file join $grandParentDir $basename$patch library]
+-	    lappend dirs [file join [file dirname $grandParentDir] \
+-			      $basename$patch library]
+-	}
++	#set parentDir [file dirname [file dirname [info nameofexecutable]]]
++	#set grandParentDir [file dirname $parentDir]
++	#lappend dirs [file join $parentDir lib $basename$version]
++	#lappend dirs [file join $grandParentDir lib $basename$version]
++	#lappend dirs [file join $parentDir library]
++	#if {0} {
++	#    lappend dirs [file join $grandParentDir library]
++	#    lappend dirs [file join $grandParentDir $basename$patch library]
++	#    lappend dirs [file join [file dirname $grandParentDir] \
++	#		      $basename$patch library]
++	#}
+     }
+     # make $dirs unique, preserving order
+     array set seen {}
+diff -rubBaN tcl.orig/library/init.tcl tcl/library/init.tcl
+--- tcl.orig/library/init.tcl	2024-08-11 18:39:14.631429738 +0000
++++ tcl/library/init.tcl	2024-08-11 18:39:30.681440039 +0000
+@@ -57,18 +57,18 @@
+ 		lappend ::auto_path $Dir
+ 	    }
+ 	}
+-	set Dir [file join [file dirname [file dirname \
+-		[info nameofexecutable]]] lib]
+-	if {$Dir ni $::auto_path} {
+-	    lappend ::auto_path $Dir
+-	}
+-	if {[info exists ::tcl_pkgPath]} { catch {
+-	    foreach Dir $::tcl_pkgPath {
+-		if {$Dir ni $::auto_path} {
+-		    lappend ::auto_path $Dir
+-		}
+-	    }
+-	}}
++	#set Dir [file join [file dirname [file dirname \
++	#	[info nameofexecutable]]] lib]
++	#if {$Dir ni $::auto_path} {
++	#    lappend ::auto_path $Dir
++	#}
++	#if {[info exists ::tcl_pkgPath]} { catch {
++	#    foreach Dir $::tcl_pkgPath {
++	#	if {$Dir ni $::auto_path} {
++	#	    lappend ::auto_path $Dir
++	#	}
++	#    }
++	#}}
+
+ 	variable Path [encoding dirs]
+ 	set Dir [file join $::tcl_library encoding]
+diff -rubBaN tcl.orig/library/tm.tcl tcl/library/tm.tcl
+--- tcl.orig/library/tm.tcl	2024-08-11 18:39:14.631429738 +0000
++++ tcl/library/tm.tcl	2024-08-11 18:39:30.681440039 +0000
+@@ -321,10 +321,11 @@
+
+     # Note that we're using [::list], not [list] because [list] means
+     # something other than [::list] in this namespace.
+-    roots [::list \
+-	    [file dirname [info library]] \
+-	    [file join [file dirname [file dirname $exe]] lib] \
+-	    ]
++    #roots [::list \
++    # 	    [file dirname [info library]] \
++    # 	    [file join [file dirname [file dirname $exe]] lib] \
++    # 	    ]
++    roots [::list [file dirname [info library]]]
+
+     if {$tcl_platform(platform) eq "windows"} {
+ 	set sep ";"

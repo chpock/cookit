@@ -21,8 +21,8 @@ proc ::installkit::stats { args } {
             -readonly $fname $root
     } {
         set root    $::installkit::root
-        set fsindex $::installkit::cookfsindex
-        set pages   $::installkit::cookfspages
+        set fsindex [[file attributes $::installkit::root -handle] getindex]
+        set pages   [[file attributes $::installkit::root -handle] getpages]
         set fsize   [file size [info nameofexecutable]]
     }
 
