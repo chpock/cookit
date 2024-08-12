@@ -169,7 +169,7 @@ set expected [dict create {*}{
             }
         }
     }
-    Windows {
+    Windows-x86 {
         installkit-deps {
             installkit_raw.exe {
                 ADVAPI32.dll
@@ -199,6 +199,56 @@ set expected [dict create {*}{
                 WS2_32.dll
                 WTSAPI32.dll
                 bcrypt.dll
+                credui.dll
+                msvcrt.dll
+                ole32.dll
+                pdh.dll
+            }
+        }
+        libs-deps {
+            Tktable*.dll {
+                KERNEL32.dll
+                msvcrt.dll
+            }
+            tkdnd*.dll {
+                KERNEL32.dll
+                SHELL32.dll
+                USER32.dll
+                msvcrt.dll
+                ole32.dll
+            }
+        }
+    }
+    Windows-x86_64 {
+        installkit-deps {
+            installkit_raw.exe {
+                ADVAPI32.dll
+                COMCTL32.DLL
+                CRYPT32.dll
+                GDI32.dll
+                IMM32.DLL
+                IPHLPAPI.DLL
+                KERNEL32.dll
+                MPR.DLL
+                NETAPI32.dll
+                OLEAUT32.dll
+                POWRPROF.dll
+                PSAPI.DLL
+                RPCRT4.dll
+                SETUPAPI.dll
+                SHELL32.dll
+                Secur32.dll
+                USER32.dll
+                USERENV.dll
+                UxTheme.dll
+                VERSION.dll
+                WINMM.DLL
+                WINSPOOL.DRV
+                WINTRUST.dll
+                WS2_32.dll
+                WTSAPI32.dll
+                bcrypt.dll
+                COMDLG32.DLL
                 credui.dll
                 msvcrt.dll
                 ole32.dll

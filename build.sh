@@ -82,6 +82,9 @@ progress() {
             \[ERROR\]*|Test\ file\ error:*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
                 ;;
+            make:\ \*\*\**)
+                printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
+                ;;
             make\[*|*Tests\ running\ in\ working\ dir:*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m %s\n' "$COLOR" "$LABEL" "$line"
                 ;;
@@ -116,7 +119,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     done
 
     if [ -z "$BUILD_PLATFORMS" ]; then
-        BUILD_PLATFORMS="Windows MacOS-X Linux-x86 Linux-x86_64"
+        BUILD_PLATFORMS="Windows-x86 Windows-x86_64 MacOS-X Linux-x86 Linux-x86_64"
         BUILD_ALL="$BUILD_HOME/all"
         rm -rf "$BUILD_ALL" "$BUILD_HOME/installkit"-*
     fi
@@ -186,12 +189,25 @@ logcmd() {
     "$@"
 }
 
+retry() {
+    RETRY_COUNT=0
+    while ! "$@"; do
+        if [ $RETRY_COUNT -ge 10 ]; then
+            error "Retry failed"
+            exit 1
+        fi
+        RETRY_COUNT=$(( RETRY_COUNT + 1 ))
+        log "Retry in 5 seconds"
+        sleep 5
+    done
+}
+
 [ "$1" != "build-local" ] || BUILD_LOCAL=1
 PLATFORM="$2"
 shift
 shift
 
-if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows" ]; then
+if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows-x86" ] || [ "$PLATFORM" = "Windows-x86_64" ]; then
 
     log "Start local build..."
 
@@ -231,11 +247,11 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows" ]; then
             CXX="clang"
             export CXX
             ;;
-        Windows)
+        Windows-x86)
             if [ -n "$IS_WSL" ]; then
                 # WSL env
                 # dependencies
-                sudo apt-get install -y tcl make gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686
+                retry sudo apt-get install -y tcl make gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686
                 sudo apt-get install -y ccache 2>/dev/null || true
             else
                 # Cygwin env
@@ -251,6 +267,28 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows" ]; then
                 done
             fi
             set -- "$@" --toolchain-prefix "/usr/bin/i686-w64-mingw32-"
+            [ "$MAKE_PARALLEL" != "true" ] || _MAKE_PARALLEL="-j8"
+            ;;
+        Windows-x86_64)
+            if [ -n "$IS_WSL" ]; then
+                # WSL env
+                # dependencies
+                retry sudo apt-get install -y tcl make gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+                sudo apt-get install -y ccache 2>/dev/null || true
+            else
+                # Cygwin env
+                # dependencies
+                for DEP in mingw64-x86-64-gcc-core mingw64-x86-64-gcc-g++; do
+                    if [ "$(cygcheck -c -n "$DEP" 2>/dev/null)" = "$DEP" ]; then
+                        log "dependency '$DEP' - OK"
+                    else
+                        error "Error: dependency '$DEP' - not installed"
+                        error "Please run: setup-x86_64.exe -q -P $DEP"
+                        exit 1
+                    fi
+                done
+            fi
+            set -- "$@" --toolchain-prefix "/usr/bin/x86_64-w64-mingw32-"
             [ "$MAKE_PARALLEL" != "true" ] || _MAKE_PARALLEL="-j8"
             ;;
         Linux-x86)
@@ -289,7 +327,10 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows" ]; then
     make $MAKE_PARALLEL test
     make $MAKE_PARALLEL dist
 
-    if [ "$PLATFORM" = "Windows" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
+    if [ "$PLATFORM" = "Windows-x86" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
+        mv "$BUILD_DIR/$PLATFORM.zip" "$BUILD_DIR/.."
+        ok "Done."
+    elif [ "$PLATFORM" = "Windows-x86_64" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
         mv "$BUILD_DIR/$PLATFORM.zip" "$BUILD_DIR/.."
         ok "Done."
     else

@@ -1,3 +1,6 @@
+2024-08-12 Konstantin Kushnir <chpock@gmail.com>
+	* Add Windows x86_64 platform
+
 2024-08-11 Konstantin Kushnir <chpock@gmail.com>
 	* Improve compiler optimization options
 	* Improve startup and remove bootstrap code. Initialize interp only by

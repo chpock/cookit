@@ -136,8 +136,8 @@ fi
 COMPILER="GCC"
 
 case "$IJ_PLATFORM" in
-  Windows)
-    UPX="$ABS_TOP_SRCDIR/src/installkit/tools/$IJ_PLATFORM/upx.exe"
+  Windows-x86)
+    UPX="$ABS_TOP_SRCDIR/src/installkit/tools/Windows/upx.exe"
     TCL_SYSTEM=win
     TCLSH="\$(PREFIX)/bin/tclsh86s"
     TARGETS="$TARGETS thread"
@@ -155,6 +155,28 @@ case "$IJ_PLATFORM" in
         CYGPATH="cygpath -m"
     fi
     AC_HOST="i686-w64-mingw32"
+    SO_EXT=".dll"
+    ;;
+
+  Windows-x86_64)
+    UPX="$ABS_TOP_SRCDIR/src/installkit/tools/Windows/upx.exe"
+    TCL_SYSTEM=win
+    TCLSH="\$(PREFIX)/bin/tclsh86s"
+    TARGETS="$TARGETS thread"
+    TK_SHARED_FLAG="--disable-shared --enable-static"
+    if uname -r | grep -q -- '-WSL2'; then
+        WINDOWS_SYSTEM=WSL
+        CYGPATH="wslpath -w"
+        if ! command -v tclsh >/dev/null 2>&1; then
+            echo "Error: could not find native tclsh command. It is required for Tcl build."
+            echo "Install it using native package manager"
+            exit 1
+        fi
+    else
+        WINDOWS_SYSTEM=Cygwin
+        CYGPATH="cygpath -m"
+    fi
+    AC_HOST="x86_64-w64-mingw32"
     SO_EXT=".dll"
     ;;
 
@@ -245,7 +267,7 @@ UPX="$UPX $UPX_ARGS"
 TARGETS="$TARGETS tktable tkdnd"
 
 case "$IJ_PLATFORM" in
-  Windows)
+  Windows-*)
     TARGETS="$TARGETS twapi"
     ;;
 esac

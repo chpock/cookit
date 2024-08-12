@@ -13,7 +13,7 @@ ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon thread
 INSTALLKIT_ROOT = /installkitvfs
 
 # Required for WSL
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 
     WSLENV = TCL_LIBRARY/p:INSTALLKIT_CONSOLE:INSTALLKIT_GUI:INSTALLKIT_BOOTSTRAP:TCLTEST_OPTIONS:INSTALLKIT_VERSION
     export WSLENV
@@ -69,7 +69,9 @@ $(KIT_PREFIX)/libs-deps.txt: $(TARGETS)
 tcl: work/stamp-tcl
 work/stamp-tcl: work/stamp-zlib
 	mkdir -p work/tcl
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+# Lock sources, since we can access the same sources for two build processes (x86 and x86_64 platforms)
+	while [ -e "$(TOP_SRCDIR)/src/tcl/.lock_installkit" ]; do sleep 1; done; touch "$(TOP_SRCDIR)/src/tcl/.lock_installkit"
 # See details about this patch in its file.
 	patch -N -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tcl" \
 	  < "$(TOP_SRCDIR)"/src/tcl-010-Windows-fix-CFLAGS.patch
@@ -84,10 +86,12 @@ endif
 		--with-encoding=utf-8 \
 		--disable-shared --enable-static \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # Revert the patch to keep source tree clean
 	patch -R -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tcl" \
 	  < "$(TOP_SRCDIR)"/src/tcl-010-Windows-fix-CFLAGS.patch
+# Unlock sources
+	rm -f "$(TOP_SRCDIR)/src/tcl/.lock_installkit"
 endif
 ifeq ($(WINDOWS_SYSTEM),Cygwin)
 # See details about this patch in its file.
@@ -102,7 +106,7 @@ endif
 		work/tcl/Makefile
 #	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/src/zlib#' \
 #		work/tcl/Makefile
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # On Windows, Tcl uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking tclsh,
 # but ignores LDFLAGS. This means that our zlib will be ignored in tclsh.
 # Let's fix that by adding $(LDFLAGS) to LDFLAGS_CONSOLE / LDFLAGS_WINDOW.
@@ -130,7 +134,7 @@ endif
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tcl/Makefile && \
 		cd work/tcl && $(MAKE) install-headers || : no-op
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # Fix for the build with MinGW. Library is specified in wrong format.
 	$(SEDI) -e 's/ lib\(tcl[^.]\+\)\.a/ -l\1/g' $(PREFIX)/lib/tclConfig.sh
 endif
@@ -139,7 +143,9 @@ endif
 tk: work/stamp-tk
 work/stamp-tk: work/stamp-tcl
 	mkdir -p work/tk
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+# Lock sources, since we can access the same sources for two build processes (x86 and x86_64 platforms)
+	while [ -e "$(TOP_SRCDIR)/src/tk/.lock_installkit" ]; do sleep 1; done; touch "$(TOP_SRCDIR)/src/tk/.lock_installkit"
 # See details about this patch in its file.
 	patch -N -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tk" \
 	  < "$(TOP_SRCDIR)"/src/tk-010-Windows-fix-CFLAGS.patch
@@ -157,16 +163,18 @@ endif
 		$(if $(filter unix,$(TCL_SYSTEM)),--disable-rpath) \
 		$(TK_SHARED_FLAG) \
 		$(AQUA_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # Revert the patch to keep source tree clean
 	patch -R -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/tk" \
 	  < "$(TOP_SRCDIR)"/src/tk-010-Windows-fix-CFLAGS.patch
+# Unlock sources
+	rm -f "$(TOP_SRCDIR)/src/tk/.lock_installkit"
 endif
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # see details in the patch
 	patch -N -p1 -d "$(TOP_SRCDIR)/src/tk" < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
 endif
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # On Windows, Tk uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking wish,
 # but ignores LDFLAGS. This means that our zlib will be ignored in wish.
 # Let's fix that by adding $(LDFLAGS) to LDFLAGS_CONSOLE / LDFLAGS_WINDOW.
@@ -270,7 +278,7 @@ work/stamp-tkcon:
 	touch $@
 
 installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread $(if $(filter $(IJ_PLATFORM),Windows),work/stamp-twapi)
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread $(if $(filter $(findstring Windows,$(IJ_PLATFORM)),Windows),work/stamp-twapi)
 	mkdir -p work/installkit
 	cd work/installkit || exit; \
 	 test -f Makefile \
@@ -288,7 +296,7 @@ work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp
 		--with-strip-command="$(STRIP) $(STRIPFLAGS)" \
 		--with-upx-command="$(UPX)" \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/installkit && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)" LDFLAGS_DEFAULT="-flto -fwhole-program"
+	cd work/installkit && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)"
 	touch $@
 
 tktable: work/stamp-tktable
@@ -304,7 +312,7 @@ work/stamp-tktable: work/stamp-tcl work/stamp-tk
 		--with-tk=$(PREFIX)/lib \
 		$(THREADS_FLAG)
 # Make dll file executable on windows
-	$(if $(filter $(IJ_PLATFORM),Windows),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tktable/Makefile,@:)
+	$(if $(filter $(findstring Windows,$(IJ_PLATFORM)),Windows),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tktable/Makefile,@:)
 # Don't include python source code
 	$(SEDI) 's/[^[:space:]]*tktable.py//' work/tktable/Makefile
 	cd work/tktable && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)"
@@ -331,7 +339,7 @@ ifeq ($(IJ_PLATFORM),MacOS-X)
 # Let's set it directly in Makefile.
 	$(SEDI) -e 's/^CFLAGS[[:space:]]*=/& -DMAC_OS_X_VERSION_10_13=101300/' work/tkdnd/Makefile
 endif
-ifeq ($(IJ_PLATFORM),Windows)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # Patch Makefile on Windows to disable libwinpthread-1.dll dependency. Setting
 # these parameters as LDFLAGS won't help because they must be at the end
 # of the linking command.
@@ -339,8 +347,18 @@ ifeq ($(IJ_PLATFORM),Windows)
 		work/tkdnd/Makefile
 endif
 # Make dll file executable on windows
-	$(if $(filter Windows,$(IJ_PLATFORM)),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tkdnd/Makefile,@:)
-	cd work/tkdnd && $(MAKE) all install-binaries
+	$(if $(filter Windows,$(findstring Windows,$(IJ_PLATFORM))),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tkdnd/Makefile,@:)
+# On Windows x86_64 platform build with -fno-asynchronous-unwind-tables
+# failed due to some exception errors.
+#
+# /usr/bin/x86_64-w64-mingw32-ld: TkDND_OleDND.o:TkDND_OleDND.c:(.text$_ZN16TkDND_DropTargetD1Ev[_ZN16TkDND_DropTargetD1Ev]+0x4): undefined reference to `__gxx_personality_sj0'
+# /usr/bin/x86_64-w64-mingw32-ld: TkDND_OleDND.o:TkDND_OleDND.c:(.text$_ZN16TkDND_DropTargetD1Ev[_ZN16TkDND_DropTargetD1Ev]+0x35): undefined reference to `_Unwind_SjLj_Register'
+# /usr/bin/x86_64-w64-mingw32-ld: TkDND_OleDND.o:TkDND_OleDND.c:(.text$_ZN16TkDND_DropTargetD1Ev[_ZN16TkDND_DropTargetD1Ev]+0x93): undefined reference to `_Unwind_SjLj_Unregister'
+# ... and so on.
+#
+# We will workaround this by overriding make variable SHLIB_CFLAGS
+# and enabling asynchronous table unwinding.
+	cd work/tkdnd && $(MAKE) all install-binaries $(if $(filter Windows-x86_64,$(IJ_PLATFORM)),SHLIB_CFLAGS="-fasynchronous-unwind-tables")
 	$(STRIP) $(STRIPFLAGS) "$(KIT_PREFIX)"/lib/tkdnd*/*$(SO_EXT)
 	touch $@
 
@@ -359,11 +377,15 @@ work/stamp-twapi: work/stamp-tcl
 		--enable-shared=no \
 		$(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/twapi && $(MAKE) all install install-lib-binaries CFLAGS="$(CFLAGS)"
-	cp -f work/twapi/twapi_entry.tcl work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
-	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
 # revert the patch to keep source tree clean
 	patch -R -p1 --no-backup-if-mismatch -d "$(TOP_SRCDIR)/src/twapi" \
 	 < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
+	cp -f work/twapi/twapi_entry.tcl work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
+ifeq ($(IJ_PLATFORM),Windows-x86)
+	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
+else
+	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_amd64/*.lib $(PREFIX)/lib/twapi*
+endif
 	touch $@
 
 zlib: work/stamp-zlib

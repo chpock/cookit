@@ -74,7 +74,7 @@ case "$1" in
         skip "encoding-24.*"
         skip io-1.8 io-1.9 io-6.55
         case "$PLATFORM" in
-            Windows)
+            Windows-*)
                 # These tests call the interpreter itself, and they get stuck
                 # because of Tk.
                 skip compile-13.1 event-7.5

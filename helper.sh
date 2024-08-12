@@ -52,7 +52,7 @@ if test -z "$PLATFORM"; then
         esac
     fi
 
-    if [ "$PLATFORM" = "MacOS-X" ] || [ "$PLATFORM" = "Windows" ]; then
+    if [ "$PLATFORM" = "MacOS-X" ]; then
         if [ "$MACHINE" = "x86" ]; then
             unset MACHINE
         fi
