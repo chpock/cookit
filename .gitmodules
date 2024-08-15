@@ -37,3 +37,6 @@
 [submodule "src/tkcon"]
 	path = src/tkcon
 	url = https://github.com/wjoye/tkcon.git
+[submodule "src/tdom"]
+	path = src/tdom
+	url = https://github.com/chpock/tdom.git

@@ -64,6 +64,7 @@ Tcl_AppInitProc Tk_Init;
 #endif /* __WIN32__ */
 Tcl_AppInitProc Vfs_Init;
 Tcl_AppInitProc Mtls_Init;
+Tcl_AppInitProc Tdom_Init;
 
 #ifdef __WIN32__
 Tcl_AppInitProc Registry_Init;
@@ -190,6 +191,7 @@ static int Installkit_Startup(Tcl_Interp *interp) {
     Tcl_StaticPackage(0, "vfs", Vfs_Init, NULL);
     Tcl_StaticPackage(0, "Cookfs", Cookfs_Init, NULL);
     Tcl_StaticPackage(0, "mtls", Mtls_Init, NULL);
+    Tcl_StaticPackage(0, "tdom", Tdom_Init, NULL);
 
 #ifdef __WIN32__
     Tcl_StaticPackage(0, "Tk", Tk_Init, NULL);

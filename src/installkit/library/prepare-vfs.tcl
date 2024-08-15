@@ -299,6 +299,21 @@ proc addMtls { { optional 0 } } {
     genStaticPkgIndex $dir mtls [package present mtls]
 }
 
+proc addTdom { { optional 0 } } {
+    puts "* prepare the tdom package:"
+    set dir [glob -nocomplain -type d -directory $::rootLibDirectory "tdom*"]
+    if { ![llength $dir] } {
+        directoryExists [file join $::rootLibdirectory "tdom*"]
+        return
+    }
+
+    addFile [file join $dir tdom.tcl]
+
+    load {} tdom
+    addFile [file join $dir pkgIndex.tcl] "package ifneeded tdom\
+        [package present tdom] \"load {} tdom; source \[list \[file join \$dir tdom.tcl\]\]\""
+}
+
 proc addTkcon { { optional 0 } } {
     puts "* prepare the tkcon package:"
     set dir [glob -nocomplain -type d -directory $::rootLibDirectory "tkcon*"]
@@ -377,6 +392,7 @@ addMtls
 if { [::tcl::pkgconfig get threaded] } addThread
 addInstallkit
 addTkcon
+addTdom
 
 if { $::tcl_platform(platform) eq "windows" } {
     addTwapi

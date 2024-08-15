@@ -129,6 +129,16 @@ AS_IF([test "${TCL_THREADS}" = 1], [
     AC_MSG_RESULT([not required for threadless builds])
 ])
 
+AC_ARG_WITH(lib-tdom, [ --with-lib-tdom library file for tdom package ], LIB_TDOM_FILE=${withval})
+AC_MSG_CHECKING([for tdom package library file])
+AS_IF([test -f "${LIB_TDOM_FILE}"], [
+    AC_MSG_RESULT([found ${LIB_TDOM_FILE}])
+    TEA_ADD_LIBS([${LIB_TDOM_FILE}])
+    LIB_TDOM_DIR="`dirname "${LIB_TDOM_FILE}"`"
+], [
+    AC_MSG_ERROR([could not find ${LIB_TDOM_FILE}])
+])
+
 AC_ARG_WITH(lib-vfs, [ --with-lib-vfs library file for VFS package ], LIB_VFS_FILE=${withval})
 AC_MSG_CHECKING([for VFS package library file])
 AS_IF([test -f "${LIB_VFS_FILE}"], [

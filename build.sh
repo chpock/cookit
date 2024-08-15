@@ -85,7 +85,7 @@ progress() {
             make:\ \*\*\**)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m \033[91m%s\033[0m\n' "$COLOR" "$LABEL" "$line"
                 ;;
-            make\[*|*Tests\ running\ in\ working\ dir:*)
+            make\[*|*Tests\ running\ in\ working\ dir:*|Tests\ located\ in:*)
                 printf '\033[90m[\033[%dm%s\033[90m]\033[0m %s\n' "$COLOR" "$LABEL" "$line"
                 ;;
             *\ warning:\ *)

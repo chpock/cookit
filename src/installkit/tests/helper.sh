@@ -24,6 +24,10 @@ notfile() {
 }
 
 case "$1" in
+    test-tdom)
+        # Skip tests that depend on files that do not exist in the test directory
+        skip schema-5.5 schema-23.1 schema-24.1
+        ;;
     test-tclmtls)
         # Skip unstable tests
         skip "mtls-badssl-*"

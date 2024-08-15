@@ -783,6 +783,7 @@ with_tcl8
 with_tk
 with_lib_twapi
 with_lib_thread
+with_lib_tdom
 with_lib_vfs
 with_lib_cookfs
 with_lib_mtls
@@ -1438,6 +1439,7 @@ Optional Packages:
   --with-tk               directory containing tk configuration (tkConfig.sh)
  --with-lib-twapi library file for twapi package
  --with-lib-thread library file for Thread package
+ --with-lib-tdom library file for tdom package
  --with-lib-vfs library file for VFS package
  --with-lib-cookfs library file for CookFS package
  --with-lib-mtls library file for mtls package
@@ -5820,6 +5822,39 @@ else $as_nop
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not required for threadless builds" >&5
 printf "%s\n" "not required for threadless builds" >&6; }
+
+fi
+
+
+# Check whether --with-lib-tdom was given.
+if test ${with_lib_tdom+y}
+then :
+  withval=$with_lib_tdom; LIB_TDOM_FILE=${withval}
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for tdom package library file" >&5
+printf %s "checking for tdom package library file... " >&6; }
+if test -f "${LIB_TDOM_FILE}"
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: found ${LIB_TDOM_FILE}" >&5
+printf "%s\n" "found ${LIB_TDOM_FILE}" >&6; }
+
+    vars="${LIB_TDOM_FILE}"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.[lL][iI][bB]$/-l\1/'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
+    LIB_TDOM_DIR="`dirname "${LIB_TDOM_FILE}"`"
+
+else $as_nop
+
+    as_fn_error $? "could not find ${LIB_TDOM_FILE}" "$LINENO" 5
 
 fi
 
