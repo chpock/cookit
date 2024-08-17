@@ -356,13 +356,25 @@ installkit_raw: $(PKG_OBJECTS)
 
 installkit_raw.exe: $(PKG_OBJECTS) installkit.user.res.o
 	rm -f "$@"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS) $(TCL_LD_FLAGS)
+	$(CC) -mwindows $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS) $(TCL_LD_FLAGS)
+	$(STRIP_COMMAND) "$@"
+	chmod +x $@
+
+installkit_raw.com: $(PKG_OBJECTS) installkit.user.res.o
+	rm -f "$@"
+	$(CC) -mconsole $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
 installkitA_raw.exe: $(PKG_OBJECTS) installkit.admin.res.o
 	rm -f "$@"
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS) $(TCL_LD_FLAGS)
+	$(CC) -mwindows $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS) $(TCL_LD_FLAGS)
+	$(STRIP_COMMAND) "$@"
+	chmod +x $@
+
+installkitA_raw.com: $(PKG_OBJECTS) installkit.admin.res.o
+	rm -f "$@"
+	$(CC) -mconsole $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
@@ -390,12 +402,26 @@ endif
 	cat installkit_vfs.image >> "$@"
 	chmod +x $@
 
+installkit.com: installkit_raw.com installkit_vfs.image
+	rm -f "$@"
+	cp -f "$<" "$@"
+ifneq ($(UPX_COMMAND),)
+	$(UPX_COMMAND) "$@"
+endif
+	cat installkit_vfs.image >> "$@"
+	chmod +x $@
+
 installkitU: installkit_raw installkit_vfs.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
 installkitU.exe: installkit_raw.exe installkit_vfs.image
+	rm -f "$@"
+	cat $^ > $@
+	chmod +x $@
+
+installkitU.com: installkit_raw.com installkit_vfs.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
@@ -409,7 +435,21 @@ endif
 	cat installkit_vfs.image >> "$@"
 	chmod +x $@
 
+installkitA.com: installkitA_raw.com installkit_vfs.image
+	rm -f "$@"
+	cp -f "$<" "$@"
+ifneq ($(UPX_COMMAND),)
+	$(UPX_COMMAND) "$@"
+endif
+	cat installkit_vfs.image >> "$@"
+	chmod +x $@
+
 installkitUA.exe: installkitA_raw.exe installkit_vfs.image
+	rm -f "$@"
+	cat $^ > $@
+	chmod +x $@
+
+installkitUA.com: installkitA_raw.com installkit_vfs.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@

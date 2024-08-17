@@ -400,6 +400,7 @@ skipNonInteractive:
     // Release argvObj object that was created above. We don't need it anymore.
     Tcl_DecrRefCount(argvObj);
 
+    IkDebug("Installkit_Startup: before exit...");
     if (!g_isConsoleMode) {
         IkDebug("Installkit_Startup: init GUI...");
 #ifdef __WIN32__
@@ -443,14 +444,34 @@ error:
 
 #ifdef __WIN32__
 
+// This function is used to determine whether the current application
+// is a GUI or a console. As for now, it check checks if if console is
+// attached to the current process. This is not a 100% solution,
+// as a console application may not have a console if it starts
+// with CREATE_NO_WINDOW or is a Windows service. Since we may add
+// more checks in the future, it has been placed in a separate function.
+static inline int is_console(void) {
+    if (GetConsoleWindow() == NULL) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
 int
 _tmain(int argc, TCHAR *argv[]) {
 
     g_argc = argc;
     g_argv = argv;
 
-    g_isConsoleMode = GetEnvironmentVariableA("INSTALLKIT_CONSOLE",
-        NULL, 0) == 0 ? 0 : 1;
+    if (is_console) {
+        g_isConsoleMode = GetEnvironmentVariableA("INSTALLKIT_GUI",
+            NULL, 0) == 0 ? 1 : 0;
+    } else {
+        g_isConsoleMode = GetEnvironmentVariableA("INSTALLKIT_CONSOLE",
+            NULL, 0) == 0 ? 0 : 1;
+    }
+
     g_isBootstrap = GetEnvironmentVariableA("INSTALLKIT_BOOTSTRAP",
         NULL, 0) == 0 ? 0 : 1;
 

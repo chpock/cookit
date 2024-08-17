@@ -191,9 +191,12 @@ AC_SUBST(STRIP_COMMAND)
 
 bin_BINARIES="${PACKAGE_NAME}${EXEEXT} ${PACKAGE_NAME}U${EXEEXT}"
 if test "${TEA_PLATFORM}" = "windows" ; then
-    TEA_ADD_LIBS([-mwindows -pipe -static-libgcc -municode])
+    TEA_ADD_LIBS([-pipe -static-libgcc -municode])
     TEA_ADD_CFLAGS([-DUNICODE -D_UNICODE])
     bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A${EXEEXT} ${PACKAGE_NAME}UA${EXEEXT}"
+    # Add console binaries
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}.com ${PACKAGE_NAME}U.com"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A.com ${PACKAGE_NAME}UA.com"
     # These are CFLAGS and LIBS from twapi
     TEA_ADD_CFLAGS([-DWINVER=0x0501 -D_WIN32_WINNT=0x0501 -DPSAPI_VERSION=1])
     # These libs must be after twapi static library

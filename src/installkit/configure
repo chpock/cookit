@@ -6008,7 +6008,7 @@ fi
 bin_BINARIES="${PACKAGE_NAME}${EXEEXT} ${PACKAGE_NAME}U${EXEEXT}"
 if test "${TEA_PLATFORM}" = "windows" ; then
 
-    vars="-mwindows -pipe -static-libgcc -municode"
+    vars="-pipe -static-libgcc -municode"
     for i in $vars; do
 	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
 	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
@@ -6023,6 +6023,9 @@ if test "${TEA_PLATFORM}" = "windows" ; then
 
 
     bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A${EXEEXT} ${PACKAGE_NAME}UA${EXEEXT}"
+    # Add console binaries
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}.com ${PACKAGE_NAME}U.com"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A.com ${PACKAGE_NAME}UA.com"
     # These are CFLAGS and LIBS from twapi
 
     PKG_CFLAGS="$PKG_CFLAGS -DWINVER=0x0501 -D_WIN32_WINNT=0x0501 -DPSAPI_VERSION=1"
