@@ -16,7 +16,10 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
 
 lappend auto_path [file join [file dirname [info nameofexecutable]] .. lib]
 
-test load-1 {Prepare VFS with SO file(s)} -setup {} -body {
+# These tests are disabled as for now because we don't have known
+# shared object to test its load.
+
+test load-1 {Prepare VFS with SO file(s)} -setup { } -constraints { noKnownSharedObject } -body {
     set vfs [tcltest::makeFile {} load.vfs]
     ::cookfs::Mount $vfs $vfs
     # Use Tktable library for tests
@@ -57,7 +60,7 @@ if { [info exists vfs] } {
     set base_script [join $base_script \n]
 }
 
-test load-2.1 {Load shared object from VFS} -constraints { [info exists vfs] } -setup {} -body {
+test load-2.1 {Load shared object from VFS} -constraints { noKnownSharedObject } -setup {} -body {
     set script $base_script
     append script {
         load $so_vfs1 $prefix
@@ -72,7 +75,7 @@ test load-2.1 {Load shared object from VFS} -constraints { [info exists vfs] } -
     file delete -force $script
 }
 
-test load-2.1 {Load 2 shared objects from VFS} -constraints { [info exists vfs] } -setup {} -body {
+test load-2.1 {Load 2 shared objects from VFS} -constraints { noKnownSharedObject } -setup {} -body {
     set script $base_script
     append script {
         load $so_vfs1 $prefix

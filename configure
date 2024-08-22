@@ -264,8 +264,6 @@ fi
 
 UPX="$UPX $UPX_ARGS"
 
-TARGETS="$TARGETS tktable tkdnd"
-
 case "$IJ_PLATFORM" in
   Windows-*)
     TARGETS="$TARGETS twapi"

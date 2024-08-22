@@ -333,6 +333,18 @@ proc addTkcon { { optional 0 } } {
         $tkcon_version \[list source \[file join \$dir tkcon.tcl\]\]"
 }
 
+proc addTclhttps { { optional 0 } } {
+    puts "* prepare the tclhttps package:"
+    set dir [glob -nocomplain -type d -directory $::rootLibDirectory "tclhttps*"]
+    if { ![llength $dir] } {
+        directoryExists [file join $::rootLibdirectory "tclhttps*"]
+        return
+    }
+
+    addFile [file join $dir https.tcl]
+    addFile [file join $dir pkgIndex.tcl]
+}
+
 proc addInstallkit { { optional 0 } } {
 
     puts "* prepare the installkit package:"
@@ -393,6 +405,7 @@ if { [::tcl::pkgconfig get threaded] } addThread
 addInstallkit
 addTkcon
 addTdom
+addTclhttps
 
 if { $::tcl_platform(platform) eq "windows" } {
     addTwapi

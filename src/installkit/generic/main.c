@@ -464,7 +464,7 @@ _tmain(int argc, TCHAR *argv[]) {
     g_argc = argc;
     g_argv = argv;
 
-    if (is_console) {
+    if (is_console()) {
         g_isConsoleMode = GetEnvironmentVariableA("INSTALLKIT_GUI",
             NULL, 0) == 0 ? 1 : 0;
     } else {

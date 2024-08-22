@@ -7,7 +7,7 @@ export RC
 export STRIP
 export PKG_CONFIG
 
-CHECK_TARGETS = tcl tk tclvfs cookfs installkit tktable tkdnd twapi tclmtls tdom
+CHECK_TARGETS = tcl tk tclvfs cookfs installkit twapi tclmtls tdom tclhttps
 ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon thread
 
 INSTALLKIT_ROOT = /installkitvfs
@@ -30,13 +30,10 @@ endif
 
 .PHONY: all clean test dist distclean
 
-all: $(TARGETS) $(KIT_PREFIX)/libs-deps.txt
+all: $(TARGETS)
 	@echo
 	@echo "Now type: make dist"
 	@echo
-
-$(KIT_PREFIX)/libs-deps.txt: $(TARGETS)
-	"$(TOP_SRCDIR)/src/installkit"/tools/gendeps.sh $(AC_HOST) "$(KIT_PREFIX)/lib" > "$@"
 
 # Note #1.
 
@@ -237,6 +234,11 @@ work/stamp-tclmtls:
 	cd work/tclmtls && $(MAKE) all install CFLAGS="$(CFLAGS)"
 	touch $@
 
+tclhttps: work/stamp-tclhttps
+work/stamp-tclhttps:
+	cd $(TOP_SRCDIR)/src/tclhttps && make install PREFIX="$(PREFIX)"
+	touch $@
+
 tkcon: work/stamp-tkcon
 work/stamp-tkcon:
 	mkdir -p work/tkcon
@@ -265,7 +267,7 @@ work/stamp-tdom: work/stamp-tcl
 	touch $@
 
 installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread work/stamp-tdom $(if $(filter $(findstring Windows,$(IJ_PLATFORM)),Windows),work/stamp-twapi)
+work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread work/stamp-tdom work/stamp-tclhttps $(if $(filter $(findstring Windows,$(IJ_PLATFORM)),Windows),work/stamp-twapi)
 	mkdir -p work/installkit
 	cd work/installkit; \
 	    test -f Makefile \
@@ -285,69 +287,6 @@ work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp
 	        --with-upx-command="$(UPX)" \
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/installkit && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)"
-	touch $@
-
-tktable: work/stamp-tktable
-work/stamp-tktable: work/stamp-tcl work/stamp-tk
-	mkdir -p work/tktable
-	cd work/tktable; \
-	    test -f config.status \
-	    || $(TOP_SRCDIR)/src/tktable/configure \
-	        --build=$(AC_HOST) --host=$(AC_HOST) \
-	        --prefix=$(KIT_PREFIX) \
-	        --exec-prefix=$(KIT_PREFIX) \
-	        --with-tcl=$(PREFIX)/lib \
-	        --with-tk=$(PREFIX)/lib \
-	        $(THREADS_FLAG)
-# Make dll file executable on windows
-	$(if $(filter $(findstring Windows,$(IJ_PLATFORM)),Windows),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tktable/Makefile,@:)
-# Don't include python source code
-	$(SEDI) 's/[^[:space:]]*tktable.py//' work/tktable/Makefile
-	cd work/tktable && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)"
-	$(STRIP) $(STRIPFLAGS) "$(KIT_PREFIX)"/lib/Tktable*/*$(SO_EXT)
-	touch $@
-
-tkdnd: work/stamp-tkdnd
-work/stamp-tkdnd: work/stamp-tcl work/stamp-tk
-	mkdir -p work/tkdnd
-	cd work/tkdnd; \
-	    test -f config.status \
-	    || $(TOP_SRCDIR)/src/tkdnd/configure \
-	        --build=$(AC_HOST) --host=$(AC_HOST) \
-	        --prefix=$(KIT_PREFIX) \
-	        --exec-prefix=$(KIT_PREFIX) \
-	        --with-tcl=$(PREFIX)/lib \
-	        --with-tk=$(PREFIX)/lib \
-	        $(THREADS_FLAG)
-ifeq ($(IJ_PLATFORM),MacOS-X)
-# This patch is only required for MacOS X i386 platform
-	$(SEDI) -e 's/-fobjc-arc//g' work/tkdnd/Makefile
-# The macOS version on my build machine is 10.12, and the SDK doesn't have
-# definitions for 10.13 and above. However, tkdnd sources expect them.
-# Let's set it directly in Makefile.
-	$(SEDI) -e 's/^CFLAGS[[:space:]]*=/& -DMAC_OS_X_VERSION_10_13=101300/' work/tkdnd/Makefile
-endif
-ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
-# Patch Makefile on Windows to disable libwinpthread-1.dll dependency. Setting
-# these parameters as LDFLAGS won't help because they must be at the end
-# of the linking command.
-	$(SEDI) -e 's/^MAKE_LIB[[:space:]]*=.*/& -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic/' \
-	    work/tkdnd/Makefile
-endif
-# Make dll file executable on windows
-	$(if $(filter Windows,$(findstring Windows,$(IJ_PLATFORM))),$(SEDI) '/^INSTALL_LIBRARY/{s/644/755/}' work/tkdnd/Makefile,@:)
-# On Windows x86_64 platform build with -fno-asynchronous-unwind-tables
-# failed due to some exception errors.
-#
-# /usr/bin/x86_64-w64-mingw32-ld: TkDND_OleDND.o:TkDND_OleDND.c:(.text$_ZN16TkDND_DropTargetD1Ev[_ZN16TkDND_DropTargetD1Ev]+0x4): undefined reference to `__gxx_personality_sj0'
-# /usr/bin/x86_64-w64-mingw32-ld: TkDND_OleDND.o:TkDND_OleDND.c:(.text$_ZN16TkDND_DropTargetD1Ev[_ZN16TkDND_DropTargetD1Ev]+0x35): undefined reference to `_Unwind_SjLj_Register'
-# /usr/bin/x86_64-w64-mingw32-ld: TkDND_OleDND.o:TkDND_OleDND.c:(.text$_ZN16TkDND_DropTargetD1Ev[_ZN16TkDND_DropTargetD1Ev]+0x93): undefined reference to `_Unwind_SjLj_Unregister'
-# ... and so on.
-#
-# We will workaround this by overriding make variable SHLIB_CFLAGS
-# and enabling asynchronous table unwinding.
-	cd work/tkdnd && $(MAKE) all install-binaries $(if $(filter Windows-x86_64,$(IJ_PLATFORM)),SHLIB_CFLAGS="-fasynchronous-unwind-tables")
-	$(STRIP) $(STRIPFLAGS) "$(KIT_PREFIX)"/lib/tkdnd*/*$(SO_EXT)
 	touch $@
 
 twapi: work/stamp-twapi
@@ -403,10 +342,6 @@ clean-thread:
 	rm -rf work/thread work/stamp-thread
 clean-installkit:
 	rm -rf work/installkit work/stamp-installkit
-clean-tktable:
-	rm -rf work/tktable work/stamp-tktable
-clean-tkdnd:
-	rm -rf work/tkdnd work/stamp-tkdnd
 clean-twapi:
 	rm -rf work/twapi work/stamp-twapi
 clean-zlib:
@@ -417,6 +352,8 @@ clean-tkcon:
 	rm -rf work/tkcon work/stamp-tkcon
 clean-tdom:
 	rm -rf work/tdom work/stamp-tdom
+clean-tclhttps:
+	rm -rf work/stamp-tclhttps
 
 clean:
 	rm -rf kit out work
@@ -463,16 +400,14 @@ test-thread:
 	$(call run-check, 1, tcl, src/thread/tests)
 test-installkit:
 	$(call run-check, 1, tcl, src/installkit/tests)
-test-tktable:
-	$(call run-check, 1, tk, src/tktable/tests)
-test-tkdnd:
-	$(call run-check, 1, tk, src/tkdnd/tests)
 test-twapi:
 	$(call run-check, 0, tcl, src/twapi/tests)
 test-tclmtls:
 	$(call run-check, 1, tcl, src/tclmtls/tests)
 test-tdom:
 	$(call run-check, 1, tcl, src/tdom/tests)
+test-tclhttps:
+	$(call run-check, 1, tcl, src/tclhttps/tests)
 
 distclean: clean
 	rm -f Makefile

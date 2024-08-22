@@ -1,3 +1,7 @@
+2024-08-23 Konstantin Kushnir <chpock@gmail.com>
+	* Remove tkdnd / tktable packages from build flow
+	* Add tclhttps package
+
 2024-08-17 Konstantin Kushnir <chpock@gmail.com>
 	* Add console binaries for Windows x86/x86_64 platforms
 
