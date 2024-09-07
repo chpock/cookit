@@ -1,0 +1,855 @@
+# cookit tests - cookit package
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+source [file join [tcltest::testsDirectory] helper.tcl]
+
+package require cookit
+
+# ::cookit::recursive_glob
+
+test cookit-1.1 {A file as input} -setup {
+    set file [makeFile {} file]
+} -body {
+    ::cookit::recursive_glob $file *
+} -result {} -cleanup {
+    file delete -force $file
+}
+
+test cookit-1.2 {An empty directory as input} -setup {
+    set dir [makeDirectory dir]
+} -body {
+    ::cookit::recursive_glob $dir *
+} -result {} -cleanup {
+    file delete -force $dir
+}
+
+test cookit-1.3 {Non-existing directory as input} -setup {} -body {
+    ::cookit::recursive_glob wrong-dir *
+} -result {} -cleanup {}
+
+test cookit-1.4 {An directory with one file as input} -setup {
+    set dir [makeDirectory dir]
+    makeFile {} [file join $dir file]
+} -body {
+    llength [::cookit::recursive_glob $dir *]
+} -result 1 -cleanup {
+    file delete -force $dir
+}
+
+test cookit-1.5 {An directory with 3 files as input} -setup {
+    set dir [makeDirectory dir]
+    makeFile {} [file join $dir file1]
+    makeFile {} [file join $dir file2.foo]
+    makeFile {} [file join $dir file3]
+} -body {
+    list \
+        [llength [::cookit::recursive_glob $dir *]] \
+        [llength [::cookit::recursive_glob $dir *.foo]]
+} -result {3 1} -cleanup {
+    file delete -force $dir
+}
+
+test cookit-1.6 {An directory tree as input} -setup {
+    set dir [makeDirectory dir]
+    makeFile {} [file join $dir file1]
+    makeFile {} [file join $dir file2.foo]
+    makeFile {} [file join $dir file3]
+    set subdir [makeDirectory subdir $dir]
+    makeFile {} [file join $subdir file2.foo]
+    makeFile {} [file join $subdir file3]
+} -body {
+    list \
+        [llength [::cookit::recursive_glob $dir *]] \
+        [llength [::cookit::recursive_glob $dir *.foo]]
+} -result {5 2} -cleanup {
+    file delete -force $dir
+}
+
+# ::cookit::tmpmount
+
+test cookit-2.1 {::cookit::tmpmount} -body {
+    ::cookit::tmpmount
+} -result {/tmpcookitvfs1}
+
+test cookit-2.2 {::cookit::tmpmount, the first mount point is busy} -setup {
+    # cleanup the mount counter
+    unset ::cookit::tmpMountCount
+    # make busy mount point
+    set vfs [tcltest::makeFile {} vfs]
+    set tmpmount [::cookit::tmpmount]
+    ::cookfs::Mount $vfs $tmpmount
+    # cleanup the mount counter
+    unset ::cookit::tmpMountCount
+} -body {
+    ::cookit::tmpmount
+} -result {/tmpcookitvfs2} -cleanup {
+    ::cookfs::Unmount $tmpmount
+    file delete -force $vfs
+}
+
+test cookit-2.3 {::cookit::tmpmount, twice} -setup {
+    # cleanup the mount counter
+    unset ::cookit::tmpMountCount
+} -body {
+    list [::cookit::tmpmount] [::cookit::tmpmount]
+} -result {/tmpcookitvfs1 /tmpcookitvfs2}
+
+test cookit-2.4 {::cookit::tmpmount, call the third time without cleanup} -body {
+    ::cookit::tmpmount
+} -result {/tmpcookitvfs3}
+
+# ::cookit::addfiles
+
+test cookit-3.1 {::cookit::addfiles} -setup {
+    set vfs [tcltest::makeFile {} vfs]
+    set dir [makeDirectory dir]
+    set f1 [makeFile {cf1} [file join $dir file1]]
+    set f2 [makeFile {cf2} [file join $dir file2.foo]]
+    set f3 [makeFile {cf3} [file join $dir file3]]
+    set subdir [makeDirectory subdir $dir]
+    set f1a [makeFile {cf1a} [file join $subdir file2.foo]]
+    set f2a [makeFile {cf2a} [file join $subdir file3]]
+} -body {
+    ::cookit::addfiles $vfs \
+        [list $f1 $f2  $f3  $f1a $f2a] \
+        [list f1  s/f2 x/f3 foo  bar ]
+    ::cookfs::Mount $vfs $vfs -readonly
+    join [concat \
+        [lsort [::cookit::recursive_glob $vfs *]] \
+        [list [getfile [file join $vfs s/f2]] [getfile [file join $vfs bar]]]] \n
+} -match glob -result {*/bar
+*/f1
+*/foo
+*/s/f2
+*/x/f3
+cf2
+
+cf2a
+} -cleanup {
+    ::cookfs::Unmount $vfs
+    file delete -force $vfs $dir
+}
+
+proc checkWrapArgs { args } {
+    set def [dict create {*}{
+        catalogs    {}
+        command     {}
+        executable  {}
+        icon        {}
+        level       6
+        mainScript  {}
+        method      zlib
+        packages    {}
+        password    {}
+        stubfile    {}
+        versionInfo {
+            CompanyName      {}
+            LegalCopyright   {}
+            FileVersion      {}
+            ProductName      {}
+            ProductVersion   {}
+            FileDescription  {}
+            OriginalFilename {}
+        }
+        wrapFiles   {}
+        wrapMethods {}
+        wrapNames   {}
+    }]
+    foreach { k v } $args { dict set def {*}$k $v }
+    dict set def versionInfo [lsort -stride 2 [dict get $def versionInfo]]
+    return [lsort -stride 2 $def]
+}
+
+proc sortWrapArgs { vals } {
+    dict set vals versionInfo [lsort -stride 2 [dict get $vals versionInfo]]
+    return [lsort -stride 2 $vals]
+}
+
+# ::cookit::parseWrapArgs
+
+test cookit-4.1 {::cookit::parseWrapArgs, default arguments} -body {
+    sortWrapArgs [::cookit::parseWrapArgs ""]
+} -result [checkWrapArgs]
+
+test cookit-4.2.1.1 {::cookit::parseWrapArgs -f} -setup {
+    set file [tcltest::makeFile [string trim {
+f1 n1 zlib
+f2 n2 m1
+}] list]
+} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -f $file]]
+} -result [checkWrapArgs \
+    wrapFiles {f1 f2} \
+    wrapMethods {zlib m1} \
+    wrapNames {n1 n2} \
+] -cleanup {
+    file delete -force $file
+}
+
+test cookit-4.2.1.1 {::cookit::parseWrapArgs -f, not existing file} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -f wrong-file]]
+} -returnCodes error -match glob -result "Could not find list file: wrong-file*"
+
+test cookit-4.2.1.2 {::cookit::parseWrapArgs -f} -setup {
+    set file [makeFile {f1 n1 zlib
+f2 n2 none} file1]
+} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -f $file]]
+} -result [checkWrapArgs wrapFiles {f1 f2} wrapMethods {zlib none} wrapNames {n1 n2}] -cleanup {
+    file delete -force $file
+}
+
+test cookit-4.2.2 {::cookit::parseWrapArgs -o} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -o f/o\\o]]
+} -result [checkWrapArgs executable f/o/o]
+
+test cookit-4.2.3 {::cookit::parseWrapArgs -w} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -w f\\o/o]]
+} -result [checkWrapArgs stubfile f/o/o]
+
+# unsupported
+test cookit-4.2.4 {::cookit::parseWrapArgs -method} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -method foo]]
+} -result [checkWrapArgs]
+
+test cookit-4.2.5 {::cookit::parseWrapArgs -level} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -level 99]]
+} -result [checkWrapArgs level 99]
+
+test cookit-4.2.6 {::cookit::parseWrapArgs -command} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -command foo]]
+} -result [checkWrapArgs command foo]
+
+test cookit-4.2.7 {::cookit::parseWrapArgs -password} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -password foo]]
+} -result [checkWrapArgs password foo]
+
+test cookit-4.2.8 {::cookit::parseWrapArgs -icon} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -icon foo]]
+} -result [checkWrapArgs icon foo]
+
+test cookit-4.2.9 {::cookit::parseWrapArgs -company} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -company foo]]
+} -result [checkWrapArgs {versionInfo CompanyName} foo]
+
+test cookit-4.2.10 {::cookit::parseWrapArgs -copyright} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -copyright foo]]
+} -result [checkWrapArgs {versionInfo LegalCopyright} foo]
+
+test cookit-4.2.11 {::cookit::parseWrapArgs -fileversion} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -fileversion foo]]
+} -result [checkWrapArgs {versionInfo FileVersion} foo]
+
+test cookit-4.2.12 {::cookit::parseWrapArgs -productname} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -productname foo]]
+} -result [checkWrapArgs {versionInfo ProductName} foo]
+
+test cookit-4.2.13 {::cookit::parseWrapArgs -productversion} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -productversion foo]]
+} -result [checkWrapArgs {versionInfo ProductVersion} foo]
+
+test cookit-4.2.14 {::cookit::parseWrapArgs -filedescription} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -filedescription foo]]
+} -result [checkWrapArgs {versionInfo FileDescription} foo]
+
+test cookit-4.2.15 {::cookit::parseWrapArgs -originalfilename} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -originalfilename foo]]
+} -result [checkWrapArgs {versionInfo OriginalFilename} foo]
+
+test cookit-4.2.16 {::cookit::parseWrapArgs -catalog} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -catalog foo -catalog bar -catalog baz -catalog bar -catalog qux]]
+} -result [checkWrapArgs catalogs {foo bar baz qux}]
+
+test cookit-4.2.17 {::cookit::parseWrapArgs -package} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -package foo -package bar -package baz -package bar -package qux]]
+} -result [checkWrapArgs packages {foo bar baz qux}]
+
+test cookit-4.3.1 {::cookit::parseWrapArgs, unknown parameter -> main script} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list foo]]
+} -result [checkWrapArgs mainScript foo]
+
+test cookit-4.3.2 {::cookit::parseWrapArgs, unknown parameter, unknown file} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -w foo bla -f]]
+} -returnCodes error -result "Not a directory or a readable file: -f"
+
+test cookit-4.3.3 {::cookit::parseWrapArgs, end of parameters} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -w foo -- -f]]
+} -result [checkWrapArgs stubfile foo mainScript -f]
+
+test cookit-4.3.4 {::cookit::parseWrapArgs, files} -setup {
+    set f1 [makeFile {} file1]
+    set f2 [makeFile {} file2]
+} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -w foo -- main $f1 $f2]]
+} -match glob -result [checkWrapArgs stubfile foo mainScript main \
+    wrapFiles {*/file1 */file2} \
+] -cleanup {
+    file delete -force $f1 $f2
+}
+
+test cookit-4.3.4 {::cookit::parseWrapArgs, files} -setup {
+    set f1 [makeFile {} file1]
+    set f2 [makeFile {} file2]
+    set dir [makeDirectory dir]
+    makeFile {} [file join $dir file1]
+    makeFile {} [file join $dir file2.foo]
+    makeFile {} [file join $dir file3]
+    set subdir [makeDirectory subdir $dir]
+    makeFile {} [file join $subdir file2.foo]
+    makeFile {} [file join $subdir file3]
+} -body {
+    sortWrapArgs [::cookit::parseWrapArgs [list -w foo main $f1 $dir $f2]]
+} -match glob -result [checkWrapArgs stubfile foo mainScript main \
+    wrapFiles {*/file1 */dir/file1 */dir/file2.foo */dir/file3 */dir/subdir/file2.foo */dir/subdir/file3 */file2} \
+] -cleanup {
+    file delete -force $f1 $f2 $dir
+}
+
+# ::cookit::ParsePEResources
+
+test cookit-4.4.1 {::cookit::parsePEResources} -constraints win -setup {
+    set exe [makeFile {} temp.exe]
+    file copy -force [interpreter] $exe
+} -body {
+    set resources [::cookit::parsePEResources $exe]
+    set result [list]
+    foreach resource [lsort [dict keys $resources]] {
+        lappend result ">$resource"
+        if { $resource eq "icon" } {
+            lappend result {*}[lsort [dict keys [dict get $resources $resource]]]
+        } elseif { $resource eq "version" } {
+            foreach vres [lsort [dict keys [dict get $resources $resource]]] {
+                set vdata [dict get $resources $resource $vres]
+                switch -- $vres {
+                    dwFileVersionMS -
+                    dwFileVersionLS -
+                    dwProductVersionMS -
+                    dwProductVersionLS -
+                    dwFileDateMS -
+                    dwFileDateLS {
+                        lappend result "$vres [dict get $vdata value]"
+                    }
+                    default {
+                        lappend result "$vres [dict get $vdata length]"
+                    }
+                }
+            }
+        }
+    }
+    join $result \n
+} -result {>icon
+16x32@8
+32x64@8
+48x96@8
+64x128@8
+>version
+CompanyName 65
+FileDescription 129
+FileVersion 33
+LegalCopyright 65
+OriginalFilename 65
+ProductName 65
+ProductVersion 33
+dwFileDateLS 0
+dwFileDateMS 0
+dwFileVersionLS 0
+dwFileVersionMS 0
+dwProductVersionLS 0
+dwProductVersionMS 0} -cleanup {
+    file delete -force $exe
+}
+
+#>icon
+#16x32@4
+#16x32@8
+#32x64@4
+#32x64@8
+#48x96@4
+#48x96@8
+#>version
+#CompanyName 65
+#FileDescription 129
+#FileVersion 33
+#LegalCopyright 65
+#OriginalFilename 65
+#ProductName 65
+#ProductVersion 33
+#dwFileDateLS 0
+#dwFileDateMS 0
+#dwFileVersionLS 0
+#dwFileVersionMS 0
+#dwProductVersionLS 0
+#dwProductVersionMS 0
+
+# ::cookit::makestub
+
+proc recursiveCompare { a b { strict 0 } } {
+
+    if { $strict } {
+        if { ![file exists $a] } { return "Not OK: $a doesn't exist" }
+        if { ![file exists $b] } { return "Not OK: $b doesn't exists" }
+
+        #if { [file mtime $a] != [file mtime $b] } {
+        #    return "Not OK: file mtime $a != file mtime $b ([file mtime $a] != [file mtime $b])"
+        #}
+
+        if { [file type $a] ne [file type $b] } {
+            return "Not OK: file type $a ne file type b ([file type $a] ne [file type b])"
+        }
+    }
+
+    if { [file type $a] eq "file" } {
+        if { [getfile $a] ne [getfile $b] } {
+            return "Not OK: file content $a ne file content $b"
+        }
+    } elseif { [file type $a] eq "directory" } {
+        set c [concat [glob -nocomplain -directory $a -tails *] [glob -nocomplain -directory $b -tails *]]
+        set c [lsort -unique $c]
+        foreach f $c {
+            set res [recursiveCompare [file join $a $f] [file join $b $f] 1]
+            if { $res ne "OK" } {
+                return $res
+            }
+        }
+    }
+
+    return OK
+
+}
+
+test cookit-4.5.1 {::cookit::makestub, can create and run a new kit} -setup {
+    set exe [makeFile {} temp.exe]
+    set script [makeFile {puts OK} script]
+} -body {
+
+    ::cookit::makestub $exe
+
+    set result [list [exec $exe $script]]
+
+    set mnt [::cookit::tmpmount]
+    cookfs::Mount $exe $mnt -readonly
+    lappend result [recursiveCompare $::cookit::root $mnt]
+    cookfs::Unmount $mnt
+
+    return $result
+
+} -result {OK OK} -cleanup {
+    catch { cookfs::Unmount $mnt }
+    file delete -force $exe $script
+}
+
+test cookit-4.5.2 {::cookit::makestub, no custom files in a new kit} -setup {
+    set exe1 [makeFile {} temp1.exe]
+    set exe2 [makeFile {} temp2.exe]
+    set script1 [makeFile [subst -nobackslashes -nocommands {
+        package require cookit
+        ::cookit::makestub {$exe2}
+    }] script1]
+    set script2 [makeFile {puts OK} script2]
+} -body {
+    ::cookit::makestub $exe1
+    set mnt [::cookit::tmpmount]
+    ::cookfs::Mount $exe1 $mnt
+    # create some files/directories
+    close [open [file join $mnt bar] w]
+    file mkdir [file join $mnt foo]
+    close [open [file join $mnt foo baz] w]
+    ::cookfs::Unmount $mnt
+    # create $exe2 from $exe1
+    exec [interpreter] $script1
+    # check $exe2
+    ::cookfs::Mount $exe2 $mnt -readonly
+    set result [recursiveCompare $::cookit::root $mnt]
+    ::cookfs::Unmount $mnt
+    return $result
+} -result {OK} -cleanup {
+    catch { ::cookfs::Unmount $mnt }
+    file delete -force $exe1 $exe2 $script1 $script2
+}
+
+test cookit-4.6.1 {::cookit::parseIcoFile} -setup { } -body {
+    lsort [dict keys [::cookit::parseIcoFile [file join [testsDirectory] misc music.ico]]]
+} -result {16x32@32 16x32@4 16x32@8 32x64@32 32x64@4 32x64@8 48x96@32 48x96@4 48x96@8}
+
+# ::cookit::updateWindowsResources
+# These tests run only on Windows because we use twapi to check the results.
+
+test cookit-4.7.1 {::cookit::updateWindowsResources, versionInfo} -constraints win -setup {
+    package require twapi
+    set exe [makeFile {} temp.exe]
+    file copy -force [interpreter] $exe
+} -body {
+    set result [list]
+    foreach { param twapiParam val } {
+        -company          CompanyName      fakecomp
+        -copyright        LegalCopyright   "(c) foo"
+        -fileversion      FileVersion      1.7.0.12
+        -productname      ProductName      bar
+        -productversion   ProductVersion   1.23
+        -filedescription  FileDescription  "some long description"
+        -originalfilename OriginalFilename file-file-file.exe
+    } {
+        ::cookit::updateWindowsResources [::cookit::parseWrapArgs \
+            [list -o $exe $param $val]]
+        set actual [dict get [::twapi::get_file_version_resource $exe $twapiParam] $twapiParam]
+        if { $actual eq $val } continue
+        lappend result "failed '$param'. Expected: '$val'; Actual: '$actual'"
+    }
+    join $result \n
+} -result {} -cleanup {
+    file delete -force $exe
+}
+
+test cookit-4.7.2 {::cookit::updateWindowsResources, versionInfo with empty values} -constraints win -setup {
+    package require twapi
+    set exe [makeFile {} temp.exe]
+    file copy -force [interpreter] $exe
+} -body {
+    ::cookit::updateWindowsResources [::cookit::parseWrapArgs [list -o $exe]]
+    lsort -stride 2 [::twapi::get_file_version_resource $exe -all]
+} -match glob -result {-datetime 0 -fileos windows32 -filetype application -fileversion 0.0.0.0 -flags {} -foundcodepage 0x04b0 -foundlangid {0x0409 {*}} -productversion 0.0.0.0 -signature 0xfeef04bd -structversion 1.0} -cleanup {
+    file delete -force $exe
+}
+
+test cookit-4.7.3.1 {::cookit::updateWindowsResources, fixed versions} -constraints win -setup {
+    package require twapi
+    set exe [makeFile {} temp.exe]
+    file copy -force [interpreter] $exe
+} -body {
+    ::cookit::updateWindowsResources [::cookit::parseWrapArgs [list \
+        -o $exe -fileversion 1.2.3.4.5 -productversion 6.7.8.9]]
+    lsort -stride 2 [::twapi::get_file_version_resource $exe -fileversion -productversion FileVersion ProductVersion]
+} -result {-fileversion 1.2.3.4 -productversion 6.7.8.9 FileVersion 1.2.3.4.5 ProductVersion 6.7.8.9} -cleanup {
+    file delete -force $exe
+}
+
+test cookit-4.7.3.2 {::cookit::updateWindowsResources, fixed versions with wrong strings} -constraints win -setup {
+    package require twapi
+    set exe [makeFile {} temp.exe]
+    file copy -force [interpreter] $exe
+} -body {
+    # not a number
+    # empty
+    # negative integer
+    # number 0xffff
+    # number greater than 0xffff
+    # not 4 digits
+    ::cookit::updateWindowsResources [::cookit::parseWrapArgs [list \
+        -o $exe -fileversion foo..-3.65535 -productversion 65536]]
+    lsort -stride 2 [::twapi::get_file_version_resource $exe -fileversion -productversion FileVersion ProductVersion]
+} -result {-fileversion 0.0.0.65535 -productversion 0.0.0.0 FileVersion foo..-3.65535 ProductVersion 65536} -cleanup {
+    file delete -force $exe
+}
+
+test cookit-4.7.4.1 {::cookit::updateWindowsResources, replace icon} -constraints win -setup {
+    package require twapi
+    set exe [makeFile {} temp.exe]
+    file copy -force [interpreter] $exe
+    set ico [file join [testsDirectory] misc music.ico]
+} -body {
+    set result [list]
+    set ico_from_file [::cookit::parseIcoFile $ico]
+    lappend result "Num icons in file: [dict size $ico_from_file]"
+    ::cookit::updateWindowsResources [::cookit::parseWrapArgs [list \
+        -o $exe -icon $ico]]
+    # load icon data from test file by twapi
+    set h [::twapi::load_library $exe -datafile]
+    set ico_from_twapi [list]
+    # 3 - RT_ICON
+    foreach id [::twapi::enumerate_resource_names $h 3] {
+        lappend ico_from_twapi [::twapi::read_resource $h 3 $id 0]
+    }
+    ::twapi::free_library $h
+    lappend result "Num icons in exe: [llength $ico_from_twapi]"
+    for { set i 0 } { $i < [llength $ico_from_twapi] } { incr i } {
+        set data [lindex $ico_from_twapi $i]
+        unset -nocomplain found
+        dict for { k v } $ico_from_file {
+            if { $data ne [dict get $v data] } continue
+            set found $k
+            break
+        }
+        if { ![info exists found] } {
+            lappend result "Icon#$i was not found"
+            continue
+        }
+        lappend result "Icon#$i was found as $found"
+        dict unset ico_from_file $k
+    }
+    lappend result "Icons in file, but not in exe: [lsort [dict keys $ico_from_file]]"
+    join $result \n
+} -result {Num icons in file: 9
+Num icons in exe: 4
+Icon#0 was found as 16x32@8
+Icon#1 was found as 32x64@8
+Icon#2 was found as 48x96@8
+Icon#3 was not found
+Icons in file, but not in exe: 16x32@32 16x32@4 32x64@32 32x64@4 48x96@32 48x96@4} -cleanup {
+    file delete -force $exe
+}
+
+#Num icons in file: 9
+#Num icons in exe: 6
+#Icon#0 was found as 16x32@4
+#Icon#1 was found as 16x32@8
+#Icon#2 was found as 32x64@4
+#Icon#3 was found as 32x64@8
+#Icon#4 was found as 48x96@4
+#Icon#5 was found as 48x96@8
+#Icons in file, but not in exe: 16x32@32 32x64@32 48x96@32
+
+test cookit-4.7.4.2 {::cookit::updateWindowsResources, replace icon, non-existing file} -constraints win -setup {
+    package require twapi
+    set exe [makeFile {} temp.exe]
+    file copy -force [interpreter] $exe
+} -body {
+    ::cookit::updateWindowsResources [::cookit::parseWrapArgs [list \
+        -o $exe -icon nofile]]
+} -returnCodes error -result "the icon file does not exist or not readable: nofile" -cleanup {
+    file delete -force $exe
+}
+
+# ::cookit::wrap
+
+set exeext [expr { $::tcl_platform(platform) eq "windows" ? {.exe} : {} }]
+
+test cookit-4.8.1 {::cookit::wrap, bad main script} -body {
+    ::cookit::wrap wrong-file
+} -returnCodes error -result {could not find the main script 'wrong-file' to wrap}
+
+test cookit-4.8.2 {::cookit::wrap, unknown output} -body {
+    ::cookit::wrap
+} -returnCodes error -result {no output file specified}
+
+test cookit-4.8.3 {::cookit::wrap, default kit name from script} -setup {
+    set script [makeFile {puts OK} temp-cookit-4.8.3.tcl]
+} -body {
+    ::cookit::wrap $script
+    exec [set exe "[file rootname $script]$exeext"]
+} -result {OK} -cleanup {
+    file delete -force $script $exe
+}
+
+test cookit-4.8.4 {::cookit::wrap, custom stub file, output name} -setup {
+    set exe1 [makeFile {} src-cookit-4.8.3.exe]
+    file copy -force [interpreter] $exe1
+    set script [makeFile {puts OK} temp-cookit-4.8.4.tcl]
+    set exe2 [makeFile {} dst-cookit-4.8.3.exe]
+} -body {
+    ::cookit::wrap -w $exe1 -o $exe2 $script
+    exec $exe2
+} -result {OK} -cleanup {
+    file delete -force $exe1 $exe2 $script
+}
+
+test cookit-4.8.5 {::cookit::wrap, update windows resources} -constraints win -setup {
+    set exe [makeFile {} temp.exe]
+    set script [makeFile {puts OK} temp-cookit-4.8.5.tcl]
+} -body {
+    ::cookit::wrap -o $exe -productname foo -copyright bar
+    set result [exec $exe $script]
+    append result " " [lsort -stride 2 [::twapi::get_file_version_resource $exe ProductName LegalCopyright]]
+} -result {OK LegalCopyright bar ProductName foo} -cleanup {
+    file delete -force $exe $script
+}
+
+test cookit-4.8.6 {::cookit::wrap, add packages} -setup {
+    set dir1 [makeDirectory foo1.0]
+    makeFile {package ifneeded foo 1.0 { package provide foo 1.0; puts fooOK }} \
+        [file join $dir1 pkgIndex.tcl]
+    set dir2 [makeDirectory bar1.0]
+    makeFile {package ifneeded bar 1.0 { package provide bar 1.0; puts barOK }} \
+        [file join $dir2 pkgIndex.tcl]
+    set exe [makeFile {} temp.exe]
+    set script [makeFile {package require foo; package require bar} temp.tcl]
+} -body {
+    ::cookit::wrap -package $dir1 -o $exe -package $dir2 $script
+    exec $exe
+} -result {fooOK
+barOK} -cleanup {
+    file delete -force $dir1 $dir2 $exe $script
+}
+
+test cookit-4.8.7 {::cookit::wrap, add catalogs} -setup {
+    set dir1 [makeDirectory foo]
+    makeFile {fooOK} [file join $dir1 test]
+    set dir2 [makeDirectory bar]
+    makeFile {barOK} [file join $dir2 test]
+    set exe [makeFile {} temp.exe]
+    set script [makeFile {
+        set fp [open [file join $::cookit::root catalogs foo test] r]
+        puts [string trim [read $fp]]
+        close $fp
+        set fp [open [file join $::cookit::root catalogs bar test] r]
+        puts [string trim [read $fp]]
+        close $fp
+    } temp.tcl]
+} -body {
+    ::cookit::wrap -catalog $dir1 -o $exe -catalog $dir2 $script
+    exec $exe
+} -result {fooOK
+barOK} -cleanup {
+    file delete -force $dir1 $dir2 $exe $script
+}
+
+test cookit-4.8.8 {::cookit::wrap, add files by absolute paths} -setup {
+    set dir1 [makeDirectory foo]
+    makeFile {fooOK} [file join $dir1 test]
+    set file2 [makeFile {barOK} test]
+    set exe [makeFile {} temp.exe]
+    set script [makeFile {
+        set fp [open [file join $::cookit::root {*}[file join [lrange [file split [pwd]] 1 end]] foo test] r]
+        puts [string trim [read $fp]]
+        close $fp
+        set fp [open [file join $::cookit::root {*}[file join [lrange [file split [pwd]] 1 end]] test] r]
+        puts [string trim [read $fp]]
+        close $fp
+    } temp.tcl]
+} -body {
+    set ::progress [list]
+    set progress_cmd [list apply {{ file } {
+        lappend ::progress "progress: $file"
+    }}]
+    ::cookit::wrap -command $progress_cmd -o $exe $script $dir1 $file2
+    lappend ::progress [exec $exe]
+    join $::progress \n
+} -match glob -result {progress: */foo/test
+progress: */test
+fooOK
+barOK} -cleanup {
+    file delete -force $exe $script $dir1 $file2
+}
+
+test cookit-4.8.9 {::cookit::wrap, add files by relative paths} -setup {
+    set dir1 [makeDirectory foo]
+    makeFile {fooOK} [file join $dir1 test]
+    set file2 [makeFile {barOK} test]
+    set exe [makeFile {} temp.exe]
+    set script [makeFile {
+        set fp [open [file join $::cookit::root foo test] r]
+        puts [string trim [read $fp]]
+        close $fp
+        set fp [open [file join $::cookit::root test] r]
+        puts [string trim [read $fp]]
+        close $fp
+    } temp.tcl]
+} -body {
+    set ::progress [list]
+    set progress_cmd [list apply {{ file } {
+        lappend ::progress "progress: $file"
+    }}]
+    set abs2rel [list apply {{ file } {
+        return [file join {*}[lrange [file split $file] [llength [file split [pwd]]] end]]
+    }}]
+    ::cookit::wrap -command $progress_cmd -o $exe $script \
+        [{*}$abs2rel $dir1] [{*}$abs2rel $file2]
+    lappend ::progress [exec $exe]
+    join $::progress \n
+} -result {progress: foo/test
+progress: test
+fooOK
+barOK} -cleanup {
+    file delete -force $exe $script $dir1 $file2
+}
+
+test cookit-4.8.10 {::cookit::wrap, preserve command line} -setup {
+    set script [makeFile {
+        puts -nonewline :[join $::argv :]:
+    } temp.tcl]
+    set exe "[file rootname $script]$exeext"
+} -body {
+    unset -nocomplain result
+    ::cookit::wrap $script
+    lappend result [exec $exe file.tcl 2 3 4]
+    lappend result [exec $exe -file 2 3 4]
+    lappend result [exec $exe -encoding utf-8 file 1 2]
+    join $result \n
+} -result {:file.tcl:2:3:4:
+:-file:2:3:4:
+:-encoding:utf-8:file:1:2:} -cleanup {
+    file delete -force $exe $script
+}
+
+test cookit-4.9.1 {::cookit::newThread} -constraints threaded -setup {
+    set save [list ::argv $::argv ::argv0 $::argv0 ::tcl_interactive $::tcl_interactive]
+    set ::argv [list "\{" "var" foo "\""]
+    set ::argv0 bar
+    set ::tcl_interactive false
+} -body {
+    set tid [::cookit::newThread thread::wait]
+    ::thread::send $tid {
+        list $::parentThread $::argv $::argv0 $::tcl_interactive [info script]
+    } res
+    lreplace $res 0 0 [expr { [lindex $res 0] eq [::thread::id]?"+":"-" }]
+} -result [list + [list "\{" "var" foo "\""] bar false bar] -cleanup {
+    foreach { k v } $save { set $k $v }
+    ::thread::release $tid
+}
+
+test cookit-4.9.2 {Test that cookfs package is present in new threads} -constraints threaded -setup {
+} -body {
+    set tid [::thread::create thread::wait]
+    ::thread::send $tid { package require cookfs }
+} -cleanup {
+    ::thread::release $tid
+    unset -nocomplain tid
+} -result [package present cookfs]
+
+# If VFS is mounted not as volume, then it is mounted relative to
+# the current volume. On Windows it means that the root mount point will be
+# unavailable when volume (drive) for pwd is changed. In order to avoid that,
+# the root mount point should be registered as a volume.
+#
+# Also, when VFS is mounted as a volume, then 'file normalize' works
+# as expected on Windows. For example, if VFS mount point is '/cvfs'
+# and VFS is not a volume, then 'file normalize' adds current volume during
+# normalization:
+#
+# (168) 1 % pwd
+# D:/168
+# (168) 2 % file normalize /cvfs
+# D:/cvfs
+# (168) 3 % file normalize /cvfs/some/file/here
+# D:/cvfs/some/file/here
+# (168) 4 %
+#
+# But it works as expected, when VFS is mounted as a volume:
+#
+# (168) 4 % file volumes
+# /cookit C:/ D:/ E:/ G:/ S:/ W:/
+# (168) 5 % file normalize /cookit
+# /cookit
+# (168) 6 % file normalize /cookit/some/file/here
+# /cookit/some/file/here
+# (168) 7 %
+#
+# On the other hand, it is possible that the root file system is mounted
+# several times. To avoid multiple mounts, here we check that there is exactly
+# one root volume.
+test cookit-5.1 {Test that cookit root is a volume} -body {
+    llength [lsearch -all -exact [file volumes] $::cookit::root]
+} -result 1
+
+test cookit-5.2 {Check that there is only one cookit root volume for multiple interps} -setup {
+    set interp1 [interp create]
+    set interp2 [interp create]
+} -body {
+    llength [lsearch -all -exact [file volumes] $::cookit::root]
+} -result 1 -cleanup {
+    interp delete $interp1
+    interp delete $interp2
+    unset interp1 interp2
+}
+
+# cleanup
+::tcltest::cleanupTests
+return

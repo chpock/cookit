@@ -1,39 +1,39 @@
 [submodule "src/tcl"]
-	path = src/tcl
+	path = deps/tcl
 	url = https://github.com/tcltk/tcl.git
 [submodule "src/tk"]
-	path = src/tk
+	path = deps/tk
 	url = https://github.com/tcltk/tk.git
 [submodule "src/thread"]
-	path = src/thread
+	path = deps/thread
 	url = https://github.com/tcltk/thread.git
 [submodule "src/zlib"]
-	path = src/zlib
+	path = deps/zlib
 	url = https://github.com/madler/zlib.git
 [submodule "src/cookfs"]
-	path = src/cookfs
+	path = deps/cookfs
 	url = https://github.com/chpock/cookfs.git
 [submodule "src/tclvfs"]
-	path = src/tclvfs
+	path = deps/tclvfs
 	url = https://github.com/chpock/tclvfs.git
 [submodule "src/installkit/tclconfig"]
-	path = src/installkit/tclconfig
+	path = cookit/tclconfig
 	url = https://github.com/tcltk/tclconfig
 [submodule "src/twapi"]
-	path = src/twapi
+	path = deps/twapi
 	url = https://github.com/chpock/twapi.git
 [submodule "src/installkit/tclx"]
-	path = src/installkit/tclx
+	path = cookit/tclx
 	url = https://github.com/flightaware/tclx.git
 [submodule "src/tclmtls"]
-	path = src/tclmtls
+	path = deps/tclmtls
 	url = https://github.com/chpock/tclmtls
 [submodule "src/tkcon"]
-	path = src/tkcon
+	path = deps/tkcon
 	url = https://github.com/wjoye/tkcon.git
 [submodule "src/tdom"]
-	path = src/tdom
+	path = deps/tdom
 	url = https://github.com/chpock/tdom.git
 [submodule "src/tclhttps"]
-	path = src/tclhttps
+	path = deps/tclhttps
 	url = https://github.com/chpock/tclhttps.git

@@ -1,4 +1,4 @@
-installkit:
+cookit:
     * binaries still depend on shared zlib on some platforms. Remove this
       dependancy.
 cookfs:

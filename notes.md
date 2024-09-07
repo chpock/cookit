@@ -1,16 +1,16 @@
 ### Testing ####
 
-Run installkit tests:
+Run cookit tests:
 ```
-$ make check-installkit VERBOSE=1
+$ make check-cookit VERBOSE=1
 ```
 
 Run specific test only:
 ```
-$ make check-installkit VERBOSE=1 CHECKFLAGS="-file installkit-windows.test -match installkit::Windows-1"
+$ make check-cookit VERBOSE=1 CHECKFLAGS="-file cookit-windows.test -match cookit::Windows-1"
 ```
 
 Rebuild and run tests:
 ```
-$ rm -f work/stamp-installkit && make installkit && make check-installkit
+$ rm -f work/stamp-cookit && make cookit && make check-cookit
 ```

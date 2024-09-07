@@ -7,15 +7,15 @@ export RC
 export STRIP
 export PKG_CONFIG
 
-CHECK_TARGETS = tcl tk tclvfs cookfs installkit twapi tclmtls tdom tclhttps
+CHECK_TARGETS = tcl tk tclvfs cookfs cookit twapi tclmtls tdom tclhttps
 ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon thread
 
-INSTALLKIT_ROOT = /installkitvfs
+COOKIT_ROOT = /cookit
 
 # Required for WSL
 ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 
-    WSLENV = TCL_LIBRARY/p:INSTALLKIT_CONSOLE:INSTALLKIT_GUI:INSTALLKIT_BOOTSTRAP:TCLTEST_OPTIONS:INSTALLKIT_VERSION
+    WSLENV = TCL_LIBRARY/p:COOKIT_CONSOLE:COOKIT_GUI:COOKIT_BOOTSTRAP:TCLTEST_OPTIONS:COOKIT_VERSION
     export WSLENV
 
     EXE_EXT = .exe
@@ -65,13 +65,13 @@ all: $(TARGETS)
 
 tcl: work/stamp-tcl
 work/stamp-tcl: work/stamp-zlib
-	mkdir -p work/tcl/src && cp -r "$(TOP_SRCDIR)/src/tcl"/* work/tcl/src
+	mkdir -p work/tcl/src && cp -r "$(TOP_SRCDIR)/deps/tcl"/* work/tcl/src
 ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # See details about this patch in its file.
-	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/src/tcl-010-Windows-fix-CFLAGS.patch
+	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/deps/tcl-010-Windows-fix-CFLAGS.patch
 endif
 # See description about this patch in the patch file
-	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/src/tcl-020-All-do-not-use-exe-directory.patch
+	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/deps/tcl-020-All-do-not-use-exe-directory.patch
 # Use our zlib. Specify paths to zlib by CFLAGS/LDFLAGS
 	cd work/tcl; \
 	    test -f config.status \
@@ -84,7 +84,7 @@ endif
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 ifeq ($(WINDOWS_SYSTEM),Cygwin)
 # See details about this patch in its file.
-	patch -N -p1 -d work/tcl < "$(TOP_SRCDIR)"/src/tcl-000-Windows-Cygwin.patch
+	patch -N -p1 -d work/tcl < "$(TOP_SRCDIR)"/deps/tcl-000-Windows-Cygwin.patch
 endif
 # Patch Makefile to avoid an error during parallel builds
 	$(SEDI) -E \
@@ -93,7 +93,7 @@ endif
 # Use our zlib: remove zlib objs from the list of linking objects
 	$(SEDI) -e 's#^\([[:space:]]*ZLIB_OBJS\)#\1_MASKED#' \
 	    work/tcl/Makefile
-#	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/src/zlib#' \
+#	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/deps/zlib#' \
 #	    work/tcl/Makefile
 ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # On Windows, Tcl uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking tclsh,
@@ -110,8 +110,8 @@ endif
 # the compile step, not the install steps. Install steps should be able
 # to install libraries to the temporary location.
 	cd work/tcl && $(MAKE) all \
-	    TCL_LIBRARY="$(INSTALLKIT_ROOT)/lib/tcl\$$(VERSION)" \
-	    TCL_PACKAGE_PATH="$(INSTALLKIT_ROOT)/lib"
+	    TCL_LIBRARY="$(COOKIT_ROOT)/lib/tcl\$$(VERSION)" \
+	    TCL_PACKAGE_PATH="$(COOKIT_ROOT)/lib"
 	cd work/tcl && $(MAKE) install-binaries install-libraries
 # Tcl installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
@@ -125,14 +125,14 @@ endif
 
 tk: work/stamp-tk
 work/stamp-tk: work/stamp-tcl
-	mkdir -p work/tk/src && cp -r "$(TOP_SRCDIR)/src/tk"/* work/tk/src
+	mkdir -p work/tk/src && cp -r "$(TOP_SRCDIR)/deps/tk"/* work/tk/src
 ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # See details about this patch in its file.
-	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/src/tk-010-Windows-fix-CFLAGS.patch
+	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/tk-010-Windows-fix-CFLAGS.patch
 endif
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # see details in the patch
-	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/src/tk-000-MacOS-X-fix-TKNSString.patch
+	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/tk-000-MacOS-X-fix-TKNSString.patch
 endif
 # Tk doesn't depent on zlib directly. However, whish binary depends on Tcl static
 # library and the Tcl static library needs zlib. We should specify our zlib
@@ -168,9 +168,9 @@ endif
 
 tclvfs: work/stamp-tclvfs
 work/stamp-tclvfs: work/stamp-tcl
-	mkdir -p work/tclvfs/src && cp -r "$(TOP_SRCDIR)/src/tclvfs"/* work/tclvfs/src
+	mkdir -p work/tclvfs/src && cp -r "$(TOP_SRCDIR)/deps/tclvfs"/* work/tclvfs/src
 # These files are necessary for installation. See:
-	cd work/tclvfs/src && tar xzf "$(TOP_SRCDIR)"/src/thread.files.tar.gz
+	cd work/tclvfs/src && tar xzf "$(TOP_SRCDIR)"/deps/thread.files.tar.gz
 	cd work/tclvfs; \
 	    test -f config.status \
 	    || ./src/configure \
@@ -190,7 +190,7 @@ work/stamp-cookfs: work/stamp-tcl
 	mkdir -p work/cookfs
 	cd work/cookfs; \
 	    test -f config.status \
-	    || $(TOP_SRCDIR)/src/cookfs/configure \
+	    || $(TOP_SRCDIR)/deps/cookfs/configure \
 	        --build=$(AC_HOST) --host=$(AC_HOST) \
 	        --prefix=$(PREFIX) \
 	        --with-tcl=$(PREFIX)/lib \
@@ -203,7 +203,7 @@ work/stamp-cookfs: work/stamp-tcl
 
 thread: work/stamp-thread
 work/stamp-thread: work/stamp-tcl
-	mkdir -p work/thread/src && cp -r "$(TOP_SRCDIR)/src/thread"/* work/thread/src
+	mkdir -p work/thread/src && cp -r "$(TOP_SRCDIR)/deps/thread"/* work/thread/src
 	cd work/thread; \
 	    test -f config.status \
 	    || ./src/configure \
@@ -214,7 +214,7 @@ work/stamp-thread: work/stamp-tcl
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 # These files are necessary for installation. See:
 # https://github.com/tcltk/thread/blob/0b17425018a6cd3a0fdca30ce3c5fced28d25033/.travis.yml#L124-L127
-	cd work/thread/src && tar xzf "$(TOP_SRCDIR)"/src/thread.files.tar.gz
+	cd work/thread/src && tar xzf "$(TOP_SRCDIR)"/deps/thread.files.tar.gz
 	cd work/thread && $(MAKE) all install CFLAGS="$(CFLAGS)"
 	rm -rf work/thread/src
 	touch $@
@@ -224,7 +224,7 @@ work/stamp-tclmtls:
 	mkdir -p work/tclmtls
 	cd work/tclmtls; \
 	    test -f config.status \
-	    || PKG_CONFIG= $(TOP_SRCDIR)/src/tclmtls/configure \
+	    || PKG_CONFIG= $(TOP_SRCDIR)/deps/tclmtls/configure \
 	        --build=$(AC_HOST) --host=$(AC_HOST) \
 	        --prefix=$(PREFIX) \
 	        --with-tcl=$(PREFIX)/lib \
@@ -236,7 +236,7 @@ work/stamp-tclmtls:
 
 tclhttps: work/stamp-tclhttps
 work/stamp-tclhttps:
-	cd $(TOP_SRCDIR)/src/tclhttps && make install PREFIX="$(PREFIX)"
+	cd $(TOP_SRCDIR)/deps/tclhttps && make install PREFIX="$(PREFIX)"
 	touch $@
 
 tkcon: work/stamp-tkcon
@@ -244,7 +244,7 @@ work/stamp-tkcon:
 	mkdir -p work/tkcon
 	cd work/tkcon; \
 	    test -f config.status \
-	    || PKG_CONFIG= $(TOP_SRCDIR)/src/tkcon/configure \
+	    || PKG_CONFIG= $(TOP_SRCDIR)/deps/tkcon/configure \
 	        --build=$(AC_HOST) --host=$(AC_HOST) \
 	        --prefix=$(PREFIX) \
 	        --with-tcl=$(PREFIX)/lib \
@@ -257,7 +257,7 @@ work/stamp-tdom: work/stamp-tcl
 	mkdir -p work/tdom
 	cd work/tdom; \
 	    test -f config.status \
-	    || $(TOP_SRCDIR)/src/tdom/configure \
+	    || $(TOP_SRCDIR)/deps/tdom/configure \
 	        --build=$(AC_HOST) --host=$(AC_HOST) \
 	        --prefix=$(PREFIX) \
 	        --with-tcl=$(PREFIX)/lib \
@@ -266,12 +266,12 @@ work/stamp-tdom: work/stamp-tcl
 	cd work/tdom && $(MAKE) all install CFLAGS="$(CFLAGS)"
 	touch $@
 
-installkit: work/stamp-installkit
-work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread work/stamp-tdom work/stamp-tclhttps $(if $(filter $(findstring Windows,$(IJ_PLATFORM)),Windows),work/stamp-twapi)
-	mkdir -p work/installkit
-	cd work/installkit; \
+cookit: work/stamp-cookit
+work/stamp-cookit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread work/stamp-tdom work/stamp-tclhttps $(if $(filter $(findstring Windows,$(IJ_PLATFORM)),Windows),work/stamp-twapi)
+	mkdir -p work/cookit
+	cd work/cookit; \
 	    test -f Makefile \
-	    || $(TOP_SRCDIR)/src/installkit/configure \
+	    || $(TOP_SRCDIR)/cookit/configure \
 	        --build=$(AC_HOST) --host=$(AC_HOST) \
 	        --prefix=$(KIT_PREFIX) \
 	        --exec-prefix=$(KIT_PREFIX) \
@@ -286,14 +286,14 @@ work/stamp-installkit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp
 	        --with-strip-command="$(STRIP) $(STRIPFLAGS)" \
 	        --with-upx-command="$(UPX)" \
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
-	cd work/installkit && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)"
+	cd work/cookit && $(MAKE) all install-binaries CFLAGS="$(CFLAGS)"
 	touch $@
 
 twapi: work/stamp-twapi
 work/stamp-twapi: work/stamp-tcl
-	mkdir -p work/twapi/src && cp -r "$(TOP_SRCDIR)/src/twapi"/* work/twapi/src
+	mkdir -p work/twapi/src && cp -r "$(TOP_SRCDIR)/deps/twapi"/* work/twapi/src
 # see details in the patch
-	patch -N -p1 -d work/twapi/src < "$(TOP_SRCDIR)"/src/twapi-000-disable-lzma.patch
+	patch -N -p1 -d work/twapi/src < "$(TOP_SRCDIR)"/deps/twapi-000-disable-lzma.patch
 	cd work/twapi; \
 	    test -f config.status \
 	    || ./src/configure \
@@ -305,9 +305,9 @@ work/stamp-twapi: work/stamp-tcl
 	cd work/twapi && $(MAKE) all install install-lib-binaries CFLAGS="$(CFLAGS)"
 	cp -f work/twapi/twapi_entry.tcl work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
 ifeq ($(IJ_PLATFORM),Windows-x86)
-	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
+	cp -f $(TOP_SRCDIR)/deps/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
 else ifeq ($(IJ_PLATFORM),Windows-x86_64)
-	cp -f $(TOP_SRCDIR)/src/twapi/dyncall/dyncall-*/lib/release_amd64/*.lib $(PREFIX)/lib/twapi*
+	cp -f $(TOP_SRCDIR)/deps/twapi/dyncall/dyncall-*/lib/release_amd64/*.lib $(PREFIX)/lib/twapi*
 endif
 	rm -rf work/twapi/src
 	touch $@
@@ -317,7 +317,7 @@ work/stamp-zlib:
 	mkdir -p work/zlib
 	cd work/zlib; \
 	    test -f Makefile \
-	    || $(TOP_SRCDIR)/src/zlib/configure \
+	    || $(TOP_SRCDIR)/deps/zlib/configure \
 	        --prefix=$(PREFIX) --static
 	cd work/zlib && $(MAKE) all install
 	touch $@
@@ -326,8 +326,8 @@ dist:
 	rm -f "$(IJ_PLATFORM).zip"
 	cp -fp $(TOP_SRCDIR)/version kit/$(IJ_PLATFORM)
 	cat build.conf environment.conf > kit/$(IJ_PLATFORM)/environment
-	cd kit && INSTALLKIT_CONSOLE=1 "$(KIT_PREFIX)/bin/installkit$(EXE_EXT)" \
-		`$(CYGPATH) $(TOP_SRCDIR)/src/installkit/library/make-zip.tcl` \
+	cd kit && COOKIT_CONSOLE=1 "$(KIT_PREFIX)/bin/cookit$(EXE_EXT)" \
+		`$(CYGPATH) $(TOP_SRCDIR)/cookit/library/make-zip.tcl` \
 		../$(IJ_PLATFORM).zip "$(IJ_PLATFORM)"
 
 clean-tcl:
@@ -340,8 +340,8 @@ clean-tclvfs:
 	rm -rf work/tclvfs work/stamp-tclvfs
 clean-thread:
 	rm -rf work/thread work/stamp-thread
-clean-installkit:
-	rm -rf work/installkit work/stamp-installkit
+clean-cookit:
+	rm -rf work/cookit work/stamp-cookit
 clean-twapi:
 	rm -rf work/twapi work/stamp-twapi
 clean-zlib:
@@ -361,7 +361,7 @@ clean:
 
 ifeq ($(WINDOWS_SYSTEM),WSL)
 # Use native temporary directory for builds for Windows platform on WSL
-    CHECK_WORK_DIR := $(shell wslpath -u "$$(cmd.exe /c 'echo %TEMP%\\installkit-test-$(IJ_PLATFORM)' 2>/dev/null)")
+    CHECK_WORK_DIR := $(shell wslpath -u "$$(cmd.exe /c 'echo %TEMP%\\cookit-test-$(IJ_PLATFORM)' 2>/dev/null)")
 else
     CHECK_WORK_DIR := $(TOP_BUILDDIR)/test
 endif
@@ -372,11 +372,11 @@ define run-check
         rm -rf "$(CHECK_WORK_DIR)/$@"
         cp -r "$(TOP_SRCDIR)/$(strip $3)" "$(CHECK_WORK_DIR)/$@"
         cd "$(CHECK_WORK_DIR)" && \
-            $(if $(filter $2,tcl),INSTALLKIT_CONSOLE=1,INSTALLKIT_GUI=1) \
-            INSTALLKIT_VERSION="`cat "$(TOP_SRCDIR)/version"`" \
+            $(if $(filter $2,tcl),COOKIT_CONSOLE=1,COOKIT_GUI=1) \
+            COOKIT_VERSION="`cat "$(TOP_SRCDIR)/version"`" \
             DISPLAY=:0 \
-            TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/src/installkit/tests/helper.sh $@`" \
-            $(KIT_PREFIX)/bin/installkit$(EXE_EXT) \
+            TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/cookit/tests/helper.sh $@`" \
+            $(KIT_PREFIX)/bin/cookit$(EXE_EXT) \
             `$(CYGPATH) "$(CHECK_WORK_DIR)/$@/all.tcl"` -verbose "body error start" $(TESTFLAGS) | \
             tr -d '\r' | \
             tee $@.output && \
@@ -389,25 +389,25 @@ endef
 test: $(patsubst %,test-%,$(CHECK_TARGETS))
 
 test-tcl:
-	$(call run-check, 0, tcl, src/tcl/tests)
+	$(call run-check, 0, tcl, deps/tcl/tests)
 test-tk:
-	$(call run-check, 0, tk, src/tk/tests)
+	$(call run-check, 0, tk, deps/tk/tests)
 test-cookfs:
-	$(call run-check, 1, tcl, src/cookfs/tests)
+	$(call run-check, 1, tcl, deps/cookfs/tests)
 test-tclvfs:
-	$(call run-check, 1, tcl, src/tclvfs/tests)
+	$(call run-check, 1, tcl, deps/tclvfs/tests)
 test-thread:
-	$(call run-check, 1, tcl, src/thread/tests)
-test-installkit:
-	$(call run-check, 1, tcl, src/installkit/tests)
+	$(call run-check, 1, tcl, deps/thread/tests)
+test-cookit:
+	$(call run-check, 1, tcl, cookit/tests)
 test-twapi:
-	$(call run-check, 0, tcl, src/twapi/tests)
+	$(call run-check, 0, tcl, deps/twapi/tests)
 test-tclmtls:
-	$(call run-check, 1, tcl, src/tclmtls/tests)
+	$(call run-check, 1, tcl, deps/tclmtls/tests)
 test-tdom:
-	$(call run-check, 1, tcl, src/tdom/tests)
+	$(call run-check, 1, tcl, deps/tdom/tests)
 test-tclhttps:
-	$(call run-check, 1, tcl, src/tclhttps/tests)
+	$(call run-check, 1, tcl, deps/tclhttps/tests)
 
 distclean: clean
 	rm -f Makefile

@@ -87,7 +87,7 @@ echo "Platform is $IJ_PLATFORM"
 echo
 
 TCL_SYSTEM=unix
-TARGETS="installkit"
+TARGETS="cookit"
 TCLSH="\$(PREFIX)/bin/tclsh8.6"
 SYMBOLS_FLAG=
 AQUA_FLAG=
@@ -126,7 +126,7 @@ CLANG_LDFLAGS="-Wl,-dead_strip,-x,-S"
 CYGPATH="echo"
 KIT_VERSION="`cat "$TOP_SRCDIR"/version`"
 SEDI="sed -i"
-UPX="$ABS_TOP_SRCDIR/src/installkit/tools/$IJ_PLATFORM/upx"
+UPX="$ABS_TOP_SRCDIR/cookit/tools/$IJ_PLATFORM/upx"
 STRIPFLAGS="--strip-all"
 if [ "$BUILD_TYPE" = "dev" ]; then
     UPX_ARGS="--lzma --overlay=strip"
@@ -137,7 +137,7 @@ COMPILER="GCC"
 
 case "$IJ_PLATFORM" in
   Windows-x86)
-    UPX="$ABS_TOP_SRCDIR/src/installkit/tools/Windows/upx.exe"
+    UPX="$ABS_TOP_SRCDIR/cookit/tools/Windows/upx.exe"
     TCL_SYSTEM=win
     TCLSH="\$(PREFIX)/bin/tclsh86s"
     TARGETS="$TARGETS thread"
@@ -159,7 +159,7 @@ case "$IJ_PLATFORM" in
     ;;
 
   Windows-x86_64)
-    UPX="$ABS_TOP_SRCDIR/src/installkit/tools/Windows/upx.exe"
+    UPX="$ABS_TOP_SRCDIR/cookit/tools/Windows/upx.exe"
     TCL_SYSTEM=win
     TCLSH="\$(PREFIX)/bin/tclsh86s"
     TARGETS="$TARGETS thread"
@@ -347,7 +347,7 @@ cat >> Makefile < "$TOP_SRCDIR/Makefile.in"
 if [ "$WINDOWS_SYSTEM" = "WSL" ] && ! net.exe session >/dev/null 2>&1; then
     echo ""
     echo "WARNING: current shell is not running in elevated mode. This will cause some"
-    echo "         of installkit tests to be skipped. Install gsudo ( https://gerardog.github.io/gsudo/docs/install )"
+    echo "         of cookit tests to be skipped. Install gsudo ( https://gerardog.github.io/gsudo/docs/install )"
     echo "         and use elevated shell to build."
     echo ""
 fi
