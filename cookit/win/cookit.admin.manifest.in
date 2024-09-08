@@ -7,7 +7,7 @@
 	    name="cookit"
 	    type="win32"
 	/>
-    <description>InstallJammer Multiplatform Installer</description>
+    <description>Cookit</description>
     <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
 	<security>
 	    <requestedPrivileges>

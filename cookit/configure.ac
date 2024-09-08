@@ -74,7 +74,7 @@ TEA_SETUP_COMPILER
 # and PKG_TCL_SOURCES.
 #-----------------------------------------------------------------------
 
-TEA_ADD_SOURCES([main.c])
+TEA_ADD_SOURCES([])
 TEA_ADD_HEADERS([])
 TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\" -I\"`${CYGPATH} ${srcdir}/tclx/generic`\"])
 TEA_ADD_LIBS([])
@@ -189,14 +189,15 @@ AS_IF([test "x${STRIP_COMMAND}" != "x"], [
 ])
 AC_SUBST(STRIP_COMMAND)
 
-bin_BINARIES="${PACKAGE_NAME}${EXEEXT} ${PACKAGE_NAME}U${EXEEXT}"
+bin_BINARIES="${PACKAGE_NAME}${EXEEXT} ${PACKAGE_NAME}U${EXEEXT} ${PACKAGE_NAME}-gui${EXEEXT} ${PACKAGE_NAME}U-gui${EXEEXT}"
 if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_LIBS([-pipe -static-libgcc -municode])
     TEA_ADD_CFLAGS([-DUNICODE -D_UNICODE])
     bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A${EXEEXT} ${PACKAGE_NAME}UA${EXEEXT}"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A-gui${EXEEXT} ${PACKAGE_NAME}UA-gui${EXEEXT}"
     # Add console binaries
-    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}.com ${PACKAGE_NAME}U.com"
-    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A.com ${PACKAGE_NAME}UA.com"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}-gui.com ${PACKAGE_NAME}U-gui.com"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A-gui.com ${PACKAGE_NAME}UA-gui.com"
     # These are CFLAGS and LIBS from twapi
     TEA_ADD_CFLAGS([-DWINVER=0x0501 -D_WIN32_WINNT=0x0501 -DPSAPI_VERSION=1])
     # These libs must be after twapi static library
@@ -204,9 +205,11 @@ if test "${TEA_PLATFORM}" = "windows" ; then
         rpcrt4.lib psapi.lib pdh.lib winmm.lib mpr.lib
         winspool.lib version.lib iphlpapi.lib powrprof.lib
         secur32.lib wtsapi32.lib setupapi.lib uxtheme.lib
-        credui.lib crypt32.lib wintrust.lib
+        credui.lib crypt32.lib wintrust.lib gdi32.lib
+        ole32.lib oleaut32.lib uuid.lib
     ])
-    #TEA_ADD_LIBS([gdi32.lib user32.lib])
+    #-lcomdlg32 -limm32 -lcomctl32 -lshell32
+    #TEA_ADD_LIBS([user32.lib])
     #TEA_ADD_SOURCES([win/winFile.c])
     #TEA_ADD_INCLUDES([-I\"$(${CYGPATH} ${srcdir}/win)\"])
 else

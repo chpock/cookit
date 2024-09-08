@@ -11,5 +11,11 @@ package require tcltest 2.2
 lappend auto_path [file join [file dirname [info nameofexecutable]] .. lib]
 
 namespace import tcltest::*
-configure {*}$argv -testdir [file dir [info script]]
+
+if { [info exists ::env(COOKIT_GUI)] } {
+    configure {*}$argv -testdir [file join [file dir [info script]] gui]
+} else {
+    configure {*}$argv -testdir [file dir [info script]]
+}
+
 runAllTests

@@ -1,0 +1,73 @@
+# cookit tests - paths for Tcl packages
+#
+# Copyright (C) 2024 Konstantin Kushnir <chpock@gmail.com>
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# These tests check the expected content in cookit vfs
+
+if { [lsearch [namespace children] ::tcltest] == -1 } {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+# Run Tk tests in a separate process to avoid its impact on the current process
+
+test cookfsPkgPath-3.1 {Check ::tk_library} -setup {
+    set script [makeFile {
+        package require Tk
+        puts -nonewline [list $tk_library [lsort $auto_path]]
+        exit
+    } temp.tcl]
+} -body {
+    set result [exec [interpreter] $script]
+} -cleanup {
+    file delete -force $script
+    unset -nocomplain script result
+} -result [list \
+    [file join $::cookit::root lib tk$tcl_version] \
+    [lsort [list \
+        [file join $::cookit::root lib] \
+        [file join $::cookit::root lib tcl$tcl_version] \
+        [file join $::cookit::root lib tk$tcl_version] \
+        [file join $::cookit::root lib tk$tcl_version ttk] \
+    ]] \
+]
+
+test cookfsPkgPath-7.1 {Make sure that TK_LIBRARY environment variable is ignored} -setup {
+
+    if { [info exists ::env(TK_LIBRARY)] } {
+        set save_env $::env(TK_LIBRARY)
+    } else {
+        unset -nocomplain save_env
+    }
+
+    set ::env(TK_LIBRARY) /foo/bar
+
+    set script [makeFile {
+        package require Tk
+        puts [list [info exists ::env(TK_LIBRARY)] $::tk_library [lsort $::auto_path]]
+        exit
+    } temp.tcl]
+
+} -body {
+    set result [exec [interpreter] $script]
+} -cleanup {
+    if { [info exists save_env] } { set ::env(TK_LIBRARY) $save_env } { unset ::env(TK_LIBRARY) }
+    file delete -force $script
+    unset -nocomplain script result save_env
+} -result [list \
+    0 \
+    [file join $::cookit::root lib tk$tcl_version] \
+    [lsort [list \
+        [file join $::cookit::root lib] \
+        [file join $::cookit::root lib tcl$tcl_version] \
+        [file join $::cookit::root lib tk$tcl_version] \
+        [file join $::cookit::root lib tk$tcl_version ttk] \
+    ]] \
+]
+
+# cleanup
+::tcltest::cleanupTests
+return

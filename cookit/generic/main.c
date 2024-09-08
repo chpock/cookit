@@ -14,8 +14,10 @@
 #endif /* TCL_THREADS */
 
 #ifdef __WIN32__
+#ifndef COOKIT_CONSOLE_ONLY
 #include <tk.h>
 #include <tkDecls.h>
+#endif /* COOKIT_CONSOLE_ONLY */
 #define WIN32_LEAN_AND_MEAN
 #ifndef STRICT
 #define STRICT // See MSDN Article Q83456
@@ -46,9 +48,11 @@ int _CRT_glob = 0;
 #define NULL_DEVICE "/dev/null"
 #endif /* __WIN32__ */
 
+#ifndef COOKIT_CONSOLE_ONLY
 // 1 - console
 // 0 - GUI
 int g_isConsoleMode;
+#endif /* COOKIT_CONSOLE_ONLY */
 int g_isBootstrap;
 
 int g_argc = 0;
@@ -59,7 +63,9 @@ char **g_argv;
 #endif /* __WIN32__ */
 
 #ifdef __WIN32__
+#ifndef COOKIT_CONSOLE_ONLY
 Tcl_AppInitProc Tk_Init;
+#endif /* COOKIT_CONSOLE_ONLY */
 #endif /* __WIN32__ */
 Tcl_AppInitProc Vfs_Init;
 Tcl_AppInitProc Mtls_Init;
@@ -87,7 +93,9 @@ static int Cookit_Startup(Tcl_Interp *interp) {
     // when attempting to write/read from standard channels. In GUI (Tk) that
     // will be done by Tk_Main()->Tk_InitConsoleChannels().
 
+#ifndef COOKIT_CONSOLE_ONLY
     if (g_isConsoleMode) {
+#endif /* COOKIT_CONSOLE_ONLY */
         Tcl_Channel chan;
 
         DBG("Cookit_Startup: check channels for console mode");
@@ -120,7 +128,9 @@ static int Cookit_Startup(Tcl_Interp *interp) {
                 Tcl_SetStdChannel(chan, TCL_STDERR);
             }
         }
+#ifndef COOKIT_CONSOLE_ONLY
     }
+#endif /* COOKIT_CONSOLE_ONLY */
 
     // Tcl_Main can break $argv by deciding that the user has specified
     // a startup script in it. In this case, Tcl_Main sets $::argv0 to the value
@@ -193,7 +203,9 @@ static int Cookit_Startup(Tcl_Interp *interp) {
     Tcl_StaticPackage(0, "tdom", Tdom_Init, NULL);
 
 #ifdef __WIN32__
+#ifndef COOKIT_CONSOLE_ONLY
     Tcl_StaticPackage(0, "Tk", Tk_Init, NULL);
+#endif /* COOKIT_CONSOLE_ONLY */
 #endif /* __WIN32__ */
 
 #ifdef TCL_THREADS
@@ -357,7 +369,9 @@ static int Cookit_Startup(Tcl_Interp *interp) {
 
     // Set the same startup file that tclsh/wish normally uses in case we are
     // running interactively
+#ifndef COOKIT_CONSOLE_ONLY
     if (g_isConsoleMode) {
+#endif /* COOKIT_CONSOLE_ONLY */
 #ifdef __WIN32__
         Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
             Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
@@ -365,6 +379,7 @@ static int Cookit_Startup(Tcl_Interp *interp) {
         Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
             Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
 #endif /* __WIN32__ */
+#ifndef COOKIT_CONSOLE_ONLY
     } else {
 #ifdef __WIN32__
         Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
@@ -374,6 +389,7 @@ static int Cookit_Startup(Tcl_Interp *interp) {
             Tcl_NewStringObj("~/.wishrc", -1), TCL_GLOBAL_ONLY);
 #endif /* __WIN32__ */
     }
+#endif /* COOKIT_CONSOLE_ONLY */
     // In Tcl9+ we need to manually expand the tilde
 #if TCL_MAJOR_VERSION > 8
     Tcl_EvalEx(interp, "set tcl_rcFileName [file tildeexpand $tcl_rcFileName]",
@@ -400,6 +416,7 @@ skipNonInteractive:
     Tcl_DecrRefCount(argvObj);
 
     DBG("Cookit_Startup: before exit...");
+#ifndef COOKIT_CONSOLE_ONLY
     if (!g_isConsoleMode) {
         DBG("Cookit_Startup: init GUI...");
 #ifdef __WIN32__
@@ -419,6 +436,7 @@ skipNonInteractive:
                 goto error;
         }
     }
+#endif /* COOKIT_CONSOLE_ONLY */
 
 done:
 
@@ -430,11 +448,13 @@ error:
 #ifdef __WIN32__
     fprintf(stderr, "Fatal error: %s\n", Tcl_GetStringResult(interp));
     fflush(stderr);
+#ifndef COOKIT_CONSOLE_ONLY
     if (!g_isConsoleMode) {
         MessageBeep(MB_ICONEXCLAMATION);
         MessageBoxA(NULL, Tcl_GetStringResult(interp), "Fatal error",
             MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     }
+#endif /* COOKIT_CONSOLE_ONLY */
     ExitProcess(1);
 #endif /* __WIN32__ */
     Tcl_DeleteInterp(interp);
@@ -443,6 +463,7 @@ error:
 
 #ifdef __WIN32__
 
+#ifndef COOKIT_CONSOLE_ONLY
 // This function is used to determine whether the current application
 // is a GUI or a console. As for now, it check checks if if console is
 // attached to the current process. This is not a 100% solution,
@@ -456,13 +477,14 @@ static inline int is_console(void) {
         return 1;
     }
 }
+#endif /* COOKIT_CONSOLE_ONLY */
 
-int
-_tmain(int argc, TCHAR *argv[]) {
+int _tmain(int argc, TCHAR *argv[]) {
 
     g_argc = argc;
     g_argv = argv;
 
+#ifndef COOKIT_CONSOLE_ONLY
     if (is_console()) {
         g_isConsoleMode = GetEnvironmentVariableA("COOKIT_GUI",
             NULL, 0) == 0 ? 1 : 0;
@@ -470,15 +492,20 @@ _tmain(int argc, TCHAR *argv[]) {
         g_isConsoleMode = GetEnvironmentVariableA("COOKIT_CONSOLE",
             NULL, 0) == 0 ? 0 : 1;
     }
+#endif /* COOKIT_CONSOLE_ONLY */
 
     g_isBootstrap = GetEnvironmentVariableA("COOKIT_BOOTSTRAP",
         NULL, 0) == 0 ? 0 : 1;
 
+#ifndef COOKIT_CONSOLE_ONLY
     if (g_isConsoleMode) {
+#endif /* COOKIT_CONSOLE_ONLY */
         Tcl_Main(argc, argv, Cookit_Startup);
+#ifndef COOKIT_CONSOLE_ONLY
     } else {
         Tk_Main(argc, argv, Cookit_Startup);
     }
+#endif /* COOKIT_CONSOLE_ONLY */
 
     return TCL_OK;
 
@@ -486,12 +513,13 @@ _tmain(int argc, TCHAR *argv[]) {
 
 #else
 
-int
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
     g_argc = argc;
     g_argv = argv;
 
+#ifndef COOKIT_CONSOLE_ONLY
     g_isConsoleMode = getenv("COOKIT_GUI") == NULL ? 1 : 0;
+#endif /* COOKIT_CONSOLE_ONLY */
     g_isBootstrap = getenv("COOKIT_BOOTSTRAP") == NULL ? 0 : 1;
 
     Tcl_Main(argc, argv, Cookit_Startup);

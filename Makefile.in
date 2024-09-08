@@ -376,7 +376,7 @@ define run-check
             COOKIT_VERSION="`cat "$(TOP_SRCDIR)/version"`" \
             DISPLAY=:0 \
             TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/cookit/tests/helper.sh $@`" \
-            $(KIT_PREFIX)/bin/cookit$(EXE_EXT) \
+            $(KIT_PREFIX)/bin/cookit$(if $(filter $2,tk),-gui,)$(EXE_EXT) \
             `$(CYGPATH) "$(CHECK_WORK_DIR)/$@/all.tcl"` -verbose "body error start" $(TESTFLAGS) | \
             tr -d '\r' | \
             tee $@.output && \
@@ -400,6 +400,7 @@ test-thread:
 	$(call run-check, 1, tcl, deps/thread/tests)
 test-cookit:
 	$(call run-check, 1, tcl, cookit/tests)
+	$(call run-check, 1, tk, cookit/tests)
 test-twapi:
 	$(call run-check, 0, tcl, deps/twapi/tests)
 test-tclmtls:

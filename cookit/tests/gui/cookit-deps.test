@@ -10,7 +10,7 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
     namespace import -force ::tcltest::*
 }
 
-source [file join [tcltest::testsDirectory] helper.tcl]
+source [file join [tcltest::testsDirectory] .. helper.tcl]
 
 set platform [lindex [file split [info nameofexecutable]] end-2]
 
@@ -18,13 +18,12 @@ set platform [lindex [file split [info nameofexecutable]] end-2]
 #   Linux-x86
 #   Linux-x86_64
 #   MacOS-X
-#   Windows-x86
-#   Windows-x86_64
+#   Windows
 
 set expected [dict create {*}{
     Linux-x86 {
         cookit-deps {
-            cookit_raw {
+            cookit-gui_raw {
                 /lib/ld-linux.so.2
                 libc.so.6
                 libdl.so.2
@@ -33,14 +32,26 @@ set expected [dict create {*}{
                 librt.so.1
                 linux-gate.so.1
             }
+            libtk*.so {
+                /lib/ld-linux.so.2
+                libX11.so.6
+                libXau.so.6
+                libc.so.6
+                libdl.so.2
+                libm.so.6
+                libpthread.so.0
+                libxcb.so.1
+                linux-gate.so.1
+            }
         }
         cookit-glibc {
-            cookit_raw { 2.11 2.7 2.3.2 2.3 2.2 2.1.2 2.1 2.0 }
+            cookit-gui_raw { 2.11 2.7 2.3.2 2.3 2.2 2.1.2 2.1 2.0 }
+            libtk*.so      { 2.7 2.3 2.1.3 2.1 2.0 }
         }
     }
     Linux-x86_64 {
         cookit-deps {
-            cookit_raw {
+            cookit-gui_raw {
                 /lib64/ld-linux-x86-64.so.2
                 libc.so.6
                 libdl.so.2
@@ -49,26 +60,54 @@ set expected [dict create {*}{
                 librt.so.1
                 linux-vdso.so.1
             }
+            libtk*.so {
+                /lib64/ld-linux-x86-64.so.2
+                libX11.so.6
+                libXau.so.6
+                libc.so.6
+                libdl.so.2
+                libm.so.6
+                libpthread.so.0
+                libxcb.so.1
+                linux-vdso.so.1
+            }
         }
         cookit-glibc {
-            cookit_raw { 2.11 2.7 2.3.2 2.3 2.2.5 }
+            cookit-gui_raw { 2.11 2.7 2.3.2 2.3 2.2.5 }
+            libtk*.so      { 2.7 2.3 2.2.5 }
         }
     }
     MacOS-X {
         cookit-deps {
-            cookit_raw {
+            cookit-gui_raw {
                 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
                 /System/Library/Frameworks/Security.framework/Versions/A/Security
                 /usr/lib/libSystem.B.dylib
+            }
+            libtk*.dylib   {
+                /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+                /System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices
+                /System/Library/Frameworks/Carbon.framework/Versions/A/Carbon
+                /System/Library/Frameworks/Cocoa.framework/Versions/A/Cocoa
+                /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+                /System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices
+                /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation
+                /System/Library/Frameworks/IOKit.framework/Versions/A/IOKit
+                /System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore
+                /usr/lib/libSystem.B.dylib
+                /usr/lib/libobjc.A.dylib
             }
         }
     }
     Windows-x86 {
         cookit-deps {
-            cookit_raw.exe {
+            cookit-gui_raw.exe {
                 ADVAPI32.dll
+                COMCTL32.DLL
+                COMDLG32.DLL
                 CRYPT32.dll
                 GDI32.dll
+                IMM32.DLL
                 IPHLPAPI.DLL
                 KERNEL32.dll
                 MPR.DLL
@@ -99,10 +138,12 @@ set expected [dict create {*}{
     }
     Windows-x86_64 {
         cookit-deps {
-            cookit_raw.exe {
+            cookit-gui_raw.exe {
                 ADVAPI32.dll
+                COMCTL32.DLL
                 CRYPT32.dll
                 GDI32.dll
+                IMM32.DLL
                 IPHLPAPI.DLL
                 KERNEL32.dll
                 MPR.DLL
@@ -124,6 +165,7 @@ set expected [dict create {*}{
                 WS2_32.dll
                 WTSAPI32.dll
                 bcrypt.dll
+                COMDLG32.DLL
                 credui.dll
                 msvcrt.dll
                 ole32.dll
@@ -155,7 +197,7 @@ set expected [list apply {{ platform expected type } {
 
 test cookit-deps-cookit-deps {cookit dependencies} -setup [concat \
     $setup_load_deps \
-    cookit-deps.txt \
+    cookit-gui-deps.txt \
 ] -body {
     set result [list]
     dict for { exe data } $deps {
@@ -171,7 +213,7 @@ test cookit-deps-cookit-deps {cookit dependencies} -setup [concat \
 
 test cookit-deps-cookit-glibc {cookit GLIBC requirement} -constraints linuxOnly -setup [concat \
     $setup_load_deps \
-    cookit-deps.txt \
+    cookit-gui-deps.txt \
 ] -body {
     set result [list]
     dict for { exe data } $deps {
@@ -187,7 +229,7 @@ test cookit-deps-cookit-glibc {cookit GLIBC requirement} -constraints linuxOnly 
 
 test cookit-deps-cookit-rpath {cookit RPATH} -constraints unix -setup [concat \
     $setup_load_deps \
-    cookit-deps.txt \
+    cookit-gui-deps.txt \
 ] -body {
     set result [list]
     dict for { exe data } $deps {

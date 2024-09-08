@@ -5,7 +5,14 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-set destinationDirectory [lindex $argv 0]
+if { [lindex $argv 0] eq "-console" } {
+    set isConsoleOnly 1
+    set destinationDirectory [lindex $argv 1]
+} else {
+    set isConsoleOnly 0
+    set destinationDirectory [lindex $argv 0]
+}
+
 set rootLibDirectory   [file dirname $tcl_library]
 set cookitLibDirectory [file dir [info script]]
 
@@ -394,14 +401,21 @@ proc makeManifest { } {
 }
 
 addTcl
-addTk
+
+if { !$isConsoleOnly } {
+    addTk
+    addTkcon
+}
+
 addVfs
 addMtls
-if { [::tcl::pkgconfig get threaded] } addThread
 addCookit
-addTkcon
 addTdom
 addTclhttps
+
+if { [::tcl::pkgconfig get threaded] } {
+    addThread
+}
 
 if { $::tcl_platform(platform) eq "windows" } {
     addTwapi

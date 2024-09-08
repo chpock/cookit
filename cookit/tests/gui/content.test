@@ -12,16 +12,10 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
     namespace import -force ::tcltest::*
 }
 
-testConstraint darwin [expr {[testConstraint unix] && $tcl_platform(os) eq "Darwin"}]
-testConstraint notDarwin [expr {![testConstraint darwin]}]
-testConstraint cookitVersionDefined [info exists ::env(COOKIT_VERSION)]
-
-test content-1 {check cookit version} -constraints cookitVersionDefined -body {
-    string equal [package require cookit $::env(COOKIT_VERSION)] $::env(COOKIT_VERSION)
-} -result 1
-
 foreach { pkgName pkgVersion constraints } {
     Tcl                 8.6.14 {}
+    Tk                  8.6.14 {}
+    Ttk                 8.6.14 {}
     http                2.9.8  {}
     https               0.1.0  {}
     Thread              2.8.9  {}
@@ -37,10 +31,6 @@ foreach { pkgName pkgVersion constraints } {
         -returnCodes ok -match glob -result *
 }
 unset count
-
-test content-6 {icon exists} -constraints win -body {
-    file exists /cookit/cookit.ico
-} -result 1
 
 # cleanup
 ::tcltest::cleanupTests
