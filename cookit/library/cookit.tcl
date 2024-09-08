@@ -7,15 +7,6 @@
 
 namespace eval ::cookit {
 
-    # -pagesize: Use 1MB as the page size.
-    # -smallfilesize: If the file is larger than 512 KB, consider it a non-text
-    #                 file and place it on a separate page.
-    variable mount_options [list \
-        -compression lzma \
-        -pagesize [expr { 1024 * 1024 }] \
-        -smallfilesize [expr { 1024 * 512 }] \
-    ]
-
     # We set the ::cookit::root variable during application initialization
     # in the main.c file. However, the application is initialized only for
     # the main interpreter. Thus, let's set it here to be sure that this
@@ -557,10 +548,67 @@ proc ::cookit::parsePEResources { exe } {
 
 }
 
+proc ::cookit::copyTclRuntime { manifest dest } {
+
+    set root [file dirname $manifest]
+    set tmpmount [tmpmount]
+
+    set fh [open $manifest r]
+
+    # The 1st pass.
+    # Copy *.enc files as one large page. In modern environments, we probably
+    # won't use encodings at all, as we probably only need utf8.
+    # Also, encoding files are very similar to each other, and keeping them
+    # as a single page is very efficient. Practical tests have verified that
+    # for lzma compression, 5 is the optimal compression level for these files.
+    # Higher compression levels do not reduce the size of the compressed data.
+    ::cookfs::Mount $dest $tmpmount \
+        -compression lzma:5 \
+        -pagesize [expr { 1024 * 1024 * 5 }] \
+        -smallfilesize [expr { 1024 * 1024 * 5 }] \
+        -smallfilebuffer [expr { 1024 * 1024 * 5 }]
+
+    while { [gets $fh file] != -1 } {
+        if { [file extension $file] ne ".enc" } continue
+        set dir [file join $tmpmount [file dirname $file]]
+        if { ![file isdirectory $dir] } {
+            file mkdir $dir
+        }
+        file copy [file join $root $file] $dir
+    }
+
+    ::cookfs::Unmount $tmpmount
+    seek $fh 0
+
+    # The 2nd pass.
+    # Copy all other files. Use the default compression.
+    # -pagesize: Use 1MB as the page size.
+    # -smallfilesize: If the file is larger than 512 KB, consider it a non-text
+    #                 file and place it on a separate page.
+    # -smallfilebuffer: Use a large smallbuffer (5MB) to efficiently sort all
+    #                   runtime files before storing them to pages.
+    ::cookfs::Mount $dest $tmpmount \
+        -pagesize [expr { 1024 * 1024 }] \
+        -smallfilesize [expr { 1024 * 512 }] \
+        -smallfilebuffer [expr { 1024 * 1024 * 5 }]
+
+    while { [gets $fh file] != -1 } {
+        if { [file extension $file] eq ".enc" } continue
+        set dir [file join $tmpmount [file dirname $file]]
+        if { ![file isdirectory $dir] } {
+            file mkdir $dir
+        }
+        file copy [file join $root $file] $dir
+    }
+
+    ::cookfs::Unmount $tmpmount
+    close $fh
+
+}
+
 proc ::cookit::makestub { exe } {
 
     variable root
-    variable mount_options
 
     # TODO: optimize and don't read the head into memory
     set pg [::cookfs::c::pages -readonly [info nameofexecutable]]
@@ -572,18 +620,7 @@ proc ::cookit::makestub { exe } {
     puts -nonewline $fh $head
     close $fh
 
-    set tmpmount [tmpmount]
-    ::cookfs::Mount $exe $tmpmount {*}$mount_options
-    set fh [open [file join $root manifest.txt] r]
-    while { [gets $fh file] != -1 } {
-        set dir [file join $tmpmount [file dirname $file]]
-        if { ![file isdirectory $dir] } {
-            file mkdir $dir
-        }
-        file copy [file join $root $file] [file join $tmpmount $file]
-    }
-    ::cookfs::Unmount $tmpmount
-
+    copyTclRuntime [file join $root manifest.txt] $exe
     setExecPerms $exe
 
     return $exe
@@ -835,7 +872,15 @@ proc ::cookit::wrap { args } {
     }
 
     set mnt [tmpmount]
-    ::cookfs::Mount $executable $mnt {*}$mount_options
+    # Default mount options for other files:
+    # -pagesize: Use 1MB as the page size.
+    # -smallfilesize: If the file is larger than 512 KB, treat it as a separate file.
+    # -smallfilebuffer: Use a large smallbuffer (64MB) to efficiently sort all
+    #                   files before storing them to pages.
+    ::cookfs::Mount $executable $mnt \
+        -pagesize [expr { 1024 * 1024 }] \
+        -smallfilesize [expr { 1024 * 512 }] \
+        -smallfilebuffer [expr { 1024 * 1024 * 64 }]
 
     foreach package [dict get $params packages] {
         # Don't try to overwrite packages/libraries.

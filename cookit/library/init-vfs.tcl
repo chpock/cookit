@@ -17,28 +17,4 @@ puts "  destination: $vfs_out"
 lappend auto_path [file normalize [file join $vfs_content lib]]
 package require cookit
 
-proc addFilesFrom { dir { level 0 } } {
-    if { ![info exists ::strip_count] } {
-        set ::strip_count [llength [file split $::vfs_content]]
-    }
-    foreach file [glob -nocomplain -directory $dir -type f *] {
-        set dst [file split $file]
-        set dst [lrange $dst $::strip_count end]
-        set dst [file join $::mnt {*}$dst]
-        set dstDir [file dirname $dst]
-        if { ![file isdirectory $dstDir] } {
-            file mkdir $dstDir
-        }
-        puts "    [string repeat {  } $level]add file: $dst"
-        file copy $file $dst
-    }
-    foreach subdir [glob -nocomplain -directory $dir -type d *] {
-        puts "    [string repeat {  } $level]add directory: $subdir"
-        addFilesFrom $subdir [expr { $level + 1 }]
-    }
-}
-
-cookfs::Mount $vfs_out $mnt {*}$::cookit::mount_options
-addFilesFrom $vfs_content
-cookfs::Unmount $mnt
-
+::cookit::copyTclRuntime [file join $vfs_content manifest.txt] $vfs_out

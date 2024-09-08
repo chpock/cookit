@@ -38,16 +38,29 @@ proc genStaticPkgIndex { srcDir package { ver {} } } {
     addFile [file join $srcDir pkgIndex.tcl] $script
 }
 
-proc shrink { src dst } {
-    set dir [file dirname $dst]
-    if { ![file isdirectory $dir] } {
-        file mkdir $dir
-    }
+proc shrink_enc { src dst } {
 
-    if { ![isMatchList [file tail $src] {*.tcl *.tm}] } {
-        file copy -force $src $dst
-        return
-    }
+    set fsrc [open $src r]
+    fconfigure $fsrc -encoding utf-8 -translation auto
+
+    set data [read $fsrc]
+
+    close $fsrc
+
+    # Replace the first line with a single comment character "#".
+    # This will allow for more efficient compression of encoding files.
+    set data [split $data \n]
+    set data [lreplace $data 0 0 "#"]
+    set data [join $data \n]
+
+    set fdst [open $dst w]
+    fconfigure $fdst -encoding utf-8 -translation lf
+    puts -nonewline $fdst $data
+    close $fdst
+
+}
+
+proc shrink_tcl { src dst } {
 
     set fsrc [open $src r]
     fconfigure $fsrc -encoding utf-8 -translation auto
@@ -100,6 +113,23 @@ proc shrink { src dst } {
 
     close $fsrc
     close $fdst
+
+}
+
+proc shrink { src dst } {
+    set dir [file dirname $dst]
+    if { ![file isdirectory $dir] } {
+        file mkdir $dir
+    }
+
+    if { [isMatchList [file tail $src] {*.tcl *.tm}] } {
+        shrink_tcl $src $dst
+    } elseif { [isMatchList [file tail $src] {*.enc}] } {
+        shrink_enc $src $dst
+    } else {
+        file copy -force $src $dst
+    }
+
 }
 
 proc copyFiles { } {
