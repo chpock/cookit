@@ -292,6 +292,7 @@ work/stamp-cookit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-coo
 twapi: work/stamp-twapi
 work/stamp-twapi: work/stamp-tcl
 	mkdir -p work/twapi/src && cp -r "$(TOP_SRCDIR)/deps/twapi"/* work/twapi/src
+	chmod +x work/twapi/src/configure work/twapi/src/tclconfig/install-sh
 # see details in the patch
 	patch -N -p1 -d work/twapi/src < "$(TOP_SRCDIR)"/deps/twapi-000-disable-lzma.patch
 	cd work/twapi; \
@@ -303,7 +304,7 @@ work/stamp-twapi: work/stamp-tcl
 	        --enable-shared=no \
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/twapi && $(MAKE) all install install-lib-binaries CFLAGS="$(CFLAGS)"
-	cp -f work/twapi/twapi_entry.tcl work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
+	cp -f work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
 ifeq ($(IJ_PLATFORM),Windows-x86)
 	cp -f $(TOP_SRCDIR)/deps/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
 else ifeq ($(IJ_PLATFORM),Windows-x86_64)

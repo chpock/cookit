@@ -74,7 +74,6 @@ Tcl_AppInitProc Tdom_Init;
 #ifdef __WIN32__
 Tcl_AppInitProc Registry_Init;
 Tcl_AppInitProc Twapi_base_Init;
-Tcl_AppInitProc Twapi_Init;
 #endif /* __WIN32__ */
 
 void TclX_IdInit (Tcl_Interp *interp);
@@ -215,7 +214,6 @@ static int Cookit_Startup(Tcl_Interp *interp) {
 #ifdef __WIN32__
     Tcl_StaticPackage(0, "registry", Registry_Init, NULL);
     Tcl_StaticPackage(0, "twapi_base", Twapi_base_Init, NULL);
-    Tcl_StaticPackage(0, "twapi", Twapi_Init, NULL);
 #endif /* __WIN32__ */
 
     Tcl_Obj *local = Tcl_NewStringObj(VFS_MOUNT, -1);

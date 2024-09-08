@@ -19,9 +19,6 @@
 [submodule "src/installkit/tclconfig"]
 	path = cookit/tclconfig
 	url = https://github.com/tcltk/tclconfig
-[submodule "src/twapi"]
-	path = deps/twapi
-	url = https://github.com/chpock/twapi.git
 [submodule "src/installkit/tclx"]
 	path = cookit/tclx
 	url = https://github.com/flightaware/tclx.git
@@ -37,3 +34,6 @@
 [submodule "src/tclhttps"]
 	path = deps/tclhttps
 	url = https://github.com/chpock/tclhttps.git
+[submodule "deps/twapi"]
+	path = deps/twapi
+	url = https://github.com/apnadkarni/twapi

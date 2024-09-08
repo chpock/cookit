@@ -282,7 +282,66 @@ proc addTwapi { { optional 0 } } {
         directoryExists [file join $::rootLibdirectory "twapi*"]
         return
     }
-    addAllFiles [lindex $dir 0] "LICENSE"
+    addAllFiles [lindex $dir 0] [list "LICENSE" "README.md" "pkgIndex.tcl"]
+
+    load {} Twapi_base
+    set version $::twapi::version
+
+    # Get list of known modules. pkgIndex.tcl from twapi contains variable:
+    # set __twapimods { ...modules list... }
+    set fd [open [file join $dir pkgIndex.tcl] r]
+    set data [read $fd]
+    close $fd
+
+    if { ![regexp "set __twapimods \\\{(.+?)\\\}" $data -> modules] } {
+        puts stderr "Failed to get twapi modules list"
+        exit 1
+    }
+    # normalize the list of modules by removing unnecessary spaces and newlines
+    set modules [list {*}$modules]
+
+    set pkgIndex [list]
+
+    lappend pkgIndex {
+        package ifneeded twapi_base @PACKAGE_VERSION@ [list apply [list { dir } {
+            load {} Twapi_base
+            source [file join $dir twapi.tcl]
+            package provide twapi_base @PACKAGE_VERSION@
+        }] $dir]
+    }
+
+    lappend pkgIndex [string map [list @MODULES_LIST@ $modules] {
+        set __twapi_modules {@MODULES_LIST@}
+    }]
+
+    lappend pkgIndex {
+        foreach __twapi_mod $__twapi_modules {
+            package ifneeded twapi_$__twapi_mod @PACKAGE_VERSION@ [list apply [list { dir mod } {
+                package require twapi_base @PACKAGE_VERSION@
+                source [file join $dir ${mod}.tcl]
+                package provide twapi_$mod @PACKAGE_VERSION@
+            }] $dir $__twapi_mod]
+        }
+    }
+
+    lappend pkgIndex {
+        package ifneeded twapi @PACKAGE_VERSION@ [list apply [list { dir mods } {
+            foreach mod $mods { package require twapi_$mod @PACKAGE_VERSION@ }
+            package provide twapi @PACKAGE_VERSION@
+        }] $dir $__twapi_modules]
+    }
+
+    lappend pkgIndex {
+        unset __twapi_modules
+    }
+
+    set pkgIndex [lmap x $pkgIndex { string trim [string map [list @PACKAGE_VERSION@ $version] $x] }]
+    set pkgIndex [join $pkgIndex \n]
+
+    # trim spaces
+    set pkgIndex [join [lmap x [split $pkgIndex \n] { string trim $x }] \n]
+
+    addFile [file join $dir pkgIndex.tcl] $pkgIndex
 
 }
 

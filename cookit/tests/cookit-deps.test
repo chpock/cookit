@@ -79,6 +79,7 @@ set expected [dict create {*}{
                 RPCRT4.dll
                 SETUPAPI.dll
                 SHELL32.dll
+                SHLWAPI.dll
                 Secur32.dll
                 USER32.dll
                 USERENV.dll
@@ -94,6 +95,7 @@ set expected [dict create {*}{
                 msvcrt.dll
                 ole32.dll
                 pdh.dll
+                tdh.dll
             }
         }
     }
@@ -113,6 +115,7 @@ set expected [dict create {*}{
                 RPCRT4.dll
                 SETUPAPI.dll
                 SHELL32.dll
+                SHLWAPI.dll
                 Secur32.dll
                 USER32.dll
                 USERENV.dll
@@ -128,6 +131,7 @@ set expected [dict create {*}{
                 msvcrt.dll
                 ole32.dll
                 pdh.dll
+                tdh.dll
             }
         }
     }

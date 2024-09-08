@@ -206,10 +206,8 @@ if test "${TEA_PLATFORM}" = "windows" ; then
         winspool.lib version.lib iphlpapi.lib powrprof.lib
         secur32.lib wtsapi32.lib setupapi.lib uxtheme.lib
         credui.lib crypt32.lib wintrust.lib gdi32.lib
-        ole32.lib oleaut32.lib uuid.lib
+        ole32.lib oleaut32.lib uuid.lib tdh.lib shlwapi.lib
     ])
-    #-lcomdlg32 -limm32 -lcomctl32 -lshell32
-    #TEA_ADD_LIBS([user32.lib])
     #TEA_ADD_SOURCES([win/winFile.c])
     #TEA_ADD_INCLUDES([-I\"$(${CYGPATH} ${srcdir}/win)\"])
 else

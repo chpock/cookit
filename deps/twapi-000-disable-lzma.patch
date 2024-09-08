@@ -1,21 +1,21 @@
 Don't link twapi with lzma procedures
 
 diff -rubBaN twapi.orig/configure twapi/configure
---- twapi.orig/configure	2024-03-12 03:30:26.791507200 +0200
-+++ twapi/configure	2024-03-12 04:15:18.192224700 +0200
-@@ -5398,8 +5398,6 @@
- 	    twapi/base/errors.c
- 	    twapi/base/ffi.c
- 	    twapi/base/keylist.c
--	    twapi/base/lzmadec.c
--	    twapi/base/lzmainterface.c
- 	    twapi/base/memlifo.c
- 	    twapi/base/mycrt.c
- 	    twapi/base/parseargs.c
-diff -rubBaN twapi.orig/twapi/base/twapi.c twapi/twapi/base/twapi.c
---- twapi.orig/twapi/base/twapi.c	2024-03-12 03:30:26.129504400 +0200
-+++ twapi/twapi/base/twapi.c	2024-03-12 04:15:53.293935400 +0200
-@@ -288,51 +288,6 @@
+--- twapi.orig/configure	2024-09-08 18:12:27.175258596 +0000
++++ twapi/configure	2024-09-08 18:14:40.095247443 +0000
+@@ -5486,8 +5486,6 @@
+ 	    win/errors.c
+ 	    win/ffi.c
+ 	    win/keylist.c
+-	    win/lzmadec.c
+-	    win/lzmainterface.c
+ 	    win/memlifo.c
+ 	    win/mycrt.c
+ 	    win/parseargs.c
+diff -rubBaN twapi.orig/win/twapi.c twapi/win/twapi.c
+--- twapi.orig/win/twapi.c	2024-09-08 18:12:27.325258370 +0000
++++ twapi/win/twapi.c	2024-09-08 18:36:03.445186395 +0000
+@@ -343,51 +343,6 @@
      int compressed;
      Tcl_Obj *pathObj;
  

@@ -21,7 +21,7 @@ foreach { pkgName pkgVersion constraints } {
     Thread              2.8.9  {}
     msgcat              1.6.1  {}
     registry            1.3.5  {win}
-    twapi               4.7.2  {win}
+    twapi               5.0a1  {win}
     vfs                 1.4.2  {}
     cookfs              1.6.0  {}
 } {
