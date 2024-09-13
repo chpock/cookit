@@ -108,7 +108,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     done
 
     if [ -z "$BUILD_PLATFORMS" ]; then
-        BUILD_PLATFORMS="Windows-x86 Windows-x86_64 MacOS-X Linux-x86 Linux-x86_64"
+        BUILD_PLATFORMS="i686-w64-mingw32 x86_64-w64-mingw32 i386-apple-darwin10.6 i686-pc-linux-gnu x86_64-pc-linux-gnu"
         BUILD_ALL="$BUILD_HOME/all"
         rm -rf "$BUILD_ALL" "$BUILD_HOME/cookit"-*
     fi
@@ -196,11 +196,11 @@ PLATFORM="$2"
 shift
 shift
 
-if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows-x86" ] || [ "$PLATFORM" = "Windows-x86_64" ]; then
+if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "i686-w64-mingw32" ] || [ "$PLATFORM" = "x86_64-w64-mingw32" ]; then
 
     log "Start local build..."
 
-    if [ "$PLATFORM" = "Linux-x86" -o "$PLATFORM" = "Linux-x86_64" ]; then
+    if [ "$PLATFORM" = "i686-pc-linux-gnu" -o "$PLATFORM" = "x86_64-pc-linux-gnu" ]; then
         CENTOS_VER="$(rpm -E %{rhel} 2>/dev/null)"
         if [ "$CENTOS_VER" = "6" -a "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
             echo "CentOS 6 detected. Scientific Linux CERN 6 Developer Toolset is enabled."
@@ -227,7 +227,7 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows-x86" ] || [ "$PLATFORM" = "
     cd "$BUILD_DIR"
 
     case "$PLATFORM" in
-        MacOS-X)
+        *-apple-darwin*)
             # Use PATH for macports
             PATH="/opt/local/bin:/opt/local/libexec/llvm-16/bin:$PATH"
             export PATH
@@ -236,7 +236,7 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows-x86" ] || [ "$PLATFORM" = "
             CXX="clang"
             export CXX
             ;;
-        Windows-x86)
+        i686-w64-mingw32)
             if [ -n "$IS_WSL" ]; then
                 # WSL env
                 # dependencies
@@ -258,7 +258,7 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows-x86" ] || [ "$PLATFORM" = "
             set -- "$@" --toolchain-prefix "/usr/bin/i686-w64-mingw32-"
             [ "$MAKE_PARALLEL" != "true" ] || _MAKE_PARALLEL="-j8"
             ;;
-        Windows-x86_64)
+        x86_64-w64-mingw32)
             if [ -n "$IS_WSL" ]; then
                 # WSL env
                 # dependencies
@@ -280,7 +280,7 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows-x86" ] || [ "$PLATFORM" = "
             set -- "$@" --toolchain-prefix "/usr/bin/x86_64-w64-mingw32-"
             [ "$MAKE_PARALLEL" != "true" ] || _MAKE_PARALLEL="-j8"
             ;;
-        Linux-x86)
+        i686-pc-linux-gnu)
             # dependencies
             # libXcursor-devel - for tkdnd
             if [ "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
@@ -292,7 +292,7 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows-x86" ] || [ "$PLATFORM" = "
             sudo yum install -y libgcc.i686 glibc-devel.i686 libX11-devel.i686 libXext-devel.i686 libXt-devel.i686 libXcursor-devel.i686
             sudo yum install -y ccache 2>/dev/null || true
             ;;
-        Linux-x86_64)
+        x86_64-pc-linux-gnu)
             # dependencies
             # libXcursor-devel - for tkdnd
             if [ "$USE_SCI_LINUX6_DEV_TOOLSET" = "1" ]; then
@@ -316,10 +316,10 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "Windows-x86" ] || [ "$PLATFORM" = "
     make $MAKE_PARALLEL test
     make $MAKE_PARALLEL dist
 
-    if [ "$PLATFORM" = "Windows-x86" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
+    if [ "$PLATFORM" = "i686-w64-mingw32" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
         mv "$BUILD_DIR/$PLATFORM.zip" "$BUILD_DIR/.."
         ok "Done."
-    elif [ "$PLATFORM" = "Windows-x86_64" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
+    elif [ "$PLATFORM" = "x86_64-w64-mingw32" ] && [ -e "$BUILD_DIR/$PLATFORM.zip" ]; then
         mv "$BUILD_DIR/$PLATFORM.zip" "$BUILD_DIR/.."
         ok "Done."
     else
@@ -413,9 +413,9 @@ vagrant_unlocked() {
 }
 
 VAGRANT_VM="$(cat <<EOF
-MacOS-X      /c/DriveD/VM/loc-70-mac-101206-64
-Linux-x86    /c/DriveD/VM/loc-26-lin-cent6-64
-Linux-x86_64 /c/DriveD/VM/loc-26-lin-cent6-64
+i386-apple-darwin10.6 /c/DriveD/VM/loc-70-mac-101206-64
+i686-pc-linux-gnu /c/DriveD/VM/loc-26-lin-cent6-64
+x86_64-pc-linux-gnu /c/DriveD/VM/loc-26-lin-cent6-64
 EOF
 )"
 

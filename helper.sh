@@ -2,69 +2,34 @@
 
 set -e
 
-OS=`uname -s`
+if [ -z "$PLATFORM" ]; then
 
-case $OS in
-    AIX)
-        PLATFORM=AIX-ppc
-        ;;
-    Darwin)
-        OS=MacOS-X
-        ;;
-    FreeBSD)
-        VERSION=`uname -r | cut -f 1 -d .`
-        ;;
-    HP-UX)
-        PLATFORM=HPUX-hppa
-        ;;
-    IRIX*)
-        PLATFORM=IRIX-mips
-        ;;
-    SunOS)
-        OS=Solaris
-        ;;
-    CYGWIN_NT*|MINGW*)
-        EXE=.exe
-        PLATFORM=Windows
-        ;;
-esac
+    case "$(uname -s)" in
+        Darwin) OS=apple-darwin10.6 ;;
+        *Linux) OS=pc-linux-gnu ;;
+        CYGWIN_NT*|MINGW*)
+            EXE=.exe
+            OS=w64-mingw32
+            ;;
+        *)
+            echo "Unsupported OS: $(uname -s)"
+            exit 1
+            ;;
+    esac
 
-if test -z "$PLATFORM"; then
-    if test -z "$MACHINE"; then
-        MACHINE=`uname -m`
+    case "$(uname -m)" in
+        *x86_64*) ARCH=x86_64 ;;
+        *86*)     ARCH=x86 ;;
+        Power*)   ARCH=powerpc ;;
+        arm64)    ARCH=arm64 ;;
+        *)
+            echo "Unsupported ARCH: $(uname -m)"
+            exit 1
+            ;;
+    esac
 
-        case $MACHINE in
-            *86_64*)
-                MACHINE=x86_64
-                ;;
-            *86*)
-                MACHINE=x86
-                ;;
-            *sun*)
-                MACHINE=sparc
-                ;;
-            Power*)
-                MACHINE=ppc
-                ;;
-            arm64)
-                MACHINE=arm64
-                ;;
-        esac
-    fi
+    PLATFORM="${ARCH}-${OS}"
 
-    if [ "$PLATFORM" = "MacOS-X" ]; then
-        if [ "$MACHINE" = "x86" ]; then
-            unset MACHINE
-        fi
-    fi
-
-    if [ -n "$MACHINE" ]; then
-        if test -n "$VERSION"; then
-            PLATFORM=$OS-$VERSION-$MACHINE
-        else
-            PLATFORM=$OS-$MACHINE
-        fi
-    fi
 fi
 
 TOP=`pwd`

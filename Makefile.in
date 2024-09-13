@@ -13,7 +13,7 @@ ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon thread
 COOKIT_ROOT = /cookit
 
 # Required for WSL
-ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 
     WSLENV = TCL_LIBRARY/p:COOKIT_CONSOLE:COOKIT_GUI:COOKIT_BOOTSTRAP:TCLTEST_OPTIONS:COOKIT_VERSION
     export WSLENV
@@ -66,7 +66,7 @@ all: $(TARGETS)
 tcl: work/stamp-tcl
 work/stamp-tcl: work/stamp-zlib
 	mkdir -p work/tcl/src && cp -r "$(TOP_SRCDIR)/deps/$(TCL_SOURCE_SUBDIR)/tcl"/* work/tcl/src
-ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 # See details about this patch in its file.
 	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tcl-010-Windows-fix-CFLAGS.patch
 endif
@@ -97,7 +97,7 @@ endif
 	    work/tcl/Makefile
 #	$(SEDI) -e 's#^\(ZLIB_DIR[[:space:]]*=\).*#\1 $(TOP_SRCDIR)/deps/zlib#' \
 #	    work/tcl/Makefile
-ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 # On Windows, Tcl uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking tclsh,
 # but ignores LDFLAGS. This means that our zlib will be ignored in tclsh.
 # Let's fix that by adding $(LDFLAGS) to LDFLAGS_CONSOLE / LDFLAGS_WINDOW.
@@ -123,7 +123,7 @@ endif
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tcl/Makefile && \
 	    cd work/tcl && $(MAKE) install-headers || : no-op
-ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 # Fix for the build with MinGW. Library is specified in wrong format.
 	$(SEDI) -e 's/ lib\(tcl[^.]\+\)\.a/ -l\1/g' $(PREFIX)/lib/tclConfig.sh
 endif
@@ -132,17 +132,17 @@ endif
 tk: work/stamp-tk
 work/stamp-tk: work/stamp-tcl
 	mkdir -p work/tk/src && cp -r "$(TOP_SRCDIR)/deps/$(TCL_SOURCE_SUBDIR)/tk"/* work/tk/src
-ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 # See details about this patch in its file.
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-010-Windows-fix-CFLAGS.patch
 endif
 ifeq ($(TCL_SOURCE_SUBDIR),tcl8.6)
-ifeq ($(IJ_PLATFORM),MacOS-X)
+ifeq ($(findstring apple-darwin,$(IJ_PLATFORM)),apple-darwin)
 # see details in the patch
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-000-MacOS-X-fix-TKNSString.patch
 endif
 else
-ifeq ($(IJ_PLATFORM),MacOS-X)
+ifeq ($(findstring apple-darwin,$(IJ_PLATFORM)),apple-darwin)
 # see details in the patch
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-040-fix-bug-macos-available.patch
 endif
@@ -151,7 +151,7 @@ ifneq ($(TCL_SOURCE_SUBDIR),tcl8.6)
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-030-All-do-not-use-install-directory.patch
 endif
 ifneq ($(TCL_SOURCE_SUBDIR),tcl8.6)
-ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 # See details about this patch in its file.
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-050-fix-windows-config.patch
 endif
@@ -170,7 +170,7 @@ endif
 	        $(if $(filter tcl8.6,$(TCL_SOURCE_SUBDIR)),,--disable-zipfs) \
 	        $(TK_SHARED_FLAG) \
 	        $(AQUA_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
-ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 # On Windows, Tk uses LDFLAGS_CONSOLE / LDFLAGS_WINDOW when linking wish,
 # but ignores LDFLAGS. This means that our zlib will be ignored in wish.
 # Let's fix that by adding $(LDFLAGS) to LDFLAGS_CONSOLE / LDFLAGS_WINDOW.
@@ -295,7 +295,7 @@ work/stamp-tdom: work/stamp-tcl
 	touch $@
 
 cookit: work/stamp-cookit
-work/stamp-cookit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread work/stamp-tdom work/stamp-tclhttps $(if $(filter $(findstring Windows,$(IJ_PLATFORM)),Windows),work/stamp-twapi)
+work/stamp-cookit: work/stamp-tcl work/stamp-tk work/stamp-tclvfs work/stamp-cookfs work/stamp-tclmtls work/stamp-tkcon work/stamp-thread work/stamp-tdom work/stamp-tclhttps $(if $(filter $(findstring mingw32,$(IJ_PLATFORM)),mingw32),work/stamp-twapi)
 	mkdir -p work/cookit
 	cd work/cookit; \
 	    test -f Makefile \
@@ -333,9 +333,9 @@ work/stamp-twapi: work/stamp-tcl
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/twapi && $(MAKE) all install install-lib-binaries CFLAGS="$(CFLAGS)"
 	cp -f work/twapi/pkgIndex.tcl $(PREFIX)/lib/twapi*
-ifeq ($(IJ_PLATFORM),Windows-x86)
+ifeq ($(IJ_PLATFORM),i686-w64-mingw32)
 	cp -f $(TOP_SRCDIR)/deps/twapi/dyncall/dyncall-*/lib/release_x86/*.lib $(PREFIX)/lib/twapi*
-else ifeq ($(IJ_PLATFORM),Windows-x86_64)
+else ifeq ($(IJ_PLATFORM),x86_64-w64-mingw32)
 	cp -f $(TOP_SRCDIR)/deps/twapi/dyncall/dyncall-*/lib/release_amd64/*.lib $(PREFIX)/lib/twapi*
 endif
 	rm -rf work/twapi/src

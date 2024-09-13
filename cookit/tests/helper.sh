@@ -36,7 +36,7 @@ case "$1" in
         ;;
     test-cookit)
         case "$PLATFORM" in
-            Linux*)
+            *-pc-linux-*)
                 # Don't check dependencies in Ubuntu24.04 environment.
                 # Real linux build environment is Centos6
                 if test -e /etc/lsb-release && grep -q -F DISTRIB_RELEASE=24.04 /etc/lsb-release; then
@@ -49,13 +49,13 @@ case "$1" in
         # Tests 4.1 and 4.2 depend on vfs::ns, which we don't ship
         skip vfs-4.1 vfs-4.2
         case "$PLATFORM" in
-            Linux-*)
+            *-pc-linux-*)
                 # vfsTar-1.2 - attempt to delete mounted file is successful on Linux
                 skip vfsTar-1.2
                 # vfsZip-9.0 - attempt to delete mounted file is successful on Linux
                 skip vfsZip-9.0
             ;;
-            MacOS-X)
+            *-apple-darwin*)
                 # vfsTar-1.2 - attempt to delete mounted file is successful on Linux
                 skip vfsTar-1.2
                 # vfsZip-9.0 - attempt to delete mounted file is successful on Linux
@@ -71,7 +71,7 @@ case "$1" in
         # the opt package is not included to cookit
         notfile opt.test
         case "$PLATFORM" in
-            Windows-*)
+            *-mingw32)
                 # These tests call the interpreter itself, and they get stuck
                 # because of Tk.
                 skip compile-13.1 event-7.5

@@ -95,7 +95,6 @@ echo
 
 TCL_SYSTEM=unix
 TARGETS="cookit"
-TCLSH="\$(PREFIX)/bin/tclsh8.6"
 SYMBOLS_FLAG=
 AQUA_FLAG=
 TK_SHARED_FLAG="--enable-shared --disable-static"
@@ -143,11 +142,9 @@ fi
 COMPILER="GCC"
 
 case "$IJ_PLATFORM" in
-  Windows-x86)
-    UPX="$ABS_TOP_SRCDIR/cookit/tools/Windows/upx.exe"
+  i686-w64-mingw32)
+    UPX="${UPX}.exe"
     TCL_SYSTEM=win
-    TCLSH="\$(PREFIX)/bin/tclsh86s"
-    TARGETS="$TARGETS thread"
     TK_SHARED_FLAG="--disable-shared --enable-static"
     if uname -r | grep -q -- '-WSL2'; then
         WINDOWS_SYSTEM=WSL
@@ -165,11 +162,9 @@ case "$IJ_PLATFORM" in
     SO_EXT=".dll"
     ;;
 
-  Windows-x86_64)
-    UPX="$ABS_TOP_SRCDIR/cookit/tools/Windows/upx.exe"
+  x86_64-w64-mingw32)
+    UPX="${UPX}.exe"
     TCL_SYSTEM=win
-    TCLSH="\$(PREFIX)/bin/tclsh86s"
-    TARGETS="$TARGETS thread"
     TK_SHARED_FLAG="--disable-shared --enable-static"
     if uname -r | grep -q -- '-WSL2'; then
         WINDOWS_SYSTEM=WSL
@@ -187,7 +182,7 @@ case "$IJ_PLATFORM" in
     SO_EXT=".dll"
     ;;
 
-  Linux-x86)
+  i686-pc-linux-gnu)
     CFLAGS="-m32 $CFLAGS"
     LDFLAGS="-m32 $LDFLAGS"
     AC_HOST="i686-pc-linux-gnu"
@@ -195,7 +190,7 @@ case "$IJ_PLATFORM" in
     SO_EXT=".so"
     ;;
 
-  Linux-x86_64)
+  x86_64-pc-linux-gnu)
     CFLAGS="-m64 $CFLAGS"
     LDFLAGS="-m64 $LDFLAGS"
     AC_HOST="x86_64-pc-linux-gnu"
@@ -203,7 +198,7 @@ case "$IJ_PLATFORM" in
     SO_EXT=".so"
     ;;
 
-  MacOS-X)
+  i386-apple-darwin10.6)
     COMPILER="CLANG"
     # NS_BUILD_32_LIKE_64 is required to build Tk8.6.13 on i383 platform. See:
     # http://theocacao.com/document.page/552
@@ -227,7 +222,7 @@ case "$IJ_PLATFORM" in
     SO_EXT=".dylib"
     ;;
 
-  MacOS-X-arm64)
+  arm64-apple-darwin10.6)
     COMPILER="CLANG"
     CFLAGS="-arch arm64 $CFLAGS"
     if [ "$TCL_MAJOR_VERSION" = "8" ]; then
@@ -244,12 +239,12 @@ case "$IJ_PLATFORM" in
     # don't use UPX on MacOS for now due to multiple issues, like:
     # https://github.com/upx/upx/issues/777
     UPX="echo"
-    AC_HOST="x86_64-apple-darwin10.6"
+    AC_HOST="arm64-apple-darwin10.6"
     STRIPFLAGS="-Sx"
     SO_EXT=".dylib"
     ;;
 
-  MacOS-X-ppc)
+  powerpc-apple-darwin10.6)
     COMPILER="CLANG"
     if [ "$TCL_MAJOR_VERSION" = "8" ]; then
         CFLAGS="$CFLAGS -mmacosx-version-min=10.6"
@@ -291,12 +286,6 @@ else
 fi
 
 UPX="$UPX $UPX_ARGS"
-
-case "$IJ_PLATFORM" in
-  Windows-*)
-    TARGETS="$TARGETS twapi"
-    ;;
-esac
 
 if command -v ccache >/dev/null 2>&1; then
     CCACHE="ccache "
@@ -356,7 +345,6 @@ SYMBOLS_FLAG    = $SYMBOLS_FLAG
 TCL_SYSTEM      = $TCL_SYSTEM
 IJ_PLATFORM     = $IJ_PLATFORM
 AC_HOST         = $AC_HOST
-TCLSH           = $TCLSH
 CYGPATH         = $CYGPATH
 WINDOWS_SYSTEM  = $WINDOWS_SYSTEM
 

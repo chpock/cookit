@@ -15,13 +15,14 @@ source [file join [tcltest::testsDirectory] .. helper.tcl]
 set platform [lindex [file split [info nameofexecutable]] end-2]
 
 # Known platforms:
-#   Linux-x86
-#   Linux-x86_64
-#   MacOS-X
-#   Windows
+#   i686-pc-linux-gnu
+#   x86_64-w64-mingw32
+#   i686-pc-linux-gnu
+#   x86_64-pc-linux-gnu
+#   i386-apple-darwin10.6
 
 set expected [dict create {*}{
-    Linux-x86 {
+    i686-pc-linux-gnu {
         cookit-deps {
             cookit-gui_raw {
                 /lib/ld-linux.so.2
@@ -59,7 +60,7 @@ set expected [dict create {*}{
             lib*tk*.so      { 2.7 2.3 2.1.3 2.1 2.0 }
         }
     }
-    Linux-x86_64 {
+    x86_64-pc-linux-gnu {
         cookit-deps {
             cookit-gui_raw {
                 /lib64/ld-linux-x86-64.so.2
@@ -97,7 +98,7 @@ set expected [dict create {*}{
             lib*tk*.so      { 2.7 2.3 2.2.5 }
         }
     }
-    MacOS-X {
+    i386-apple-darwin10.6 {
         cookit-deps {
             cookit-gui_raw {
                 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
@@ -124,7 +125,7 @@ set expected [dict create {*}{
             }
         }
     }
-    Windows-x86 {
+    i686-w64-mingw32 {
         cookit-deps {
             cookit-gui_raw.exe {
                 ADVAPI32.dll
@@ -198,7 +199,7 @@ set expected [dict create {*}{
             }
         }
     }
-    Windows-x86_64 {
+    x86_64-w64-mingw32 {
         cookit-deps {
             cookit-gui_raw.exe {
                 ADVAPI32.dll
