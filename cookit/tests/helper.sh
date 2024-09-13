@@ -30,6 +30,10 @@ case "$1" in
         # Skip unstable tests
         skip "mtls-badssl-*"
         ;;
+    test-cookfs)
+        # skip threaded tests as they are not stable in build environment
+        skip "cookfsVfsThread-*"
+        ;;
     test-cookit)
         case "$PLATFORM" in
             Linux*)

@@ -94,6 +94,16 @@ TEA_ADD_TCL_SOURCES([library/cookit.tcl library/wzipvfs.tcl library/cookit-stats
 # TEA_ADD_* any platform specific compiler/build info here.
 #--------------------------------------------------------------------
 
+
+AC_MSG_CHECKING([for binary suffix])
+if test "${TCL_MAJOR_VERSION}" = "8"; then
+    BIN_SUFFIX="8"
+else
+    BIN_SUFFIX=""
+fi
+AC_MSG_RESULT(['${BIN_SUFFIX}'])
+AC_SUBST(BIN_SUFFIX)
+
 AS_IF([test "${TEA_PLATFORM}" = "windows"], [
     AC_ARG_WITH(lib-twapi, [ --with-lib-twapi library file for twapi package ], LIB_TWAPI_FILE=${withval})
 
@@ -118,7 +128,7 @@ AS_IF([test "${TEA_PLATFORM}" = "windows"], [
 
 AC_ARG_WITH(lib-thread, [ --with-lib-thread library file for Thread package ], LIB_THREAD_FILE=${withval})
 AC_MSG_CHECKING([for Thread package library file])
-AS_IF([test "${TCL_THREADS}" = 1], [
+AS_IF([test "${TCL_THREADS}" = 1 -o "${TCL_MAJOR_VERSION}" -ge 9], [
     AS_IF([test -f "${LIB_THREAD_FILE}"], [
         AC_MSG_RESULT([found ${LIB_THREAD_FILE}])
         TEA_ADD_LIBS([${LIB_THREAD_FILE}])
@@ -189,15 +199,15 @@ AS_IF([test "x${STRIP_COMMAND}" != "x"], [
 ])
 AC_SUBST(STRIP_COMMAND)
 
-bin_BINARIES="${PACKAGE_NAME}${EXEEXT} ${PACKAGE_NAME}U${EXEEXT} ${PACKAGE_NAME}-gui${EXEEXT} ${PACKAGE_NAME}U-gui${EXEEXT}"
+bin_BINARIES="${PACKAGE_NAME}${BIN_SUFFIX}${EXEEXT} ${PACKAGE_NAME}${BIN_SUFFIX}U${EXEEXT} ${PACKAGE_NAME}${BIN_SUFFIX}-gui${EXEEXT} ${PACKAGE_NAME}${BIN_SUFFIX}U-gui${EXEEXT}"
 if test "${TEA_PLATFORM}" = "windows" ; then
     TEA_ADD_LIBS([-pipe -static-libgcc -municode])
     TEA_ADD_CFLAGS([-DUNICODE -D_UNICODE])
-    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A${EXEEXT} ${PACKAGE_NAME}UA${EXEEXT}"
-    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A-gui${EXEEXT} ${PACKAGE_NAME}UA-gui${EXEEXT}"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}${BIN_SUFFIX}A${EXEEXT} ${PACKAGE_NAME}${BIN_SUFFIX}UA${EXEEXT}"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}${BIN_SUFFIX}A-gui${EXEEXT} ${PACKAGE_NAME}${BIN_SUFFIX}UA-gui${EXEEXT}"
     # Add console binaries
-    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}-gui.com ${PACKAGE_NAME}U-gui.com"
-    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}A-gui.com ${PACKAGE_NAME}UA-gui.com"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}${BIN_SUFFIX}-gui.com ${PACKAGE_NAME}${BIN_SUFFIX}U-gui.com"
+    bin_BINARIES="${bin_BINARIES} ${PACKAGE_NAME}${BIN_SUFFIX}A-gui.com ${PACKAGE_NAME}${BIN_SUFFIX}UA-gui.com"
     # These are CFLAGS and LIBS from twapi
     TEA_ADD_CFLAGS([-DWINVER=0x0501 -D_WIN32_WINNT=0x0501 -DPSAPI_VERSION=1])
     # These libs must be after twapi static library
@@ -310,6 +320,7 @@ if test "${TEA_PLATFORM}" = "windows" ; then
     AC_MSG_RESULT([${MACHINE}])
     AC_SUBST(MACHINE)
     AC_CONFIG_FILES([win/cookit.admin.manifest win/cookit.user.manifest])
+    AC_CONFIG_FILES([win/cookit8.admin.manifest win/cookit8.user.manifest])
 
     # Link with Tk on Windows
 

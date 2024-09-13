@@ -230,7 +230,13 @@ proc addTcl { { optional 0 } } {
     }
 
     addAllFiles $dirMinor [list "encoding" "http1.*" "opt*" \
-        "tzdata" "msgs" "safe.tcl" "*.c"]
+        "tzdata" "msgs" "safe.tcl" "*.c" "cookiejar*"]
+
+    set dirCookieJar [glob -nocomplain -directory $dirMinor -type d "cookiejar*"]
+    if { [llength $dirCookieJar] } {
+        set dirCookieJar [lindex $dirCookieJar 0]
+        addAllFiles $dirCookieJar
+    }
 
 }
 
@@ -249,10 +255,10 @@ proc addTk { { optional 0 } } {
     if { $::tcl_platform(platform) eq "windows" } {
         genStaticPkgIndex $dirTk Tk [info patchlevel]
     } {
-        addFile [file join $dirTk .. libtk[info tclversion][info sharedlibext]]
+        addFile [file join $dirTk .. lib[expr { $::tcl_version >= 9.0 ? "tcl9" : "" }]tk[info tclversion][info sharedlibext]]
         addFile [file join $dirTk pkgIndex.tcl] "package ifneeded Tk\
             [info patchlevel]\
-            \[list load \[file normalize \[file join \$dir .. libtk[info tclversion][info sharedlibext]\]\]\]"
+            \[list load \[file normalize \[file join \$dir .. lib[expr { $::tcl_version >= 9.0 ? "tcl9" : "" }]tk[info tclversion][info sharedlibext]\]\]\]"
     }
 
 }
@@ -356,7 +362,7 @@ proc addVfs { { optional 0 } } {
 
     # detect available vfs::zip and vfs::tar versions
     lappend auto_path $::rootLibDirectory
-    load {} vfs
+    load {} Vfs
     package require vfs::zip
     package require vfs::tar
 
@@ -372,7 +378,7 @@ proc addVfs { { optional 0 } } {
     addFile [file join $dir pkgIndex.tcl] "package ifneeded vfs\
         [package present vfs] \[list apply {{ dir } {\
         namespace eval ::vfs {};\
-        load {} vfs;\
+        load {} Vfs;\
         source \[file join \$dir vfsUtils.tcl\];\
         source \[file join \$dir vfslib.tcl\];\
         }} \$dir\]"
@@ -387,7 +393,7 @@ proc addMtls { { optional 0 } } {
         return
     }
 
-    load {} mtls
+    load {} Mtls
     genStaticPkgIndex $dir mtls [package present mtls]
 }
 
@@ -401,9 +407,9 @@ proc addTdom { { optional 0 } } {
 
     addFile [file join $dir tdom.tcl]
 
-    load {} tdom
+    load {} Tdom
     addFile [file join $dir pkgIndex.tcl] "package ifneeded tdom\
-        [package present tdom] \"load {} tdom; source \[list \[file join \$dir tdom.tcl\]\]\""
+        [package present tdom] \"load {} Tdom; source \[list \[file join \$dir tdom.tcl\]\]\""
 }
 
 proc addTkcon { { optional 0 } } {

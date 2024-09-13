@@ -19,6 +19,8 @@ help() {
   echo "                      information from binaries"
   echo "--buildtype dev|debug|release"
   echo "                      Apply a specific set of parameters"
+  echo "--tcl-version <major_version>"
+  echo "                      Build against specified major Tcl version"
   echo
   exit 0
 }
@@ -71,6 +73,10 @@ while [ "$#" != 0 ]; do
           shift
           STRIP="$1"
           ;;
+      --tcl-version)
+          shift
+          TCL_MAJOR_VERSION="$1"
+          ;;
       *)
           echo "Invalid configure option $i"
           help
@@ -81,6 +87,7 @@ while [ "$#" != 0 ]; do
 done
 
 [ -n "$IJ_PLATFORM" ] || IJ_PLATFORM="$($TOP_SRCDIR/helper.sh platform)"
+[ -n "$TCL_MAJOR_VERSION" ] || TCL_MAJOR_VERSION="8"
 
 echo
 echo "Platform is $IJ_PLATFORM"
@@ -200,7 +207,15 @@ case "$IJ_PLATFORM" in
     COMPILER="CLANG"
     # NS_BUILD_32_LIKE_64 is required to build Tk8.6.13 on i383 platform. See:
     # http://theocacao.com/document.page/552
-    CFLAGS="-arch i386 -mmacosx-version-min=10.6 -DNS_BUILD_32_LIKE_64 $CFLAGS"
+    CFLAGS="-arch i386 -DNS_BUILD_32_LIKE_64 $CFLAGS"
+    #CFLAGS="-arch x86_64 $CFLAGS"
+    if [ "$TCL_MAJOR_VERSION" = "8" ]; then
+        CFLAGS="$CFLAGS -mmacosx-version-min=10.6"
+    else
+        # 10.10 is the minimum version:
+        # https://core.tcl-lang.org/tk/tktview/cb052066deda07b2b94a2d097770b7e76793d802
+        CFLAGS="$CFLAGS -mmacosx-version-min=10.10"
+    fi
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
@@ -214,7 +229,14 @@ case "$IJ_PLATFORM" in
 
   MacOS-X-arm64)
     COMPILER="CLANG"
-    CFLAGS="-arch arm64 -mmacosx-version-min=10.6 $CFLAGS"
+    CFLAGS="-arch arm64 $CFLAGS"
+    if [ "$TCL_MAJOR_VERSION" = "8" ]; then
+        CFLAGS="$CFLAGS -mmacosx-version-min=10.6"
+    else
+        # 10.10 is the minimum version:
+        # https://core.tcl-lang.org/tk/tktview/cb052066deda07b2b94a2d097770b7e76793d802
+        CFLAGS="$CFLAGS -mmacosx-version-min=10.10"
+    fi
     CFLAGS="-DSTDC_HEADERS $CFLAGS"
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
@@ -229,7 +251,13 @@ case "$IJ_PLATFORM" in
 
   MacOS-X-ppc)
     COMPILER="CLANG"
-    CFLAGS="-arch ppc -mmacosx-version-min=10.6 $CFLAGS"
+    if [ "$TCL_MAJOR_VERSION" = "8" ]; then
+        CFLAGS="$CFLAGS -mmacosx-version-min=10.6"
+    else
+        # 10.10 is the minimum version:
+        # https://core.tcl-lang.org/tk/tktview/cb052066deda07b2b94a2d097770b7e76793d802
+        CFLAGS="$CFLAGS -mmacosx-version-min=10.10"
+    fi
     AQUA_FLAG="--enable-aqua"
     # on BSD sed the extension after -i is mandatory
     SEDI="sed -i ''"
@@ -285,6 +313,17 @@ fi
 
 CC="${CC}" CXX="${CXX}" "$TOP_SRCDIR/helper.sh" environment > build.conf
 
+if [ "$TCL_MAJOR_VERSION" = "8" ]; then
+    TCL_SOURCE_SUBDIR="tcl8.6"
+    BIN_SUFFIX="8"
+elif [ "$TCL_MAJOR_VERSION" = "9" ]; then
+    TCL_SOURCE_SUBDIR="tcl9.0"
+    BIN_SUFFIX=""
+else
+    echo "Error: unknown Tcl major version '$TCL_MAJOR_VERSION'" >&2
+    exit 1
+fi
+
 cat > environment.conf << EOF
 ## General build configuration
 ## Created with $0 $CONFIGURE_CMDLINE
@@ -320,6 +359,9 @@ AC_HOST         = $AC_HOST
 TCLSH           = $TCLSH
 CYGPATH         = $CYGPATH
 WINDOWS_SYSTEM  = $WINDOWS_SYSTEM
+
+TCL_SOURCE_SUBDIR = $TCL_SOURCE_SUBDIR
+BIN_SUFFIX        = $BIN_SUFFIX
 
 TARGETS         = $TARGETS
 

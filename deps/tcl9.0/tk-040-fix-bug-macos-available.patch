@@ -1,0 +1,29 @@
+Fix for bug: https://core.tcl-lang.org/tk/tktview/cb052066deda07b2b94a2d097770b7e76793d802
+
+diff -rubBaN tk.orig/macosx/tkMacOSXDraw.c tk/macosx/tkMacOSXDraw.c
+--- tk.orig/macosx/tkMacOSXDraw.c	2024-09-13 11:38:31.293479159 +0000
++++ tk/macosx/tkMacOSXDraw.c	2024-09-13 11:41:53.203667508 +0000
+@@ -1287,6 +1287,7 @@
+ 	 * currentAppearance property, but that has not been verified.
+ 	 */
+ 
++#if MAC_OS_X_VERSION_MIN_REQUIRED >= 120000
+ 	if (@available(macOS 12.0, *)) {
+ 	    NSAppearance *current = NSAppearance.currentDrawingAppearance;
+ 	    NSAppearance *effective = view.effectiveAppearance;
+@@ -1300,12 +1301,12 @@
+ 	     *It is not clear if this is a problem before macos 12.0, but
+ 	     * we might as well do the update anyway.
+ 	     */
+-
+-#if MAC_OS_X_VERSION_MIN_REQUIRED < 120000
++#endif
+ /* currentAppearance is not deprecated. */
+ 	    NSAppearance.currentAppearance = view.effectiveAppearance;
+-#endif
++#if MAC_OS_X_VERSION_MIN_REQUIRED >= 120000
+ 	}
++#endif
+     }
+ 
+     /*

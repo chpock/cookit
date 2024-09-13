@@ -58,7 +58,7 @@ test cookfsPkgPath-7.1 {Make sure that TK_LIBRARY environment variable is ignore
     file delete -force $script
     unset -nocomplain script result save_env
 } -result [list \
-    0 \
+    1 \
     [file join $::cookit::root lib tk$tcl_version] \
     [lsort [list \
         [file join $::cookit::root lib] \

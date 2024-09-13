@@ -33,9 +33,19 @@ set expected [dict create {*}{
                 librt.so.1
                 linux-gate.so.1
             }
+            cookit8_raw {
+                /lib/ld-linux.so.2
+                libc.so.6
+                libdl.so.2
+                libm.so.6
+                libpthread.so.0
+                librt.so.1
+                linux-gate.so.1
+            }
         }
         cookit-glibc {
-            cookit_raw { 2.11 2.7 2.3.2 2.3 2.2 2.1.2 2.1 2.0 }
+            cookit_raw { 2.11 2.9 2.7 2.3.2 2.3 2.2 2.1.2 2.1 2.0 }
+            cookit8_raw { 2.11 2.7 2.3.2 2.3 2.2 2.1.2 2.1 2.0 }
         }
     }
     Linux-x86_64 {
@@ -49,9 +59,19 @@ set expected [dict create {*}{
                 librt.so.1
                 linux-vdso.so.1
             }
+            cookit8_raw {
+                /lib64/ld-linux-x86-64.so.2
+                libc.so.6
+                libdl.so.2
+                libm.so.6
+                libpthread.so.0
+                librt.so.1
+                linux-vdso.so.1
+            }
         }
         cookit-glibc {
-            cookit_raw { 2.11 2.7 2.3.2 2.3 2.2.5 }
+            cookit_raw { 2.11 2.9 2.7 2.3.2 2.3 2.2.5 }
+            cookit8_raw { 2.11 2.7 2.3.2 2.3 2.2.5 }
         }
     }
     MacOS-X {
@@ -61,11 +81,48 @@ set expected [dict create {*}{
                 /System/Library/Frameworks/Security.framework/Versions/A/Security
                 /usr/lib/libSystem.B.dylib
             }
+            cookit8_raw {
+                /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+                /System/Library/Frameworks/Security.framework/Versions/A/Security
+                /usr/lib/libSystem.B.dylib
+            }
         }
     }
     Windows-x86 {
         cookit-deps {
             cookit_raw.exe {
+                ADVAPI32.dll
+                CRYPT32.dll
+                GDI32.dll
+                IPHLPAPI.DLL
+                KERNEL32.dll
+                MPR.DLL
+                NETAPI32.dll
+                OLEAUT32.dll
+                POWRPROF.dll
+                PSAPI.DLL
+                RPCRT4.dll
+                SETUPAPI.dll
+                SHELL32.dll
+                SHLWAPI.dll
+                Secur32.dll
+                USER32.dll
+                USERENV.dll
+                UxTheme.dll
+                VERSION.dll
+                WINMM.DLL
+                WINSPOOL.DRV
+                WINTRUST.dll
+                WS2_32.dll
+                WTSAPI32.dll
+                bcrypt.dll
+                credui.dll
+                msvcrt.dll
+                ole32.dll
+                pdh.dll
+                tdh.dll
+            }
+            cookit8_raw.exe {
                 ADVAPI32.dll
                 CRYPT32.dll
                 GDI32.dll
@@ -133,6 +190,38 @@ set expected [dict create {*}{
                 pdh.dll
                 tdh.dll
             }
+            cookit8_raw.exe {
+                ADVAPI32.dll
+                CRYPT32.dll
+                GDI32.dll
+                IPHLPAPI.DLL
+                KERNEL32.dll
+                MPR.DLL
+                NETAPI32.dll
+                OLEAUT32.dll
+                POWRPROF.dll
+                PSAPI.DLL
+                RPCRT4.dll
+                SETUPAPI.dll
+                SHELL32.dll
+                SHLWAPI.dll
+                Secur32.dll
+                USER32.dll
+                USERENV.dll
+                UxTheme.dll
+                VERSION.dll
+                WINMM.DLL
+                WINSPOOL.DRV
+                WINTRUST.dll
+                WS2_32.dll
+                WTSAPI32.dll
+                bcrypt.dll
+                credui.dll
+                msvcrt.dll
+                ole32.dll
+                pdh.dll
+                tdh.dll
+            }
         }
     }
 }]
@@ -148,18 +237,19 @@ set setup_load_deps [list apply {{ file {var deps} } {
     close $fp
 }}]
 
-set expected [list apply {{ platform expected type } {
+set expected [list apply {{ platform expected prefix type } {
     if { ![dict exists $expected $platform $type] } { return "" }
     set result [list]
     dict for { k v } [dict get $expected $platform $type] {
+        if { [string match "cookit*" $k] && ![string match "${prefix}-*" $k] && ![string match "${prefix}_*" $k] } continue
         lappend result "$k [string tolower [join $v { }]]"
     }
     return [join $result \n]
-}} $platform $expected]
+}} $platform $expected "cookit[expr { $::tcl_version < 9.0 ? 8 : "" }]"]
 
 test cookit-deps-cookit-deps {cookit dependencies} -setup [concat \
     $setup_load_deps \
-    cookit-deps.txt \
+    cookit[expr { $::tcl_version < 9.0 ? 8 : "" }]-deps.txt \
 ] -body {
     set result [list]
     dict for { exe data } $deps {
@@ -175,7 +265,7 @@ test cookit-deps-cookit-deps {cookit dependencies} -setup [concat \
 
 test cookit-deps-cookit-glibc {cookit GLIBC requirement} -constraints linuxOnly -setup [concat \
     $setup_load_deps \
-    cookit-deps.txt \
+    cookit[expr { $::tcl_version < 9.0 ? 8 : "" }]-deps.txt \
 ] -body {
     set result [list]
     dict for { exe data } $deps {
@@ -191,7 +281,7 @@ test cookit-deps-cookit-glibc {cookit GLIBC requirement} -constraints linuxOnly 
 
 test cookit-deps-cookit-rpath {cookit RPATH} -constraints unix -setup [concat \
     $setup_load_deps \
-    cookit-deps.txt \
+    cookit[expr { $::tcl_version < 9.0 ? 8 : "" }]-deps.txt \
 ] -body {
     set result [list]
     dict for { exe data } $deps {

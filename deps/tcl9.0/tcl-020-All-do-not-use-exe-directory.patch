@@ -1,0 +1,85 @@
+diff -rubBaN tcl.orig/library/auto.tcl tcl/library/auto.tcl
+--- tcl.orig/library/auto.tcl	2024-09-09 01:02:31.049010423 +0000
++++ tcl/library/auto.tcl	2024-09-09 01:02:46.899008704 +0000
+@@ -168,17 +168,17 @@
+ 	# ../../../foo1.0.1/library
+ 	#		(From unix/arch directory in parallel build hierarchy)
+ 
+-	set parentDir [file dirname [file dirname [info nameofexecutable]]]
+-	set grandParentDir [file dirname $parentDir]
+-	lappend dirs [file join $parentDir lib $basename$version]
+-	lappend dirs [file join $grandParentDir lib $basename$version]
+-	lappend dirs [file join $parentDir library]
+-	if {0} {
+-	    lappend dirs [file join $grandParentDir library]
+-	    lappend dirs [file join $grandParentDir $basename$patch library]
+-	    lappend dirs [file join [file dirname $grandParentDir] \
+-			      $basename$patch library]
+-	}
++	#set parentDir [file dirname [file dirname [info nameofexecutable]]]
++	#set grandParentDir [file dirname $parentDir]
++	#lappend dirs [file join $parentDir lib $basename$version]
++	#lappend dirs [file join $grandParentDir lib $basename$version]
++	#lappend dirs [file join $parentDir library]
++	#if {0} {
++	#    lappend dirs [file join $grandParentDir library]
++	#    lappend dirs [file join $grandParentDir $basename$patch library]
++	#    lappend dirs [file join [file dirname $grandParentDir] \
++	#		      $basename$patch library]
++	#}
+     }
+     # make $dirs unique, preserving order
+     array set seen {}
+diff -rubBaN tcl.orig/library/init.tcl tcl/library/init.tcl
+--- tcl.orig/library/init.tcl	2024-09-09 01:02:31.079010416 +0000
++++ tcl/library/init.tcl	2024-09-09 01:02:46.899008704 +0000
+@@ -65,18 +65,18 @@
+ 		lappend ::auto_path $Dir
+ 	    }
+ 	}
+-	set Dir [file join [file dirname [file dirname \
+-		[info nameofexecutable]]] lib]
+-	if {$Dir ni $::auto_path} {
+-	    lappend ::auto_path $Dir
+-	}
+-	if {[info exists ::tcl_pkgPath]} { catch {
+-	    foreach Dir $::tcl_pkgPath {
+-		if {$Dir ni $::auto_path} {
+-		    lappend ::auto_path $Dir
+-		}
+-	    }
+-	}}
++	#set Dir [file join [file dirname [file dirname \
++	#	[info nameofexecutable]]] lib]
++	#if {$Dir ni $::auto_path} {
++	#    lappend ::auto_path $Dir
++	#}
++	#if {[info exists ::tcl_pkgPath]} { catch {
++	#    foreach Dir $::tcl_pkgPath {
++	#	if {$Dir ni $::auto_path} {
++	#	    lappend ::auto_path $Dir
++	#	}
++	#    }
++	#}}
+ 
+ 	variable Path [encoding dirs]
+ 	set Dir [file join $::tcl_library encoding]
+diff -rubBaN tcl.orig/library/tm.tcl tcl/library/tm.tcl
+--- tcl.orig/library/tm.tcl	2024-09-09 01:02:31.119010406 +0000
++++ tcl/library/tm.tcl	2024-09-09 01:03:30.219011686 +0000
+@@ -321,10 +321,11 @@
+ 
+     # Note that we're using [::list], not [list] because [list] means
+     # something other than [::list] in this namespace.
+-    roots [::list \
+-	    [file dirname [info library]] \
+-	    [file join [file dirname [file dirname $exe]] lib] \
+-	    ]
++    #roots [::list \
++	#    [file dirname [info library]] \
++	#    [file join [file dirname [file dirname $exe]] lib] \
++	#    ]
++	roots [::list [file dirname [info library]]]
+ 
+     if {$tcl_platform(platform) eq "windows"} {
+ 	set sep ";"

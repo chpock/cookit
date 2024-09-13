@@ -1,11 +1,11 @@
-[submodule "src/tcl"]
-	path = deps/tcl
+[submodule "deps/tcl9.0/tcl"]
+	path = deps/tcl8.6/tcl
 	url = https://github.com/tcltk/tcl.git
-[submodule "src/tk"]
-	path = deps/tk
+[submodule "deps/tcl9.0/tk"]
+	path = deps/tcl8.6/tk
 	url = https://github.com/tcltk/tk.git
-[submodule "src/thread"]
-	path = deps/thread
+[submodule "deps/tcl9.0/thread"]
+	path = deps/tcl8.6/thread
 	url = https://github.com/tcltk/thread.git
 [submodule "src/zlib"]
 	path = deps/zlib
@@ -19,9 +19,6 @@
 [submodule "src/installkit/tclconfig"]
 	path = cookit/tclconfig
 	url = https://github.com/tcltk/tclconfig
-[submodule "src/installkit/tclx"]
-	path = cookit/tclx
-	url = https://github.com/flightaware/tclx.git
 [submodule "src/tclmtls"]
 	path = deps/tclmtls
 	url = https://github.com/chpock/tclmtls
@@ -37,3 +34,12 @@
 [submodule "deps/twapi"]
 	path = deps/twapi
 	url = https://github.com/apnadkarni/twapi
+[submodule "deps/tcl9.0/tcl"]
+	path = deps/tcl9.0/tcl
+	url = https://github.com/tcltk/tcl.git
+[submodule "deps/tcl9.0/tk"]
+	path = deps/tcl9.0/tk
+	url = https://github.com/tcltk/tk.git
+[submodule "deps/tcl9.0/thread"]
+	path = deps/tcl9.0/thread
+	url = https://github.com/tcltk/thread.git

@@ -226,7 +226,7 @@ proc ::cookit::parseWrapArgs { arglist } {
 
 proc ::cookit::isPEFile { exe } {
     set fh [open $exe r]
-    fconfigure $fh -encoding binary -translation binary
+    fconfigure $fh -translation binary
     set sig [read $fh 2]
     close $fh
     return [expr { $sig eq "MZ" }]
@@ -235,7 +235,7 @@ proc ::cookit::isPEFile { exe } {
 proc ::cookit::parsePEResources { exe } {
 
     set fh [open $exe r]
-    fconfigure $fh -encoding binary -translation binary
+    fconfigure $fh -translation binary
 
     # make sure that we close $fh on any error
     catch {
@@ -616,7 +616,7 @@ proc ::cookit::makestub { exe } {
     $pg delete
 
     set fh [open $exe w]
-    fconfigure $fh -encoding binary -translation binary
+    fconfigure $fh -translation binary
     puts -nonewline $fh $head
     close $fh
 
@@ -630,7 +630,7 @@ proc ::cookit::makestub { exe } {
 proc ::cookit::parseIcoFile { file } {
 
     set fh [open $file r]
-    fconfigure $fh -encoding binary -translation binary
+    fconfigure $fh -translation binary
 
     set icons [dict create]
 
@@ -742,7 +742,7 @@ proc ::cookit::updateWindowsResources { params } {
             if { [dict get $resources icon $id size] != [dict get $icon size] } {
                 continue
             }
-            fconfigure $fh -encoding binary -translation binary
+            fconfigure $fh -translation binary
             seek $fh [dict get $resources icon $id offset] start
             puts -nonewline $fh [dict get $icon data]
         }
@@ -791,13 +791,13 @@ proc ::cookit::updateWindowsResources { params } {
 
         # change version in fixed version struct
         if { $key eq "FileVersion" } {
-            fconfigure $fh -encoding binary -translation binary
+            fconfigure $fh -translation binary
             seek $fh [dict get $resources version dwFileVersionMS offset] start
             puts -nonewline $fh [{*}$versionToBytes $val MS]
             seek $fh [dict get $resources version dwFileVersionLS offset] start
             puts -nonewline $fh [{*}$versionToBytes $val LS]
         } elseif { $key eq "ProductVersion" } {
-            fconfigure $fh -encoding binary -translation binary
+            fconfigure $fh -translation binary
             seek $fh [dict get $resources version dwProductVersionMS offset] start
             puts -nonewline $fh [{*}$versionToBytes $val MS]
             seek $fh [dict get $resources version dwProductVersionLS offset] start
@@ -821,7 +821,7 @@ proc ::cookit::updateWindowsResources { params } {
     set ctime "${ctimeMSh}.${ctimeMSl}.${ctimeLSh}.${ctimeLSl}"
 
     # Update the datetime in fixed version struct
-    fconfigure $fh -encoding binary -translation binary
+    fconfigure $fh -translation binary
     seek $fh [dict get $resources version dwFileDateMS offset] start
     puts -nonewline $fh [{*}$versionToBytes $val MS]
     seek $fh [dict get $resources version dwFileDateLS offset] start

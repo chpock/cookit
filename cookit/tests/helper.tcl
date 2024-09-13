@@ -17,4 +17,6 @@ if { $::tcl_platform(platform) eq "windows" } {
     testConstraint notelevated 0
 }
 
-proc getfile { fn } { return [read [set f [open $fn r]]][close $f] }
+proc getfile { fn } { return [read [set f [open $fn rb]]][close $f] }
+
+

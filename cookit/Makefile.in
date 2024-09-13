@@ -66,6 +66,7 @@ bin_BINARIES	= @bin_BINARIES@
 lib_BINARIES	= $(PKG_LIB_FILE)
 #BINARIES	= $(lib_BINARIES)
 BINARIES	= $(bin_BINARIES)
+BIN_SUFFIX      = @BIN_SUFFIX@
 
 SHELL		= @SHELL@
 CYGPATH         = @CYGPATH@
@@ -210,7 +211,7 @@ export WSLENV
 # for the BINARIES that you specified above have already been done.
 #========================================================================
 
-all: binaries cookit-deps.txt cookit-stats.txt cookit-gui-deps.txt cookit-gui-stats.txt
+all: binaries cookit$(BIN_SUFFIX)-deps.txt cookit$(BIN_SUFFIX)-stats.txt cookit$(BIN_SUFFIX)-gui-deps.txt cookit$(BIN_SUFFIX)-gui-stats.txt
 
 #========================================================================
 # The binaries target builds executable programs, Windows .dll's, unix
@@ -336,25 +337,25 @@ VPATH = $(srcdir):$(srcdir)/generic:$(srcdir)/unix:$(srcdir)/win:$(srcdir)/macos
 # as stdout.
 
 # Install *.tcl and pkgIndex.tcl files before creating VFS content
-cookit-console.vfs: $(srcdir)/library/prepare-vfs.tcl cookit_raw$(EXEEXT) $(PKG_TCL_SOURCES)
+cookit-console.vfs: $(srcdir)/library/prepare-vfs.tcl cookit$(BIN_SUFFIX)_raw$(EXEEXT) $(PKG_TCL_SOURCES)
 	rm -rf "$@"
-	COOKIT_BOOTSTRAP=1 TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
-	    ./cookit_raw$(EXEEXT) `$(CYGPATH) $<` -console "$@" | cat
+	COOKIT_BOOTSTRAP=1 TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl?.*` \
+	    ./cookit$(BIN_SUFFIX)_raw$(EXEEXT) `$(CYGPATH) $<` -console "$@" | cat
 
-cookit-gui.vfs: $(srcdir)/library/prepare-vfs.tcl cookit_raw$(EXEEXT) $(PKG_TCL_SOURCES)
+cookit-gui.vfs: $(srcdir)/library/prepare-vfs.tcl cookit$(BIN_SUFFIX)_raw$(EXEEXT) $(PKG_TCL_SOURCES)
 	rm -rf "$@"
-	COOKIT_BOOTSTRAP=1 TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
-	    ./cookit_raw$(EXEEXT) `$(CYGPATH) $<` "$@" | cat
+	COOKIT_BOOTSTRAP=1 TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl?.*` \
+	    ./cookit$(BIN_SUFFIX)_raw$(EXEEXT) `$(CYGPATH) $<` "$@" | cat
 
-cookit-console.image: $(srcdir)/library/init-vfs.tcl cookit-console.vfs cookit_raw$(EXEEXT)
+cookit-console.image: $(srcdir)/library/init-vfs.tcl cookit-console.vfs cookit$(BIN_SUFFIX)_raw$(EXEEXT)
 	rm -f "$@"
-	COOKIT_BOOTSTRAP=1 TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
-	    ./cookit_raw$(EXEEXT) `$(CYGPATH) $<` "$@" "cookit-console.vfs" | cat
+	COOKIT_BOOTSTRAP=1 TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl?.*` \
+	    ./cookit$(BIN_SUFFIX)_raw$(EXEEXT) `$(CYGPATH) $<` "$@" "cookit-console.vfs" | cat
 
-cookit-gui.image: $(srcdir)/library/init-vfs.tcl cookit-gui.vfs cookit_raw$(EXEEXT)
+cookit-gui.image: $(srcdir)/library/init-vfs.tcl cookit-gui.vfs cookit$(BIN_SUFFIX)_raw$(EXEEXT)
 	rm -f "$@"
-	COOKIT_BOOTSTRAP=1 TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl8.*` \
-	    ./cookit_raw$(EXEEXT) `$(CYGPATH) $<` "$@" "cookit-gui.vfs" | cat
+	COOKIT_BOOTSTRAP=1 TCL_LIBRARY=`$(CYGPATH) $(TCL_BIN_DIR)/tcl?.*` \
+	    ./cookit$(BIN_SUFFIX)_raw$(EXEEXT) `$(CYGPATH) $<` "$@" "cookit-gui.vfs" | cat
 
 main-console.@OBJEXT@: main.c
 	$(COMPILE) -DCOOKIT_CONSOLE_ONLY -c `@CYGPATH@ $<` -o $@
@@ -362,25 +363,25 @@ main-console.@OBJEXT@: main.c
 main-gui.@OBJEXT@: main.c
 	$(COMPILE) -c `@CYGPATH@ $<` -o $@
 
-cookit_raw: main-console.$(OBJEXT) $(PKG_OBJECTS)
+cookit$(BIN_SUFFIX)_raw: main-console.$(OBJEXT) $(PKG_OBJECTS)
 	rm -f "$@"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TCL_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-cookit_raw.exe: main-console.$(OBJEXT) $(PKG_OBJECTS) cookit.user.res.o
+cookit$(BIN_SUFFIX)_raw.exe: main-console.$(OBJEXT) $(PKG_OBJECTS) cookit.user.res.o
 	rm -f "$@"
 	$(CC) -mconsole $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TCL_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-cookitA_raw.exe: main-console.$(OBJEXT) $(PKG_OBJECTS) cookit.admin.res.o
+cookit$(BIN_SUFFIX)A_raw.exe: main-console.$(OBJEXT) $(PKG_OBJECTS) cookit.admin.res.o
 	rm -f "$@"
 	$(CC) -mconsole $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TCL_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-cookit: cookit_raw cookit-console.image
+cookit$(BIN_SUFFIX): cookit$(BIN_SUFFIX)_raw cookit-console.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -389,7 +390,7 @@ endif
 	cat cookit-console.image >> "$@"
 	chmod +x $@
 
-cookit.exe: cookit_raw.exe cookit-console.image
+cookit$(BIN_SUFFIX).exe: cookit$(BIN_SUFFIX)_raw.exe cookit-console.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -398,17 +399,17 @@ endif
 	cat cookit-console.image >> "$@"
 	chmod +x $@
 
-cookitU: cookit_raw cookit-console.image
+cookit$(BIN_SUFFIX)U: cookit$(BIN_SUFFIX)_raw cookit-console.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
-cookitU.exe: cookit_raw.exe cookit-console.image
+cookit$(BIN_SUFFIX)U.exe: cookit$(BIN_SUFFIX)_raw.exe cookit-console.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
-cookitA.exe: cookitA_raw.exe cookit-console.image
+cookit$(BIN_SUFFIX)A.exe: cookit$(BIN_SUFFIX)A_raw.exe cookit-console.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -417,42 +418,42 @@ endif
 	cat cookit-console.image >> "$@"
 	chmod +x $@
 
-cookitUA.exe: cookitA_raw.exe cookit-console.image
+cookit$(BIN_SUFFIX)UA.exe: cookit$(BIN_SUFFIX)A_raw.exe cookit-console.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
-cookit-gui_raw: main-gui.$(OBJEXT) $(PKG_OBJECTS)
+cookit$(BIN_SUFFIX)-gui_raw: main-gui.$(OBJEXT) $(PKG_OBJECTS)
 	rm -f "$@"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TCL_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-cookit-gui_raw.exe: main-gui.$(OBJEXT) $(PKG_OBJECTS) cookit.user.res.o
+cookit$(BIN_SUFFIX)-gui_raw.exe: main-gui.$(OBJEXT) $(PKG_OBJECTS) cookit.user.res.o
 	rm -f "$@"
 	$(CC) -mwindows $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIB_SPEC) $(TK_STUB_LIB_SPEC) $(TK_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-cookit-gui_raw.com: main-gui.$(OBJEXT) $(PKG_OBJECTS) cookit.user.res.o
+cookit$(BIN_SUFFIX)-gui_raw.com: main-gui.$(OBJEXT) $(PKG_OBJECTS) cookit.user.res.o
 	rm -f "$@"
 	$(CC) -mconsole $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIB_SPEC) $(TK_STUB_LIB_SPEC) $(TK_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-cookitA-gui_raw.exe: main-gui.$(OBJEXT) $(PKG_OBJECTS) cookit.admin.res.o
+cookit$(BIN_SUFFIX)A-gui_raw.exe: main-gui.$(OBJEXT) $(PKG_OBJECTS) cookit.admin.res.o
 	rm -f "$@"
 	$(CC) -mwindows $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIB_SPEC) $(TK_STUB_LIB_SPEC) $(TK_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-cookitA-gui_raw.com: main-gui.$(OBJEXT) $(PKG_OBJECTS) cookit.admin.res.o
+cookit$(BIN_SUFFIX)A-gui_raw.com: main-gui.$(OBJEXT) $(PKG_OBJECTS) cookit.admin.res.o
 	rm -f "$@"
 	$(CC) -mconsole $(CFLAGS) $(LDFLAGS) $(LDFLAGS_DEFAULT) -o $@ $^ $(LIBS) $(TK_LIB_SPEC) $(TK_STUB_LIB_SPEC) $(TK_LIBS) $(TCL_LD_FLAGS)
 	$(STRIP_COMMAND) "$@"
 	chmod +x $@
 
-cookit-gui: cookit-gui_raw cookit-gui.image
+cookit$(BIN_SUFFIX)-gui: cookit$(BIN_SUFFIX)-gui_raw cookit-gui.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -461,7 +462,7 @@ endif
 	cat cookit-gui.image >> "$@"
 	chmod +x $@
 
-cookit-gui.exe: cookit-gui_raw.exe cookit-gui.image
+cookit$(BIN_SUFFIX)-gui.exe: cookit$(BIN_SUFFIX)-gui_raw.exe cookit-gui.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -470,7 +471,7 @@ endif
 	cat cookit-gui.image >> "$@"
 	chmod +x $@
 
-cookit-gui.com: cookit-gui_raw.com cookit-gui.image
+cookit$(BIN_SUFFIX)-gui.com: cookit$(BIN_SUFFIX)-gui_raw.com cookit-gui.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -479,22 +480,22 @@ endif
 	cat cookit-gui.image >> "$@"
 	chmod +x $@
 
-cookitU-gui: cookit-gui_raw cookit-gui.image
+cookit$(BIN_SUFFIX)U-gui: cookit$(BIN_SUFFIX)-gui_raw cookit-gui.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
-cookitU-gui.exe: cookit-gui_raw.exe cookit-gui.image
+cookit$(BIN_SUFFIX)U-gui.exe: cookit$(BIN_SUFFIX)-gui_raw.exe cookit-gui.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
-cookitU-gui.com: cookit-gui_raw.com cookit-gui.image
+cookit$(BIN_SUFFIX)U-gui.com: cookit$(BIN_SUFFIX)-gui_raw.com cookit-gui.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
-cookitA-gui.exe: cookitA-gui_raw.exe cookit-gui.image
+cookit$(BIN_SUFFIX)A-gui.exe: cookit$(BIN_SUFFIX)A-gui_raw.exe cookit-gui.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -503,7 +504,7 @@ endif
 	cat cookit-gui.image >> "$@"
 	chmod +x $@
 
-cookitA-gui.com: cookitA-gui_raw.com cookit-gui.image
+cookit$(BIN_SUFFIX)A-gui.com: cookit$(BIN_SUFFIX)A-gui_raw.com cookit-gui.image
 	rm -f "$@"
 	cp -f "$<" "$@"
 ifneq ($(UPX_COMMAND),)
@@ -512,32 +513,32 @@ endif
 	cat cookit-gui.image >> "$@"
 	chmod +x $@
 
-cookitUA-gui.exe: cookitA-gui_raw.exe cookit-gui.image
+cookit$(BIN_SUFFIX)UA-gui.exe: cookit$(BIN_SUFFIX)A-gui_raw.exe cookit-gui.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
-cookitUA-gui.com: cookitA-gui_raw.com cookit-gui.image
+cookit$(BIN_SUFFIX)UA-gui.com: cookit$(BIN_SUFFIX)A-gui_raw.com cookit-gui.image
 	rm -f "$@"
 	cat $^ > $@
 	chmod +x $@
 
-cookit-deps.txt: cookit_raw$(EXEEXT) cookit-console.vfs
+cookit$(BIN_SUFFIX)-deps.txt: cookit$(BIN_SUFFIX)_raw$(EXEEXT) cookit-console.vfs
 	"$(srcdir)"/tools/gendeps.sh $(BUILD_PLATFORM) $^ > "$@"
 
-cookit-stats.txt: cookit$(EXEEXT)
-	./cookit$(EXEEXT) stats | cat > "$@"
+cookit$(BIN_SUFFIX)-stats.txt: cookit$(BIN_SUFFIX)$(EXEEXT)
+	./cookit$(BIN_SUFFIX)$(EXEEXT) stats | cat > "$@"
 
-cookit-gui-deps.txt: cookit-gui_raw$(EXEEXT) cookit-gui.vfs
+cookit$(BIN_SUFFIX)-gui-deps.txt: cookit$(BIN_SUFFIX)-gui_raw$(EXEEXT) cookit-gui.vfs
 	"$(srcdir)"/tools/gendeps.sh $(BUILD_PLATFORM) $^ > "$@"
 
-cookit-gui-stats.txt: cookit-gui$(EXEEXT)
-	COOKIT_CONSOLE=1 ./cookit$(EXEEXT) stats | cat > "$@"
+cookit$(BIN_SUFFIX)-gui-stats.txt: cookit$(BIN_SUFFIX)-gui$(EXEEXT)
+	COOKIT_CONSOLE=1 ./cookit$(BIN_SUFFIX)$(EXEEXT) stats | cat > "$@"
 
-cookit.user.res.o: $(srcdir)/win/cookit.user.rc win/cookit.user.manifest
+cookit.user.res.o: $(srcdir)/win/cookit.user.rc win/cookit$(BIN_SUFFIX).user.manifest
 	$(RC) -o $@ --define STATIC_BUILD --define BASE_NO_TK_ICON "$<" $(INCLUDES) --include $(TK_SRC_DIR)/win/rc --include $(srcdir)/win
 
-cookit.admin.res.o: $(srcdir)/win/cookit.admin.rc win/cookit.admin.manifest
+cookit.admin.res.o: $(srcdir)/win/cookit.admin.rc win/cookit$(BIN_SUFFIX).admin.manifest
 	$(RC) -o $@ --define STATIC_BUILD --define BASE_NO_TK_ICON "$<" $(INCLUDES) --include $(TK_SRC_DIR)/win/rc --include $(srcdir)/win
 
 .c.@OBJEXT@:
@@ -675,7 +676,7 @@ install-bin-binaries: binaries
 	    $(INSTALL_PROGRAM) $$p "$(DESTDIR)$(bindir)/$$p"; \
 	  fi; \
 	done
-	cp cookit-deps.txt cookit-stats.txt cookit-gui-deps.txt cookit-gui-stats.txt "$(DESTDIR)$(exec_prefix)"
+	cp cookit$(BIN_SUFFIX)-deps.txt cookit$(BIN_SUFFIX)-stats.txt cookit$(BIN_SUFFIX)-gui-deps.txt cookit$(BIN_SUFFIX)-gui-stats.txt "$(DESTDIR)$(exec_prefix)"
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \

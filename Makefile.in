@@ -65,13 +65,14 @@ all: $(TARGETS)
 
 tcl: work/stamp-tcl
 work/stamp-tcl: work/stamp-zlib
-	mkdir -p work/tcl/src && cp -r "$(TOP_SRCDIR)/deps/tcl"/* work/tcl/src
+	mkdir -p work/tcl/src && cp -r "$(TOP_SRCDIR)/deps/$(TCL_SOURCE_SUBDIR)/tcl"/* work/tcl/src
 ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # See details about this patch in its file.
-	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/deps/tcl-010-Windows-fix-CFLAGS.patch
+	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tcl-010-Windows-fix-CFLAGS.patch
 endif
 # See description about this patch in the patch file
-	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/deps/tcl-020-All-do-not-use-exe-directory.patch
+	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tcl-020-All-do-not-use-exe-directory.patch
+	patch -N -p1 -d work/tcl/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tcl-030-All-do-not-use-install-directory.patch
 # Use our zlib. Specify paths to zlib by CFLAGS/LDFLAGS
 	cd work/tcl; \
 	    test -f config.status \
@@ -79,12 +80,13 @@ endif
 	    ./src/$(TCL_SYSTEM)/configure \
 	        --build=$(AC_HOST) --host=$(AC_HOST) \
 	        --prefix=$(PREFIX) \
-	        --with-encoding=utf-8 \
+	        --with-encoding=utf-8 --without-tzdata \
+	        $(if $(filter tcl8.6,$(TCL_SOURCE_SUBDIR)),,--disable-zipfs) \
 	        --disable-shared --enable-static \
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 ifeq ($(WINDOWS_SYSTEM),Cygwin)
 # See details about this patch in its file.
-	patch -N -p1 -d work/tcl < "$(TOP_SRCDIR)"/deps/tcl-000-Windows-Cygwin.patch
+	patch -N -p1 -d work/tcl < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tcl-000-Windows-Cygwin.patch
 endif
 # Patch Makefile to avoid an error during parallel builds
 	$(SEDI) -E \
@@ -109,9 +111,13 @@ endif
 # variables to the library path within VFS. This only needs to be done for
 # the compile step, not the install steps. Install steps should be able
 # to install libraries to the temporary location.
+#
+# $(COOKIT_ROOT) variable will be used to replace various CFG_INSTALL_* and
+# CFG_RUNTIME_* definitions
 	cd work/tcl && $(MAKE) all \
 	    TCL_LIBRARY="$(COOKIT_ROOT)/lib/tcl\$$(VERSION)" \
-	    TCL_PACKAGE_PATH="$(COOKIT_ROOT)/lib"
+	    TCL_PACKAGE_PATH="$(COOKIT_ROOT)/lib" \
+	    COOKIT_ROOT="$(COOKIT_ROOT)"
 	cd work/tcl && $(MAKE) install-binaries install-libraries
 # Tcl installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
@@ -125,14 +131,30 @@ endif
 
 tk: work/stamp-tk
 work/stamp-tk: work/stamp-tcl
-	mkdir -p work/tk/src && cp -r "$(TOP_SRCDIR)/deps/tk"/* work/tk/src
+	mkdir -p work/tk/src && cp -r "$(TOP_SRCDIR)/deps/$(TCL_SOURCE_SUBDIR)/tk"/* work/tk/src
 ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 # See details about this patch in its file.
-	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/tk-010-Windows-fix-CFLAGS.patch
+	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-010-Windows-fix-CFLAGS.patch
 endif
+ifeq ($(TCL_SOURCE_SUBDIR),tcl8.6)
 ifeq ($(IJ_PLATFORM),MacOS-X)
 # see details in the patch
-	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/tk-000-MacOS-X-fix-TKNSString.patch
+	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-000-MacOS-X-fix-TKNSString.patch
+endif
+else
+ifeq ($(IJ_PLATFORM),MacOS-X)
+# see details in the patch
+	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-040-fix-bug-macos-available.patch
+endif
+endif
+ifneq ($(TCL_SOURCE_SUBDIR),tcl8.6)
+	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-030-All-do-not-use-install-directory.patch
+endif
+ifneq ($(TCL_SOURCE_SUBDIR),tcl8.6)
+ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
+# See details about this patch in its file.
+	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-050-fix-windows-config.patch
+endif
 endif
 # Tk doesn't depent on zlib directly. However, whish binary depends on Tcl static
 # library and the Tcl static library needs zlib. We should specify our zlib
@@ -145,6 +167,7 @@ endif
 	        --prefix=$(PREFIX) \
 	        --with-tcl=$(PREFIX)/lib \
 	        $(if $(filter unix,$(TCL_SYSTEM)),--disable-rpath) \
+	        $(if $(filter tcl8.6,$(TCL_SOURCE_SUBDIR)),,--disable-zipfs) \
 	        $(TK_SHARED_FLAG) \
 	        $(AQUA_FLAG) $(SYMBOLS_FLAG) $(THREADS_FLAG)
 ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
@@ -154,33 +177,35 @@ ifeq ($(findstring Windows,$(IJ_PLATFORM)),Windows)
 	$(SEDI) -E -e 's/^[[:space:]]*LDFLAGS_(CONSOLE|WINDOW).*/& $$(LDFLAGS)/' \
 	    work/tk/Makefile
 endif
-	cd work/tk && $(MAKE) all install-binaries install-libraries
+# $(COOKIT_ROOT) variable will be used to replace various CFG_INSTALL_* and
+# CFG_RUNTIME_* definitions
+	cd work/tk && $(MAKE) all \
+	    TK_LIBRARY="$(COOKIT_ROOT)/lib/tk\$$(VERSION)" \
+	    COOKIT_ROOT="$(COOKIT_ROOT)"
+	cd work/tk && $(MAKE) install-binaries install-libraries
 # Tk installs headers on Windows in scope of the install-libraries target. But on other
 # platforms, there is a separate target 'install-headers'.
 	grep -q '^install-headers:' work/tk/Makefile \
 	    && cd work/tk && $(MAKE) install-headers \
 	    || : no-op
-	test -e $(PREFIX)/lib/libtk*$(SO_EXT) \
-	    && chmod +w "$(PREFIX)"/lib/libtk*$(SO_EXT) \
-	    && $(STRIP) $(STRIPFLAGS) "$(PREFIX)"/lib/libtk*$(SO_EXT) \
+	test -e $(PREFIX)/lib/lib*tk*$(SO_EXT) \
+	    && chmod +w "$(PREFIX)"/lib/lib*tk*$(SO_EXT) \
+	    && $(STRIP) $(STRIPFLAGS) "$(PREFIX)"/lib/lib*tk*$(SO_EXT) \
 	    || true
 	touch $@
 
 tclvfs: work/stamp-tclvfs
 work/stamp-tclvfs: work/stamp-tcl
-	mkdir -p work/tclvfs/src && cp -r "$(TOP_SRCDIR)/deps/tclvfs"/* work/tclvfs/src
-# These files are necessary for installation. See:
-	cd work/tclvfs/src && tar xzf "$(TOP_SRCDIR)"/deps/thread.files.tar.gz
+	mkdir -p work/tclvfs
 	cd work/tclvfs; \
 	    test -f config.status \
-	    || ./src/configure \
+	    || "$(TOP_SRCDIR)"/deps/tclvfs/configure \
 	        --build=$(AC_HOST) --host=$(AC_HOST) \
 	        --prefix=$(PREFIX) \
 	        --with-tcl=$(PREFIX)/lib \
 	        --enable-shared=no \
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/tclvfs && $(MAKE) all install install-lib-binaries CFLAGS="$(CFLAGS)"
-	rm -rf work/tclvfs/src
 	touch $@
 
 # --enable-internal-debug
@@ -195,7 +220,8 @@ work/stamp-cookfs: work/stamp-tcl
 	        --prefix=$(PREFIX) \
 	        --with-tcl=$(PREFIX)/lib \
 	        --enable-lzma \
-	        --disable-bz2 --disable-zstd \
+	        --disable-bz2 --disable-zstd --disable-brotli \
+	        --disable-c-crypto \
 	        --enable-shared=no \
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/cookfs && $(MAKE) all install CFLAGS="$(CFLAGS)"
@@ -203,18 +229,20 @@ work/stamp-cookfs: work/stamp-tcl
 
 thread: work/stamp-thread
 work/stamp-thread: work/stamp-tcl
-	mkdir -p work/thread/src && cp -r "$(TOP_SRCDIR)/deps/thread"/* work/thread/src
-	cd work/thread; \
-	    test -f config.status \
-	    || ./src/configure \
-	        --build=$(AC_HOST) --host=$(AC_HOST) \
-	        --prefix=$(PREFIX) \
-	        --with-tcl=$(PREFIX)/lib \
-	        --enable-shared=no \
-	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
+	mkdir -p work/thread/src && cp -r "$(TOP_SRCDIR)/deps/$(TCL_SOURCE_SUBDIR)/thread"/* work/thread/src
 # These files are necessary for installation. See:
 # https://github.com/tcltk/thread/blob/0b17425018a6cd3a0fdca30ce3c5fced28d25033/.travis.yml#L124-L127
 	cd work/thread/src && tar xzf "$(TOP_SRCDIR)"/deps/thread.files.tar.gz
+# There is a bug when configure called by relative path.
+	cd work/thread; \
+	    test -f config.status \
+	    || "$(shell pwd)"/work/thread/src/configure \
+	        --build=$(AC_HOST) --host=$(AC_HOST) \
+	        --prefix=$(PREFIX) \
+	        --with-tcl=$(PREFIX)/lib \
+	        $(if $(filter tcl8.6,$(TCL_SOURCE_SUBDIR)),,--disable-zipfs) \
+	        --enable-shared=no \
+	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/thread && $(MAKE) all install CFLAGS="$(CFLAGS)"
 	rm -rf work/thread/src
 	touch $@
@@ -327,7 +355,7 @@ dist:
 	rm -f "$(IJ_PLATFORM).zip"
 	cp -fp $(TOP_SRCDIR)/version kit/$(IJ_PLATFORM)
 	cat build.conf environment.conf > kit/$(IJ_PLATFORM)/environment
-	cd kit && COOKIT_CONSOLE=1 "$(KIT_PREFIX)/bin/cookit$(EXE_EXT)" \
+	cd kit && COOKIT_CONSOLE=1 "$(KIT_PREFIX)/bin/cookit$(BIN_SUFFIX)$(EXE_EXT)" \
 		`$(CYGPATH) $(TOP_SRCDIR)/cookit/library/make-zip.tcl` \
 		../$(IJ_PLATFORM).zip "$(IJ_PLATFORM)"
 
@@ -377,7 +405,7 @@ define run-check
             COOKIT_VERSION="`cat "$(TOP_SRCDIR)/version"`" \
             DISPLAY=:0 \
             TCLTEST_OPTIONS="`PLATFORM=$(IJ_PLATFORM) $(TOP_SRCDIR)/cookit/tests/helper.sh $@`" \
-            $(KIT_PREFIX)/bin/cookit$(if $(filter $2,tk),-gui,)$(EXE_EXT) \
+            $(KIT_PREFIX)/bin/cookit$(BIN_SUFFIX)$(if $(filter $2,tk),-gui,)$(EXE_EXT) \
             `$(CYGPATH) "$(CHECK_WORK_DIR)/$@/all.tcl"` -verbose "body error start" $(TESTFLAGS) | \
             tr -d '\r' | \
             tee $@.output && \

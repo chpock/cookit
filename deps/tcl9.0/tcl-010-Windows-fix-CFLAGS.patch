@@ -1,0 +1,12 @@
+diff -rubBaN tcl.orig/win/Makefile.in tcl/win/Makefile.in
+--- tcl.orig/win/Makefile.in	2024-09-08 22:47:16.595212040 +0000
++++ tcl/win/Makefile.in	2024-09-08 22:55:59.485246496 +0000
+@@ -82,7 +82,7 @@
+ #CFLAGS =		$(CFLAGS_DEBUG)
+ #CFLAGS =		$(CFLAGS_OPTIMIZE)
+ #CFLAGS =		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+-CFLAGS =		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
++CFLAGS =		@CFLAGS_DEFAULT@ @CFLAGS@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0
+ 
+ # To compile without backward compatibility and deprecated code uncomment the
+ # following

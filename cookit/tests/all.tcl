@@ -5,7 +5,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.5
+package require Tcl 8.6-
 package require tcltest 2.2
 
 lappend auto_path [file join [file dirname [info nameofexecutable]] .. lib]

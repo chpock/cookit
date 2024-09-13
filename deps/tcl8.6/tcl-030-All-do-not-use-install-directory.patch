@@ -1,0 +1,59 @@
+diff -rubBaN tcl.orig/unix/Makefile.in tcl/unix/Makefile.in
+--- tcl.orig/unix/Makefile.in	2024-09-09 03:47:44.029006101 +0000
++++ tcl/unix/Makefile.in	2024-09-09 03:50:03.409008082 +0000
+@@ -1369,16 +1369,16 @@
+ 
+ tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
+ 	$(CC) -c $(CC_SWITCHES) \
+-		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR)\"" \
+-		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR)\"" \
++		-DCFG_INSTALL_LIBDIR="\"$(COOKIT_ROOT)/lib\"" \
++		-DCFG_INSTALL_BINDIR="\"$(COOKIT_ROOT)/bin\"" \
+ 		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR)\"" \
+-		-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR)\"" \
+-		-DCFG_INSTALL_DOCDIR="\"$(MAN_INSTALL_DIR)\"" \
+-		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
+-		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
++		-DCFG_INSTALL_INCDIR="\"$(COOKIT_ROOT)/include\"" \
++		-DCFG_INSTALL_DOCDIR="\"$(COOKIT_ROOT)/share/man\"" \
++		-DCFG_RUNTIME_LIBDIR="\"$(COOKIT_ROOT)/lib\"" \
++		-DCFG_RUNTIME_BINDIR="\"$(COOKIT_ROOT)/bin\"" \
+ 		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+-		-DCFG_RUNTIME_INCDIR="\"$(includedir)\"" \
+-		-DCFG_RUNTIME_DOCDIR="\"$(mandir)\"" \
++		-DCFG_RUNTIME_INCDIR="\"$(COOKIT_ROOT)/include\"" \
++		-DCFG_RUNTIME_DOCDIR="\"$(COOKIT_ROOT)/share/man\"" \
+ 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+ 		$(GENERIC_DIR)/tclPkgConfig.c
+ 
+diff -rubBaN tcl.orig/win/Makefile.in tcl/win/Makefile.in
+--- tcl.orig/win/Makefile.in	2024-09-09 03:47:44.039006102 +0000
++++ tcl/win/Makefile.in	2024-09-09 03:51:58.719006595 +0000
+@@ -570,17 +570,17 @@
+ 
+ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
+ 	$(CC)	-c $(CC_SWITCHES)			\
+-		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR_NATIVE)\"" \
+-		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR_NATIVE)\"" \
+-		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR_NATIVE)\"" \
+-		-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR_NATIVE)\"" \
+-		-DCFG_INSTALL_DOCDIR="\"$(MAN_INSTALL_DIR_NATIVE)\"" \
++		-DCFG_INSTALL_LIBDIR="\"$(COOKIT_ROOT)/lib\"" \
++		-DCFG_INSTALL_BINDIR="\"$(COOKIT_ROOT)/bin\"" \
++		-DCFG_INSTALL_SCRDIR="\"$(TCL_LIBRARY)\"" \
++		-DCFG_INSTALL_INCDIR="\"$(COOKIT_ROOT)/include\"" \
++		-DCFG_INSTALL_DOCDIR="\"$(COOKIT_ROOT)/share/man\"" \
+ 		\
+-		-DCFG_RUNTIME_LIBDIR="\"$(libdir_native)\"" \
+-		-DCFG_RUNTIME_BINDIR="\"$(bindir_native)\"" \
+-		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY_NATIVE)\"" \
+-		-DCFG_RUNTIME_INCDIR="\"$(includedir_native)\"" \
+-		-DCFG_RUNTIME_DOCDIR="\"$(mandir_native)\"" \
++		-DCFG_RUNTIME_LIBDIR="\"$(COOKIT_ROOT)/lib\"" \
++		-DCFG_RUNTIME_BINDIR="\"$(COOKIT_ROOT)/bin\"" \
++		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
++		-DCFG_RUNTIME_INCDIR="\"$(COOKIT_ROOT)/include\"" \
++		-DCFG_RUNTIME_DOCDIR="\"$(COOKIT_ROOT)/share/man\"" \
+ 		-DBUILD_tcl \
+ 		@DEPARG@ $(CC_OBJNAME)
+ 

@@ -48,6 +48,11 @@ int _CRT_glob = 0;
 #define NULL_DEVICE "/dev/null"
 #endif /* __WIN32__ */
 
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+
 #ifndef COOKIT_CONSOLE_ONLY
 // 1 - console
 // 0 - GUI
@@ -177,10 +182,16 @@ static int Cookit_Startup(Tcl_Interp *interp) {
     while (g_argc--) {
         DBG("Cookit_Startup: add arg...");
 #ifdef UNICODE
+#if (TCL_MAJOR_VERSION < 9) && defined(TCL_MINOR_VERSION) && (TCL_MINOR_VERSION < 7)
         Tcl_WinTCharToUtf(*g_argv++, -1, &ds);
+#else
+        Tcl_DStringSetLength(&ds, 0);
+        Tcl_WCharToUtfDString(*g_argv++, -1, &ds);
+#endif
 #else
         Tcl_ExternalToUtfDString(NULL, (char *)*g_argv++, -1, &ds);
 #endif /* UNICODE */
+        DBG("Add arg [%s]", Tcl_DStringValue(&ds));
         Tcl_ListObjAppendElement(interp, argvObj,
             Tcl_NewStringObj(Tcl_DStringValue(&ds), -1));
         argvLength++;
@@ -196,10 +207,10 @@ static int Cookit_Startup(Tcl_Interp *interp) {
     TclX_IdInit(interp);
 
     DBG("Cookit_Startup: register static packages");
-    Tcl_StaticPackage(0, "vfs", Vfs_Init, NULL);
+    Tcl_StaticPackage(0, "Vfs", Vfs_Init, NULL);
     Tcl_StaticPackage(0, "Cookfs", Cookfs_Init, NULL);
-    Tcl_StaticPackage(0, "mtls", Mtls_Init, NULL);
-    Tcl_StaticPackage(0, "tdom", Tdom_Init, NULL);
+    Tcl_StaticPackage(0, "Mtls", Mtls_Init, NULL);
+    Tcl_StaticPackage(0, "Tdom", Tdom_Init, NULL);
 
 #ifdef __WIN32__
 #ifndef COOKIT_CONSOLE_ONLY
@@ -212,8 +223,8 @@ static int Cookit_Startup(Tcl_Interp *interp) {
 #endif /* TCL_THREADS */
 
 #ifdef __WIN32__
-    Tcl_StaticPackage(0, "registry", Registry_Init, NULL);
-    Tcl_StaticPackage(0, "twapi_base", Twapi_base_Init, NULL);
+    Tcl_StaticPackage(0, "Registry", Registry_Init, NULL);
+    Tcl_StaticPackage(0, "Twapi_base", Twapi_base_Init, NULL);
 #endif /* __WIN32__ */
 
     Tcl_Obj *local = Tcl_NewStringObj(VFS_MOUNT, -1);
@@ -259,10 +270,6 @@ static int Cookit_Startup(Tcl_Interp *interp) {
         // Thus, here we will unset the array element.
         Tcl_UnsetVar2(interp, "env", "TCLLIBPATH", TCL_GLOBAL_ONLY);
 
-        // Ignore the TK_LIBRARY environment variable. We should be able to find
-        // Tk automatically from auto_path.
-        Tcl_UnsetVar2(interp, "env", "TK_LIBRARY", TCL_GLOBAL_ONLY);
-
         // Ignore variables in formats TCL<X>.<Y>_TM_PATH and TCL<X>_<Y>_TM_PATH,
         // where <X> is Tcl major version and <Y> is all previous minor versions.
         // These variables are used to specify the location of Tcl modules.
@@ -290,6 +297,7 @@ static int Cookit_Startup(Tcl_Interp *interp) {
         // for this Tcl interpreter and not for child/threaded interpreters.
         // Thus, we choose to set environment variable TCL_LIBRARY.
         Tcl_PutEnv("TCL_LIBRARY=" VFS_MOUNT "/lib/tcl" TCL_VERSION);
+        Tcl_PutEnv("TK_LIBRARY=" VFS_MOUNT "/lib/tk" TCL_VERSION);
 
     } else if (!g_isBootstrap) {
         DBG("Cookit_Startup: FATAL! vfs is not available");

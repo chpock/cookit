@@ -20,16 +20,23 @@ test content-1 {check cookit version} -constraints cookitVersionDefined -body {
     string equal [package require cookit $::env(COOKIT_VERSION)] $::env(COOKIT_VERSION)
 } -result 1
 
+test content-2.1.1 {check Tcl version} -body {
+    expr { [package require Tcl] in {8.6.14 9.0b3} }
+} -result 1
+
+test content-2.2.1 {check Thread version} -body {
+    expr { [package require Thread] in {2.8.9 3.0b4} }
+} -result 1
+
 foreach { pkgName pkgVersion constraints } {
-    Tcl                 8.6.14 {}
     http                2.9.8  {}
     https               0.1.0  {}
-    Thread              2.8.9  {}
     msgcat              1.6.1  {}
     registry            1.3.5  {win}
     twapi               5.0a1  {win}
     vfs                 1.4.2  {}
     cookfs              1.6.0  {}
+    tdom                0.9.4  {}
 } {
     test content-3.[incr count] [list package require $pkgName $pkgVersion] \
         -constraints $constraints \
