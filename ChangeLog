@@ -1,6 +1,7 @@
 2024-09-14 Kontantin Kushnir <chpock@gmail.com>
 	* Add build for Tcl9 (macOS doesn't work yet)
 	* Normalize platform names
+	* Add x86_64-apple-darwin10.6 platform
 
 2024-09-09 Konstantin Kushnir <chpock@gmail.com>
 	* Update twapi to 5.0a1

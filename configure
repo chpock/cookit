@@ -203,7 +203,6 @@ case "$IJ_PLATFORM" in
     # NS_BUILD_32_LIKE_64 is required to build Tk8.6.13 on i383 platform. See:
     # http://theocacao.com/document.page/552
     CFLAGS="-arch i386 -DNS_BUILD_32_LIKE_64 $CFLAGS"
-    #CFLAGS="-arch x86_64 $CFLAGS"
     if [ "$TCL_MAJOR_VERSION" = "8" ]; then
         CFLAGS="$CFLAGS -mmacosx-version-min=10.6"
     else
@@ -218,6 +217,27 @@ case "$IJ_PLATFORM" in
     # https://github.com/upx/upx/issues/777
     UPX="echo"
     AC_HOST="i386-apple-darwin10.6"
+    STRIPFLAGS="-Sx"
+    SO_EXT=".dylib"
+    ;;
+
+  x86_64-apple-darwin10.6)
+    COMPILER="CLANG"
+    CFLAGS="-arch x86_64 -DNS_BUILD_32_LIKE_64 $CFLAGS"
+    if [ "$TCL_MAJOR_VERSION" = "8" ]; then
+        CFLAGS="$CFLAGS -mmacosx-version-min=10.6"
+    else
+        # 10.10 is the minimum version:
+        # https://core.tcl-lang.org/tk/tktview/cb052066deda07b2b94a2d097770b7e76793d802
+        CFLAGS="$CFLAGS -mmacosx-version-min=10.10"
+    fi
+    AQUA_FLAG="--enable-aqua"
+    # on BSD sed the extension after -i is mandatory
+    SEDI="sed -i ''"
+    # don't use UPX on MacOS for now due to multiple issues, like:
+    # https://github.com/upx/upx/issues/777
+    UPX="echo"
+    AC_HOST="x86_64-apple-darwin10.6"
     STRIPFLAGS="-Sx"
     SO_EXT=".dylib"
     ;;

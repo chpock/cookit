@@ -88,6 +88,20 @@ set expected [dict create {*}{
             }
         }
     }
+    x86_64-apple-darwin10.6 {
+        cookit-deps {
+            cookit_raw {
+                /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+                /System/Library/Frameworks/Security.framework/Versions/A/Security
+                /usr/lib/libSystem.B.dylib
+            }
+            cookit8_raw {
+                /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+                /System/Library/Frameworks/Security.framework/Versions/A/Security
+                /usr/lib/libSystem.B.dylib
+            }
+        }
+    }
     i686-w64-mingw32 {
         cookit-deps {
             cookit_raw.exe {
