@@ -28,6 +28,13 @@
 #include <tchar.h>
 #endif
 
+#ifndef TCL_SIZE_MAX
+#ifndef Tcl_Size
+typedef int Tcl_Size;
+#endif /* Tcl_Size */
+#define TCL_SIZE_MAX INT_MAX
+#endif /* TCL_SIZE_MAX */
+
 #if defined(__MINGW32__)
 int _CRT_glob = 0;
 #endif /* __MINGW32__ */
@@ -338,17 +345,18 @@ static int Cookit_Startup(Tcl_Interp *interp) {
         // one element (because argvLength > 0).
         Tcl_Obj *firstArgObj;
         Tcl_ListObjIndex(NULL, argvObj, 0, &firstArgObj);
-        const char *firstArgStr = Tcl_GetString(firstArgObj);
-        if (strcmp(firstArgStr, "wrap") == 0 || strcmp(firstArgStr, "stats") == 0) {
-            // We found a simple command. Let's load the cookit package and run
-            // simple command processing (rawStartup). Report error an if it failed.
-            if (Tcl_EvalEx(interp, "package require cookit;"
-                " ::cookit::rawStartup", -1, TCL_EVAL_GLOBAL |
+        Tcl_Size firstArgLen;
+        const char *firstArgStr = Tcl_GetStringFromObj(firstArgObj, &firstArgLen);
+        if (firstArgLen > 2 && firstArgStr[0] == '-' && firstArgStr[1] == '-') {
+            // We found a builin command. Let's load the cookit package and run
+            // builtin processing (rawStartup). Report error an if it failed.
+            if (Tcl_EvalEx(interp, "package require cookit::builtin;"
+                "::cookit::builtin::run", -1, TCL_EVAL_GLOBAL |
                 TCL_EVAL_DIRECT) != TCL_OK)
             {
                 goto error;
             }
-            // ::cookit::rawStartup should call exit. Go to to done here.
+            // ::cookit::builtin::run should call exit. Go to to done here.
             goto done;
         }
 

@@ -527,13 +527,13 @@ cookit$(BIN_SUFFIX)-deps.txt: cookit$(BIN_SUFFIX)_raw$(EXEEXT) cookit-console.vf
 	"$(srcdir)"/tools/gendeps.sh $(BUILD_PLATFORM) $^ > "$@"
 
 cookit$(BIN_SUFFIX)-stats.txt: cookit$(BIN_SUFFIX)$(EXEEXT)
-	./cookit$(BIN_SUFFIX)$(EXEEXT) stats | cat > "$@"
+	./cookit$(BIN_SUFFIX)$(EXEEXT) --stats | cat > "$@"
 
 cookit$(BIN_SUFFIX)-gui-deps.txt: cookit$(BIN_SUFFIX)-gui_raw$(EXEEXT) cookit-gui.vfs
 	"$(srcdir)"/tools/gendeps.sh $(BUILD_PLATFORM) $^ > "$@"
 
 cookit$(BIN_SUFFIX)-gui-stats.txt: cookit$(BIN_SUFFIX)-gui$(EXEEXT)
-	COOKIT_CONSOLE=1 ./cookit$(BIN_SUFFIX)$(EXEEXT) stats | cat > "$@"
+	COOKIT_CONSOLE=1 ./cookit$(BIN_SUFFIX)$(EXEEXT) --stats | cat > "$@"
 
 cookit.user.res.o: $(srcdir)/win/cookit.user.rc win/cookit$(BIN_SUFFIX).user.manifest
 	$(RC) -o $@ --define STATIC_BUILD --define BASE_NO_TK_ICON "$<" $(INCLUDES) --include $(TK_SRC_DIR)/win/rc --include $(srcdir)/win

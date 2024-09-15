@@ -931,18 +931,3 @@ proc ::cookit::setExecPerms { exe } {
         file attributes $exe -permissions 00755
     }
 }
-
-proc ::cookit::rawStartup { } {
-    if { ![info exists ::argv] } return
-    set cmd [lindex $::argv 0]
-    if { $cmd eq "wrap" } {
-        set ::tcl_interactive 0
-        wrap {*}[lrange $::argv 1 end]
-        exit 0
-    } elseif { $cmd eq "stats" } {
-        set ::tcl_interactive 0
-        package require cookit::stats
-        stats {*}[lrange $::argv 1 end]
-        exit 0
-    }
-}
