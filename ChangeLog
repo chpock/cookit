@@ -1,6 +1,8 @@
 2024-09-15 Konstantin Kushnir <chpock@gmail.com>
 	* Standardize root mount point as //cookit:/
 	* Standardize builtin commands --wrap and --stats
+	* Don't build i386-apple-darwin10.6 platform by default as it will not be
+	supported in Tk9.0
 
 2024-09-14 Kontantin Kushnir <chpock@gmail.com>
 	* Add build for Tcl9 (macOS doesn't work yet)
