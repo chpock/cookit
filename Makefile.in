@@ -354,7 +354,7 @@ work/stamp-zlib:
 dist:
 	rm -f "$(IJ_PLATFORM).zip"
 	cp -fp $(TOP_SRCDIR)/version kit/$(IJ_PLATFORM)
-	cat build.conf environment.conf > kit/$(IJ_PLATFORM)/environment
+	cat build.conf environment.conf > kit/$(IJ_PLATFORM)/environment$(BIN_SUFFIX)
 	cd kit && COOKIT_CONSOLE=1 "$(KIT_PREFIX)/bin/cookit$(BIN_SUFFIX)$(EXE_EXT)" \
 		`$(CYGPATH) $(TOP_SRCDIR)/cookit/library/make-zip.tcl` \
 		../$(IJ_PLATFORM).zip "$(IJ_PLATFORM)"
