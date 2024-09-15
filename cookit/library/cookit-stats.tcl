@@ -12,7 +12,7 @@ proc ::cookit::stats { args } {
     if { [llength $args] } {
         set fname   [lindex $args 0]
         set fsize   [file size $fname]
-        set root    [tmpmount]
+        set root    $fname
         set pages   [::cookfs::pages -readonly $fname]
         set fsindex [::cookfs::fsindex [$pages index]]
         ::cookfs::Mount -pagesobject $pages -fsindexobject $fsindex \

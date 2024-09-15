@@ -11,7 +11,7 @@ namespace eval ::cookit {
     # in the main.c file. However, the application is initialized only for
     # the main interpreter. Thus, let's set it here to be sure that this
     # variable is available for child/threaded interpreters.
-    variable root "/cookit"
+    variable root "//cookit:/"
 
 }
 
@@ -40,12 +40,6 @@ proc ::cookit::recursive_glob { dir pattern } {
         lappend files {*}[recursive_glob $dir $pattern]
     }
     return $files
-}
-
-proc ::cookit::tmpmount {} {
-    variable tmpMountCount
-    while { [file exists [set mnt "/tmpcookitvfs[incr tmpMountCount]"]] } {}
-    return $mnt
 }
 
 proc ::cookit::addfiles { filename files names } {
@@ -551,7 +545,6 @@ proc ::cookit::parsePEResources { exe } {
 proc ::cookit::copyTclRuntime { manifest dest } {
 
     set root [file dirname $manifest]
-    set tmpmount [tmpmount]
 
     set fh [open $manifest r]
 
@@ -562,7 +555,7 @@ proc ::cookit::copyTclRuntime { manifest dest } {
     # as a single page is very efficient. Practical tests have verified that
     # for lzma compression, 5 is the optimal compression level for these files.
     # Higher compression levels do not reduce the size of the compressed data.
-    ::cookfs::Mount $dest $tmpmount \
+    ::cookfs::Mount $dest $dest \
         -compression lzma:5 \
         -pagesize [expr { 1024 * 1024 * 5 }] \
         -smallfilesize [expr { 1024 * 1024 * 5 }] \
@@ -570,14 +563,14 @@ proc ::cookit::copyTclRuntime { manifest dest } {
 
     while { [gets $fh file] != -1 } {
         if { [file extension $file] ne ".enc" } continue
-        set dir [file join $tmpmount [file dirname $file]]
+        set dir [file join $dest [file dirname $file]]
         if { ![file isdirectory $dir] } {
             file mkdir $dir
         }
         file copy [file join $root $file] $dir
     }
 
-    ::cookfs::Unmount $tmpmount
+    ::cookfs::Unmount $dest
     seek $fh 0
 
     # The 2nd pass.
@@ -587,21 +580,21 @@ proc ::cookit::copyTclRuntime { manifest dest } {
     #                 file and place it on a separate page.
     # -smallfilebuffer: Use a large smallbuffer (5MB) to efficiently sort all
     #                   runtime files before storing them to pages.
-    ::cookfs::Mount $dest $tmpmount \
+    ::cookfs::Mount $dest $dest \
         -pagesize [expr { 1024 * 1024 }] \
         -smallfilesize [expr { 1024 * 512 }] \
         -smallfilebuffer [expr { 1024 * 1024 * 5 }]
 
     while { [gets $fh file] != -1 } {
         if { [file extension $file] eq ".enc" } continue
-        set dir [file join $tmpmount [file dirname $file]]
+        set dir [file join $dest [file dirname $file]]
         if { ![file isdirectory $dir] } {
             file mkdir $dir
         }
         file copy [file join $root $file] $dir
     }
 
-    ::cookfs::Unmount $tmpmount
+    ::cookfs::Unmount $dest
     close $fh
 
 }
@@ -871,13 +864,12 @@ proc ::cookit::wrap { args } {
         updateWindowsResources $params
     }
 
-    set mnt [tmpmount]
-    # Default mount options for other files:
+    # Default mount options for other (not Tcl runtime) files:
     # -pagesize: Use 1MB as the page size.
     # -smallfilesize: If the file is larger than 512 KB, treat it as a separate file.
     # -smallfilebuffer: Use a large smallbuffer (64MB) to efficiently sort all
     #                   files before storing them to pages.
-    ::cookfs::Mount $executable $mnt \
+    ::cookfs::Mount $executable $executable \
         -pagesize [expr { 1024 * 1024 }] \
         -smallfilesize [expr { 1024 * 512 }] \
         -smallfilebuffer [expr { 1024 * 1024 * 64 }]
@@ -885,15 +877,15 @@ proc ::cookit::wrap { args } {
     foreach package [dict get $params packages] {
         # Don't try to overwrite packages/libraries.
         set pkg_name [file tail $package]
-        if { [file exists [file join $mnt lib $pkg_name]] } {
+        if { [file exists [file join $executable lib $pkg_name]] } {
             continue
         }
         # Copy the package to the VFS
-        file copy -force $package [file join $mnt lib]
+        file copy -force $package [file join $executable lib]
     }
 
     foreach catalog [dict get $params catalogs] {
-        set dest [file join $mnt catalogs]
+        set dest [file join $executable catalogs]
         if { ![file isdirectory $dest] } {
             file mkdir $dest
         }
@@ -901,7 +893,7 @@ proc ::cookit::wrap { args } {
     }
 
     if { $mainScript ne "" } {
-        file copy -force $mainScript [file join $mnt main.tcl]
+        file copy -force $mainScript [file join $executable main.tcl]
         if { [llength [dict get $params wrapFiles]] } {
             foreach file [dict get $params wrapFiles] name [dict get $params wrapNames] {
                 if { [dict get $params command] ne "" } {
@@ -916,7 +908,7 @@ proc ::cookit::wrap { args } {
                         set name $file
                     }
                 }
-                set out_name [file join $mnt $name]
+                set out_name [file join $executable $name]
                 set out_dir  [file dirname $out_name]
                 if { ![file isdirectory $out_dir] } {
                     file mkdir -- $out_dir
@@ -926,7 +918,7 @@ proc ::cookit::wrap { args } {
         }
     }
 
-    ::cookfs::Unmount $mnt
+    ::cookfs::Unmount $executable
     setExecPerms $executable
     return $executable
 

@@ -10,7 +10,7 @@ export PKG_CONFIG
 CHECK_TARGETS = tcl tk tclvfs cookfs cookit twapi tclmtls tdom tclhttps
 ALL_TARGETS   = $(CHECK_TARGETS) zlib tkcon thread
 
-COOKIT_ROOT = /cookit
+COOKIT_ROOT = //cookit:/
 
 # Required for WSL
 ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)

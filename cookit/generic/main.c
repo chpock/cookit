@@ -32,7 +32,7 @@
 int _CRT_glob = 0;
 #endif /* __MINGW32__ */
 
-#define VFS_MOUNT "/cookit"
+#define VFS_MOUNT "//cookit:/"
 
 // #define COOKIT_DEBUG
 
@@ -296,8 +296,8 @@ static int Cookit_Startup(Tcl_Interp *interp) {
         // We cannot set the $tcl_library variable here because it will only be set
         // for this Tcl interpreter and not for child/threaded interpreters.
         // Thus, we choose to set environment variable TCL_LIBRARY.
-        Tcl_PutEnv("TCL_LIBRARY=" VFS_MOUNT "/lib/tcl" TCL_VERSION);
-        Tcl_PutEnv("TK_LIBRARY=" VFS_MOUNT "/lib/tk" TCL_VERSION);
+        Tcl_PutEnv("TCL_LIBRARY=" VFS_MOUNT "lib/tcl" TCL_VERSION);
+        Tcl_PutEnv("TK_LIBRARY=" VFS_MOUNT "lib/tk" TCL_VERSION);
 
     } else if (!g_isBootstrap) {
         DBG("Cookit_Startup: FATAL! vfs is not available");
@@ -311,7 +311,7 @@ static int Cookit_Startup(Tcl_Interp *interp) {
     }
 
     // Check if we have a wrapped script in VFS
-    Tcl_Obj *wrappedScript = Tcl_NewStringObj(VFS_MOUNT "/main.tcl", -1);
+    Tcl_Obj *wrappedScript = Tcl_NewStringObj(VFS_MOUNT "main.tcl", -1);
     // Tcl_FSAccess() must be called on object an with refcount >= 1.
     // Thus, we need to increment refcount for wrappedScript here.
     Tcl_IncrRefCount(wrappedScript);

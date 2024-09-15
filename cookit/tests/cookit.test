@@ -74,39 +74,6 @@ test cookit-1.6 {An directory tree as input} -setup {
     file delete -force $dir
 }
 
-# ::cookit::tmpmount
-
-test cookit-2.1 {::cookit::tmpmount} -body {
-    ::cookit::tmpmount
-} -result {/tmpcookitvfs1}
-
-test cookit-2.2 {::cookit::tmpmount, the first mount point is busy} -setup {
-    # cleanup the mount counter
-    unset ::cookit::tmpMountCount
-    # make busy mount point
-    set vfs [tcltest::makeFile {} vfs]
-    set tmpmount [::cookit::tmpmount]
-    ::cookfs::Mount $vfs $tmpmount
-    # cleanup the mount counter
-    unset ::cookit::tmpMountCount
-} -body {
-    ::cookit::tmpmount
-} -result {/tmpcookitvfs2} -cleanup {
-    ::cookfs::Unmount $tmpmount
-    file delete -force $vfs
-}
-
-test cookit-2.3 {::cookit::tmpmount, twice} -setup {
-    # cleanup the mount counter
-    unset ::cookit::tmpMountCount
-} -body {
-    list [::cookit::tmpmount] [::cookit::tmpmount]
-} -result {/tmpcookitvfs1 /tmpcookitvfs2}
-
-test cookit-2.4 {::cookit::tmpmount, call the third time without cleanup} -body {
-    ::cookit::tmpmount
-} -result {/tmpcookitvfs3}
-
 # ::cookit::addfiles
 
 test cookit-3.1 {::cookit::addfiles} -setup {
@@ -435,10 +402,9 @@ test cookit-4.5.1 {::cookit::makestub, can create and run a new kit} -setup {
 
     set result [list [exec $exe $script]]
 
-    set mnt [::cookit::tmpmount]
-    cookfs::Mount $exe $mnt -readonly
-    lappend result [recursiveCompare $::cookit::root $mnt]
-    cookfs::Unmount $mnt
+    cookfs::Mount $exe $exe -readonly
+    lappend result [recursiveCompare $::cookit::root $exe]
+    cookfs::Unmount $exe
 
     return $result
 
@@ -457,19 +423,18 @@ test cookit-4.5.2 {::cookit::makestub, no custom files in a new kit} -setup {
     set script2 [makeFile {puts OK} script2]
 } -body {
     ::cookit::makestub $exe1
-    set mnt [::cookit::tmpmount]
-    ::cookfs::Mount $exe1 $mnt
+    ::cookfs::Mount $exe1 $exe1
     # create some files/directories
-    close [open [file join $mnt bar] w]
-    file mkdir [file join $mnt foo]
-    close [open [file join $mnt foo baz] w]
-    ::cookfs::Unmount $mnt
+    close [open [file join $exe1 bar] w]
+    file mkdir [file join $exe1 foo]
+    close [open [file join $exe1 foo baz] w]
+    ::cookfs::Unmount $exe1
     # create $exe2 from $exe1
     exec [interpreter] $script1
     # check $exe2
-    ::cookfs::Mount $exe2 $mnt -readonly
-    set result [recursiveCompare $::cookit::root $mnt]
-    ::cookfs::Unmount $mnt
+    ::cookfs::Mount $exe2 $exe2 -readonly
+    set result [recursiveCompare $::cookit::root $exe2]
+    ::cookfs::Unmount $exe2
     return $result
 } -result {OK} -cleanup {
     catch { ::cookfs::Unmount $mnt }

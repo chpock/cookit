@@ -46,7 +46,7 @@ foreach { pkgName pkgVersion constraints } {
 unset count
 
 test content-6 {icon exists} -constraints win -body {
-    file exists /cookit/cookit.ico
+    file exists [file join $::cookit::root cookit.ico]
 } -result 1
 
 # cleanup

@@ -8,6 +8,7 @@
 package require cookit
 package require vfs::wzip
 
-vfs::zip::Mount [lindex $argv 0] [set mnt [::cookit::tmpmount]] -readwrite
-file copy {*}[lrange $argv 1 end] $mnt
-vfs::unmount $mnt
+set archive [lindex $argv 0]
+vfs::zip::Mount $archive $archive -readwrite
+file copy {*}[lrange $argv 1 end] $archive
+vfs::unmount $archive
