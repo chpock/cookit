@@ -1,3 +1,6 @@
+2024-09-21 Konstantin Kushnir <chpock@gmail.com>
+	* Add ::cookit::pkgconfig
+
 2024-09-15 Konstantin Kushnir <chpock@gmail.com>
 	* Standardize root mount point as //cookit:/
 	* Standardize builtin commands --wrap and --stats

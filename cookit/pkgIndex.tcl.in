@@ -4,6 +4,7 @@ package ifneeded cookit::builtin 1.0.0 [list source [file join $dir cookit-built
 package ifneeded vfs::wzip 0.1.0 [list source [file join $dir wzipvfs.tcl]]
 
 package ifneeded cookit @PACKAGE_VERSION@ [list ::apply {{ dir } {
+    load {} Cookit
     source [file join $dir cookit.tcl]
     package provide cookit @PACKAGE_VERSION@
 }} $dir]

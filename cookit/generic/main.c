@@ -8,6 +8,7 @@
 
 #include <tclInt.h>
 #include <tclCookfs.h>
+#include "cookit.h"
 
 #ifdef TCL_THREADS
 #include <tclThread.h>
@@ -214,6 +215,7 @@ static int Cookit_Startup(Tcl_Interp *interp) {
     TclX_IdInit(interp);
 
     DBG("Cookit_Startup: register static packages");
+    Tcl_StaticPackage(0, "Cookit", Cookit_Init, NULL);
     Tcl_StaticPackage(0, "Vfs", Vfs_Init, NULL);
     Tcl_StaticPackage(0, "Cookfs", Cookfs_Init, NULL);
     Tcl_StaticPackage(0, "Mtls", Mtls_Init, NULL);

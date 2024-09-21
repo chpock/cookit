@@ -5604,7 +5604,7 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 #-----------------------------------------------------------------------
 
 
-    vars=""
+    vars="generic/cookit.c"
     for i in $vars; do
 	case $i in
 	    \$*)
@@ -5704,6 +5704,10 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 	fi
 	PKG_TCL_SOURCES="$PKG_TCL_SOURCES $i"
     done
+
+
+
+printf "%s\n" "#define COOKIT_PLATFORM \"$build\"" >>confdefs.h
 
 
 
