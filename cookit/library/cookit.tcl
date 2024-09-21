@@ -15,24 +15,24 @@ namespace eval ::cookit {
 
 }
 
-if { [::tcl::pkgconfig get threaded] } {
-    proc ::cookit::newThread { args } {
-        package require Thread
-        # if the last arg is not parameter for thread::create, but script
-        if { [string index [lindex $args end] 0] ne "-" } {
-            set script [list]
-            lappend script [list set ::parentThread [thread::id]]
-            lappend script [list set ::argv $::argv]
-            lappend script [list set ::argv0 $::argv0]
-            lappend script [list info script $::argv0]
-            lappend script [list set ::tcl_interactive $::tcl_interactive]
-            lappend script [lindex $args end]
-            set args [lreplace $args end end [join $script \n]]
-        }
-        set tid [::thread::create {*}$args]
-        return $tid
-    }
-}
+#if { [::tcl::pkgconfig get threaded] } {
+#    proc ::cookit::newThread { args } {
+#        package require Thread
+#        # if the last arg is not parameter for thread::create, but script
+#        if { [string index [lindex $args end] 0] ne "-" } {
+#            set script [list]
+#            lappend script [list set ::parentThread [thread::id]]
+#            lappend script [list set ::argv $::argv]
+#            lappend script [list set ::argv0 $::argv0]
+#            lappend script [list info script $::argv0]
+#            lappend script [list set ::tcl_interactive $::tcl_interactive]
+#            lappend script [lindex $args end]
+#            set args [lreplace $args end end [join $script \n]]
+#        }
+#        set tid [::thread::create {*}$args]
+#        return $tid
+#    }
+#}
 
 proc ::cookit::recursive_glob { dir pattern } {
     set files [lsort [glob -nocomplain -type f -directory $dir $pattern]]
@@ -42,8 +42,36 @@ proc ::cookit::recursive_glob { dir pattern } {
     return $files
 }
 
-proc ::cookit::addfiles { filename files names } {
-    set h [::cookfs::Mount $filename $filename]
+proc ::cookit::addfiles { filename arg_files arg_names args } {
+
+    set files [list]
+    set names [list]
+
+    foreach file $arg_files name $arg_names {
+
+        lappend files $file
+        lappend names $name
+
+        if { ![file isdirectory $file] } {
+            continue
+        }
+
+        set strip_path [llength [file split $file]]
+        foreach path [recursive_glob $file *] {
+
+            lappend files $path
+
+            set path [file split $path]
+            set path [lrange $path $strip_path end]
+            set path [file join $name {*}$path]
+
+            lappend names $path
+
+        }
+
+    }
+
+    set h [::cookfs::Mount $filename $filename {*}$args]
     set params [list]
     set dirs [list]
     foreach file $files name $names {
@@ -51,9 +79,11 @@ proc ::cookit::addfiles { filename files names } {
         if { $dir ne "." && [lsearch -exact $dirs $dir] == -1 } {
             lappend dirs $dir
         }
-        # <destination name> "file" <filename> <size> (the size will
-        # be calculated automatically)
-        lappend params $name file $file ""
+        if { ![file isdirectory $file] } {
+            # <destination name> "file" <filename> <size> (the size will
+            # be calculated automatically)
+            lappend params $name file $file ""
+        }
     }
     # directories to create
     set dirs2 [list]
@@ -68,157 +98,7 @@ proc ::cookit::addfiles { filename files names } {
     ::cookfs::Unmount $filename
 }
 
-proc ::cookit::parseWrapArgs { arglist } {
-
-    # Set the default options
-    set params [dict create {*}{
-        icon            ""
-        level           6
-        method          zlib
-        command         ""
-        catalogs        {}
-        packages        {}
-        stubfile        ""
-        password        ""
-        wrapFiles       {}
-        wrapNames       {}
-        mainScript      ""
-        executable      ""
-        wrapMethods     {}
-        versionInfo     {
-            CompanyName      {}
-            LegalCopyright   {}
-            FileVersion      {}
-            ProductName      {}
-            ProductVersion   {}
-            FileDescription  {}
-            OriginalFilename {}
-        }
-    }]
-
-    for { set i 0 } { $i < [llength $arglist] } { incr i } {
-        set arg [lindex $arglist $i]
-        switch -- $arg {
-            "-f" {
-                # File which contains files to wrap
-                set arg [lindex $arglist [incr i]]
-                if { ![file readable $arg] } {
-                     return -code error "Could not find list file: $arg.\n\nWrapping aborted."
-                }
-
-                set fp [open $arg r]
-                while { [gets $fp line] != -1 } {
-                    lassign $line file name method
-                    dict lappend params wrapFiles $file
-                    dict lappend params wrapNames [expr { $name eq "" ? $file : $name }]
-                    dict lappend params wrapMethods $method
-                }
-                close $fp
-            }
-            "-o" {
-                # Output file
-                set arg [lindex $arglist [incr i]]
-                dict set params executable [string map [list \\ /] $arg]
-            }
-            "-w" {
-                # Input cookit stub file
-                set arg [lindex $arglist [incr i]]
-                dict set params stubfile [string map [list \\ /] $arg]
-            }
-            "-method" {
-                # Compression method (not supported)
-                set method [lindex $arglist [incr i]]
-                set method "zlib"; # is not supported
-                dict set params method $method
-            }
-            "-level" {
-                # Compression level (not supported)
-                dict set params level [lindex $arglist [incr i]]
-            }
-            "-command" {
-                # Progress command
-                dict set params command [lindex $arglist [incr i]]
-            }
-            "-password" {
-                # Password (not supported)
-                dict set params password [lindex $arglist [incr i]]
-            }
-            "-icon" {
-                # Icon
-                dict set params icon [lindex $arglist [incr i]]
-            }
-            "-company" {
-                # Version info: company
-                dict set params versionInfo CompanyName [lindex $arglist [incr i]]
-            }
-            "-copyright" {
-                # Version info: copyright
-                dict set params versionInfo LegalCopyright [lindex $arglist [incr i]]
-            }
-            "-fileversion" {
-                # Version info: version
-                dict set params versionInfo FileVersion [lindex $arglist [incr i]]
-            }
-            "-productname" {
-                # Version info: product
-                dict set params versionInfo ProductName [lindex $arglist [incr i]]
-            }
-            "-productversion" {
-                # Version info: product version
-                dict set params versionInfo ProductVersion [lindex $arglist [incr i]]
-            }
-            "-filedescription" {
-                # Version info: description
-                dict set params versionInfo FileDescription [lindex $arglist [incr i]]
-            }
-            "-originalfilename" {
-                # Version info: original filename
-                dict set params versionInfo OriginalFilename [lindex $arglist [incr i]]
-            }
-            "-catalog" {
-                # Catalog
-                set arg [lindex $arglist [incr i]]
-                if { [lsearch -exact [dict get $params catalogs] $arg] == -1 } {
-                    dict lappend params catalogs $arg
-                }
-            }
-            "-package" {
-                # A Tcl package to include in our lib/ directory
-                set arg [lindex $arglist [incr i]]
-                if { [lsearch -exact [dict get $params packages] $arg] == -1 } {
-                    dict lappend params packages $arg
-                }
-            }
-            "--" {
-                incr i
-                break
-            }
-            default {
-                break
-            }
-
-        }
-    }
-
-    # The first argument is out main script
-    dict set params mainScript [lindex $arglist $i]
-    # All the rest of the arguments are files to be wrapped
-    foreach file [lrange $arglist [incr i] end] {
-        # It is unclear what directory tree in VFS will have the specified files.
-        if { [file isdirectory $file] } {
-            dict lappend params wrapFiles {*}[recursive_glob $file *]
-        } elseif { [file readable $file] } {
-            dict lappend params wrapFiles $file
-        } {
-            return -code error "Not a directory or a readable file: $file"
-        }
-    }
-
-    return $params
-
-}
-
-proc ::cookit::isPEFile { exe } {
+proc ::cookit::is_pe_file { exe } {
     set fh [open $exe r]
     fconfigure $fh -translation binary
     set sig [read $fh 2]
@@ -226,7 +106,7 @@ proc ::cookit::isPEFile { exe } {
     return [expr { $sig eq "MZ" }]
 }
 
-proc ::cookit::parsePEResources { exe } {
+proc ::cookit::windows_resources_parse { exe } {
 
     set fh [open $exe r]
     fconfigure $fh -translation binary
@@ -542,7 +422,7 @@ proc ::cookit::parsePEResources { exe } {
 
 }
 
-proc ::cookit::copyTclRuntime { manifest dest } {
+proc ::cookit::copy_tcl_runtime { manifest dest } {
 
     set root [file dirname $manifest]
 
@@ -613,14 +493,14 @@ proc ::cookit::makestub { exe } {
     puts -nonewline $fh $head
     close $fh
 
-    copyTclRuntime [file join $root manifest.txt] $exe
-    setExecPerms $exe
+    copy_tcl_runtime [file join $root manifest.txt] $exe
+    set_exec_perms $exe
 
     return $exe
 
 }
 
-proc ::cookit::parseIcoFile { file } {
+proc ::cookit::ico_file_parse { file } {
 
     set fh [open $file r]
     fconfigure $fh -translation binary
@@ -711,21 +591,20 @@ proc ::cookit::parseIcoFile { file } {
 
 }
 
-proc ::cookit::updateWindowsResources { params } {
+proc ::cookit::windows_resources_update { executable params } {
 
-    set resources [parsePEResources [dict get $params executable]]
+    set resources [windows_resources_parse $executable]
 
-    set fh [open [dict get $params executable] r+]
+    set fh [open $executable r+]
 
     # make sure that we close $fh on any error
     catch {
 
-    set iconfile [dict get $params icon]
-    if { $iconfile ne "" } {
+    if { [dict exists $params icon] && [set iconfile [dict get $params icon]] ne "" } {
         if { ![file readable $iconfile] } {
             return -code error "the icon file does not exist or not readable: $iconfile"
         }
-        if { [catch { parseIcoFile $iconfile } icondata] } {
+        if { [catch { ico_file_parse $iconfile } icondata] } {
             return -code error "error while parsing the icon file $iconfile: $icondata"
         }
         dict for { id icon } $icondata {
@@ -764,39 +643,55 @@ proc ::cookit::updateWindowsResources { params } {
         return [string range $l 0 1][string range $h 0 1]
     }}]
 
-    foreach key [dict keys [dict get $params versionInfo]] {
-        if { ![dict exists $resources version $key] } {
-            return -error "could not find key $key in versionInfo"
-        }
-        set val [dict get $params versionInfo $key]
-        set res [dict get $resources version $key]
-        set maxlen [expr { [dict get $res length] - 1 }]
-        set len [string length $val]
-        if { $len > $maxlen } {
-            return -error "value size ($len) for key $key\
-                in versionInfo exceeds the maximum length $maxlen"
-        }
-        append val [string repeat "\000" [expr { $maxlen - $len + 1 }]]
+    set resource_keys [dict create {*}{
+         company          CompanyName
+         copyright        LegalCopyright
+         fileversion      FileVersion
+         productname      ProductName
+         productversion   ProductVersion
+         filedescription  FileDescription
+         originalfilename OriginalFilename
+    }]
 
-        fconfigure $fh -encoding unicode -translation lf -eofchar {}
-        seek $fh [dict get $res offset] start
-        puts -nonewline $fh $val
+    if { [dict exists $params versionInfo] } {
+        foreach key [dict keys [dict get $params versionInfo]] {
+            if { ![dict exists $resource_keys $key] } {
+                return -code error "unknown resource: \"$key\""
+            }
+            set resource_key [dict get $resource_keys $key]
+            if { ![dict exists $resources version $resource_key] } {
+                return -code error "could not find key $resource_key in versionInfo"
+            }
+            set val [dict get $params versionInfo $key]
+            set res [dict get $resources version $resource_key]
+            set maxlen [expr { [dict get $res length] - 1 }]
+            set len [string length $val]
+            if { $len > $maxlen } {
+                return -code error "value size ($len) for key $key\
+                    in versionInfo exceeds the maximum length $maxlen"
+            }
+            append val [string repeat "\000" [expr { $maxlen - $len + 1 }]]
 
-        # change version in fixed version struct
-        if { $key eq "FileVersion" } {
-            fconfigure $fh -translation binary
-            seek $fh [dict get $resources version dwFileVersionMS offset] start
-            puts -nonewline $fh [{*}$versionToBytes $val MS]
-            seek $fh [dict get $resources version dwFileVersionLS offset] start
-            puts -nonewline $fh [{*}$versionToBytes $val LS]
-        } elseif { $key eq "ProductVersion" } {
-            fconfigure $fh -translation binary
-            seek $fh [dict get $resources version dwProductVersionMS offset] start
-            puts -nonewline $fh [{*}$versionToBytes $val MS]
-            seek $fh [dict get $resources version dwProductVersionLS offset] start
-            puts -nonewline $fh [{*}$versionToBytes $val LS]
+            fconfigure $fh -encoding unicode -translation lf -eofchar {}
+            seek $fh [dict get $res offset] start
+            puts -nonewline $fh $val
+
+            # change version in fixed version struct
+            if { $resource_key eq "FileVersion" } {
+                fconfigure $fh -translation binary
+                seek $fh [dict get $resources version dwFileVersionMS offset] start
+                puts -nonewline $fh [{*}$versionToBytes $val MS]
+                seek $fh [dict get $resources version dwFileVersionLS offset] start
+                puts -nonewline $fh [{*}$versionToBytes $val LS]
+            } elseif { $resource_key eq "ProductVersion" } {
+                fconfigure $fh -translation binary
+                seek $fh [dict get $resources version dwProductVersionMS offset] start
+                puts -nonewline $fh [{*}$versionToBytes $val MS]
+                seek $fh [dict get $resources version dwProductVersionLS offset] start
+                puts -nonewline $fh [{*}$versionToBytes $val LS]
+            }
+
         }
-
     }
 
     set ctime [clock microseconds]
@@ -804,7 +699,7 @@ proc ::cookit::updateWindowsResources { params } {
     set ctime [expr { $ctime * 10 + 11644473600 }]
     # Convert 64-bit Windows FILETIME to 4 WORD values devided by dot.
     # I.e. it will look like a version number, and we can use
-    # [{*}$versionToBytes] to get bytes to writing.
+    # [{*}$versionToBytes] to get bytes for writing.
     set ctimeMS  [expr { $ctime >> 32 }]
     set ctimeMSh [expr { $ctimeMS >> 16 }]
     set ctimeMSl [expr { $ctimeMS & 0x0000ffff }]
@@ -816,9 +711,9 @@ proc ::cookit::updateWindowsResources { params } {
     # Update the datetime in fixed version struct
     fconfigure $fh -translation binary
     seek $fh [dict get $resources version dwFileDateMS offset] start
-    puts -nonewline $fh [{*}$versionToBytes $val MS]
+    puts -nonewline $fh [{*}$versionToBytes $ctime MS]
     seek $fh [dict get $resources version dwFileDateLS offset] start
-    puts -nonewline $fh [{*}$versionToBytes $val LS]
+    puts -nonewline $fh [{*}$versionToBytes $ctime LS]
 
     close $fh
 
@@ -830,101 +725,153 @@ proc ::cookit::updateWindowsResources { params } {
 
 }
 
-proc ::cookit::wrap { args } {
+proc ::cookit::wrap { main_script args } {
 
     variable mount_options
 
-    set params [parseWrapArgs $args]
+    set paths_input  [list]
+    set paths_output [list]
+    set compression  "lzma"
+    set output       ""
+    set stubfile     ""
+    set windows_resources [dict create icon "" versionInfo [dict create]]
 
-    set mainScript [dict get $params mainScript]
-    if { $mainScript ne "" && ![file exists $mainScript] } {
-        return -code error "could not find the main script '$mainScript' to wrap"
+    if { $main_script eq "-" } {
+        set main_script ""
     }
 
-    set executable [dict get $params executable]
-    if { $executable eq "" } {
-        if { $mainScript eq "" } {
-            return -code error "no output file specified"
+    if { $main_script ne "" } {
+        if { ![file exists $main_script] } {
+            return -code error "could not find the main script '$main_script' to wrap"
         }
-        set executable [file rootname $mainScript]
-        if { $::tcl_platform(platform) eq "windows" } {
-            append executable ".exe"
+        lappend paths_input $main_script
+        lappend paths_output "main.tcl"
+    }
+
+    for { set i 0 } { $i < [llength $args] } { incr i } {
+
+        set arg [lindex $args $i]
+        if { [incr i] == [llength $args] } {
+            return -code error "missing value for argument '$arg'"
         }
-        dict set params executable $executable
-    }
+        set val [lindex $args $i]
 
-    set stubfile [dict get $params stubfile]
-    if { $stubfile ne "" } {
-        file copy -force $stubfile $executable
-    } else {
-        makestub $executable
-    }
-
-    if { [isPEFile $executable] } {
-        updateWindowsResources $params
-    }
-
-    # Default mount options for other (not Tcl runtime) files:
-    # -pagesize: Use 1MB as the page size.
-    # -smallfilesize: If the file is larger than 512 KB, treat it as a separate file.
-    # -smallfilebuffer: Use a large smallbuffer (64MB) to efficiently sort all
-    #                   files before storing them to pages.
-    ::cookfs::Mount $executable $executable \
-        -pagesize [expr { 1024 * 1024 }] \
-        -smallfilesize [expr { 1024 * 512 }] \
-        -smallfilebuffer [expr { 1024 * 1024 * 64 }]
-
-    foreach package [dict get $params packages] {
-        # Don't try to overwrite packages/libraries.
-        set pkg_name [file tail $package]
-        if { [file exists [file join $executable lib $pkg_name]] } {
-            continue
-        }
-        # Copy the package to the VFS
-        file copy -force $package [file join $executable lib]
-    }
-
-    foreach catalog [dict get $params catalogs] {
-        set dest [file join $executable catalogs]
-        if { ![file isdirectory $dest] } {
-            file mkdir $dest
-        }
-        file copy -force $catalog $dest
-    }
-
-    if { $mainScript ne "" } {
-        file copy -force $mainScript [file join $executable main.tcl]
-        if { [llength [dict get $params wrapFiles]] } {
-            foreach file [dict get $params wrapFiles] name [dict get $params wrapNames] {
-                if { [dict get $params command] ne "" } {
-                    {*}[dict get $params command] $file
-                }
-                # This logic, when $name is empty, is strange.
-                if { $name eq "" } {
-                    if { [file pathtype $file] eq "absolute" } {
-                        # strip volume/root from source filename
-                        set name [file join {*}[lrange [file split $file] 1 end]]
-                    } else {
-                        set name $file
+        switch -exact -- $arg {
+            -paths {
+                if { [info exists paths] } {
+                    foreach path $paths {
+                        lappend paths_input $path
+                        lappend paths_output [file tail $path]
                     }
                 }
-                set out_name [file join $executable $name]
-                set out_dir  [file dirname $out_name]
-                if { ![file isdirectory $out_dir] } {
-                    file mkdir -- $out_dir
-                }
-                file copy -force $file $out_name
+                set paths $val
             }
+            -path {
+                if { [info exists paths] } {
+                    foreach path $paths {
+                        lappend paths_input $path
+                        lappend paths_output [file tail $path]
+                    }
+                }
+                set paths [list $val]
+            }
+            -to {
+                if { ![info exists paths] } {
+                    return -code error "no paths were specified for destination path '$val'"
+                }
+                if { [file pathtype $val] ne "relative" } {
+                    return -code error "destination directory must be relative: '$val'"
+                }
+                foreach path $paths {
+                    lappend paths_input $path
+                    lappend paths_output [file join $val [file tail $path]]
+                }
+                unset paths
+            }
+            -as {
+                if { ![info exists paths] } {
+                    return -code error "no paths were specified for destination path '$val'"
+                }
+                if { [llength $paths] != 1 } {
+                    return -code error "only one path must be specified before argument -as \"$val\""
+                }
+                if { [file pathtype $val] ne "relative" } {
+                    return -code error "destination path must be relative: '$val'"
+                }
+                lappend paths_input [lindex $paths 0]
+                lappend paths_output $val
+                unset paths
+            }
+            -package {
+                lappend paths_input $val
+                lappend paths_output [file join "lib" [file tail $val]]
+            }
+            -compression      { set compression $val }
+            -output           { set output      $val }
+            -stubfile         { set stubfile    $val }
+            -icon             { dict set windows_resources icon $val }
+            -company          { dict set windows_resources versionInfo company          $val }
+            -copyright        { dict set windows_resources versionInfo copyright        $val }
+            -fileversion      { dict set windows_resources versionInfo fileversion      $val }
+            -productname      { dict set windows_resources versionInfo productname      $val }
+            -productversion   { dict set windows_resources versionInfo productversion   $val }
+            -filedescription  { dict set windows_resources versionInfo filedescription  $val }
+            -originalfilename { dict set windows_resources versionInfo originalfilename $val }
+            default {
+                puts "DEFAULT $arg"
+                return -code error "unknown argument: '$arg'"
+            }
+        }
+
+    }
+
+    if { [info exists paths] } {
+        foreach path $paths {
+            lappend paths_input $path
+            lappend paths_output [file tail $path]
+        }
+        unset paths
+    }
+
+    if { $output eq "" } {
+        if { $main_script eq "" } {
+            return -code error "no output file specified"
+        }
+        set output [file rootname $main_script]
+        if { $::tcl_platform(platform) eq "windows" } {
+            append output ".exe"
         }
     }
 
-    ::cookfs::Unmount $executable
-    setExecPerms $executable
-    return $executable
+    if { $stubfile ne "" } {
+        file copy -force $stubfile $output
+    } else {
+        makestub $output
+    }
+
+    if { [is_pe_file $output] } {
+        windows_resources_update $output $windows_resources
+    }
+
+    if { [llength $paths_input] } {
+        # Default mount options for other (not Tcl runtime) files:
+        # -pagesize: Use 1MB as the page size.
+        # -smallfilesize: If the file is larger than 512 KB, treat it as a separate file.
+        # -smallfilebuffer: Use a large smallbuffer (64MB) to efficiently sort all
+        #                   files before storing them to pages.
+        addfiles $output $paths_input $paths_output \
+            -compression $compression \
+            -pagesize [expr { 1024 * 1024 }] \
+            -smallfilesize [expr { 1024 * 512 }] \
+            -smallfilebuffer [expr { 1024 * 1024 * 64 }]
+    }
+
+    set_exec_perms $output
+    return $output
 
 }
 
-proc ::cookit::setExecPerms { exe } {
+proc ::cookit::set_exec_perms { exe } {
     if { $::tcl_platform(platform) eq "windows" } {
         file attributes $exe -readonly 0
     } {

@@ -1,6 +1,9 @@
 cookit:
-    * binaries still depend on shared zlib on some platforms. Remove this
-      dependancy.
+    * Add PE header options IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP and
+      IMAGE_FILE_NET_RUN_FROM_SWAP on Windows to not depend on network when
+      running executable. It looks like we have to read/parse/save PE header
+      from Tcl and correct header CRC.
+      More info: https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-image_file_header
 cookfs:
     * add support for pre-analyzing files before adding.
       - check the first 64kb (or whole file if it is small) of file with

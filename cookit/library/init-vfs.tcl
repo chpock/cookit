@@ -17,4 +17,4 @@ puts "  destination: $vfs_out"
 lappend auto_path [file normalize [file join $vfs_content lib]]
 package require cookit
 
-::cookit::copyTclRuntime [file join $vfs_content manifest.txt] $vfs_out
+::cookit::copy_tcl_runtime [file join $vfs_content manifest.txt] $vfs_out
