@@ -2,6 +2,7 @@
 	* Bumped version to 2.1.0
 	* Fix tkcon compatibility with Tcl9
 	* Add more release automations
+	* Use Tcl9 by default in build script
 
 2024-09-22 Konstantin Kushnir <chpock@gmail.com>
 	* RELEASE TAG 2.0.0

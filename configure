@@ -87,7 +87,7 @@ while [ "$#" != 0 ]; do
 done
 
 [ -n "$IJ_PLATFORM" ] || IJ_PLATFORM="$($TOP_SRCDIR/helper.sh platform)"
-[ -n "$TCL_MAJOR_VERSION" ] || TCL_MAJOR_VERSION="8"
+[ -n "$TCL_MAJOR_VERSION" ] || TCL_MAJOR_VERSION="9"
 
 echo
 echo "Platform is $IJ_PLATFORM"
