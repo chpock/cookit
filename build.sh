@@ -229,12 +229,17 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "i686-w64-mingw32" ] || [ "$PLATFORM
     case "$PLATFORM" in
         *-apple-darwin*)
             # Use PATH for macports
-            PATH="/opt/local/bin:/opt/local/libexec/llvm-16/bin:$PATH"
+            LLVM_LATEST_VERSION="$(/bin/ls -d /opt/local/libexec/llvm* | cut -d- -f2 | sort -g -r | head -n 1)"
+            PATH="/opt/local/bin:/opt/local/libexec/llvm-$LLVM_LATEST_VERSION/bin:$PATH"
             export PATH
             CC="clang"
             export CC
             CXX="clang"
             export CXX
+            # This is needed for clang from macports to correctly find sysroot from xcode
+            # https://github.com/include-what-you-use/include-what-you-use/issues/1308#issuecomment-1732644079
+            SDKROOT="$(xcrun --show-sdk-path)"
+            export SDKROOT
             ;;
         i686-w64-mingw32)
             if [ -n "$IS_WSL" ]; then
@@ -412,9 +417,12 @@ vagrant_unlocked() {
     fi
 }
 
+# loc-70-mac-101206-64
+# loc-72-mac-101300-64
+
 VAGRANT_VM="$(cat <<EOF
-i386-apple-darwin10.6 /c/DriveD/VM/loc-70-mac-101206-64
-x86_64-apple-darwin10.6 /c/DriveD/VM/loc-70-mac-101206-64
+i386-apple-darwin10.6 /c/DriveD/VM/loc-72-mac-101300-64
+x86_64-apple-darwin10.6 /c/DriveD/VM/loc-72-mac-101300-64
 i686-pc-linux-gnu /c/DriveD/VM/loc-26-lin-cent6-64
 x86_64-pc-linux-gnu /c/DriveD/VM/loc-26-lin-cent6-64
 EOF

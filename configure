@@ -223,7 +223,7 @@ case "$IJ_PLATFORM" in
 
   x86_64-apple-darwin10.6)
     COMPILER="CLANG"
-    CFLAGS="-arch x86_64 -DNS_BUILD_32_LIKE_64 $CFLAGS"
+    CFLAGS="-arch x86_64 $CFLAGS"
     if [ "$TCL_MAJOR_VERSION" = "8" ]; then
         CFLAGS="$CFLAGS -mmacosx-version-min=10.6"
     else
