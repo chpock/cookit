@@ -1,5 +1,6 @@
 2024-09-22 Konstantin Kushnir <chpock@gmail.com>
 	* Bumped version to 2.1.0
+	* Fix tkcon compatibility with Tcl9
 
 2024-09-22 Konstantin Kushnir <chpock@gmail.com>
 	* RELEASE TAG 2.0.0

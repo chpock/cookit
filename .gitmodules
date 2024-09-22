@@ -22,9 +22,6 @@
 [submodule "src/tclmtls"]
 	path = deps/tclmtls
 	url = https://github.com/chpock/tclmtls
-[submodule "src/tkcon"]
-	path = deps/tkcon
-	url = https://github.com/wjoye/tkcon.git
 [submodule "src/tdom"]
 	path = deps/tdom
 	url = https://github.com/chpock/tdom.git
@@ -43,3 +40,6 @@
 [submodule "deps/tcl9.0/thread"]
 	path = deps/tcl9.0/thread
 	url = https://github.com/tcltk/thread.git
+[submodule "deps/tkcon"]
+	path = deps/tkcon
+	url = https://github.com/chpock/tkcon.git
