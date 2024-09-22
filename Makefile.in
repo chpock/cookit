@@ -136,21 +136,12 @@ ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 # See details about this patch in its file.
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-010-Windows-fix-CFLAGS.patch
 endif
-ifeq ($(TCL_SOURCE_SUBDIR),tcl8.6)
-ifeq ($(findstring apple-darwin,$(IJ_PLATFORM)),apple-darwin)
-# see details in the patch
-	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-000-MacOS-X-fix-TKNSString.patch
-endif
-else
+ifneq ($(TCL_SOURCE_SUBDIR),tcl8.6)
 ifeq ($(findstring apple-darwin,$(IJ_PLATFORM)),apple-darwin)
 # see details in the patch
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-040-fix-bug-macos-available.patch
 endif
-endif
-ifneq ($(TCL_SOURCE_SUBDIR),tcl8.6)
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-030-All-do-not-use-install-directory.patch
-endif
-ifneq ($(TCL_SOURCE_SUBDIR),tcl8.6)
 ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
 # See details about this patch in its file.
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-050-fix-windows-config.patch

@@ -13,19 +13,19 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
 }
 
 test content-2.1.1 {check Tcl version} -body {
-    expr { [package require Tcl] in {8.6.14 9.0b3} }
+    expr { [package require Tcl] in {8.6.15 9.0b3} }
 } -result 1
 
 test content-2.1.2 {check Tk version} -body {
-    expr { [package require Tk] in {8.6.14 9.0b3} }
+    expr { [package require Tk] in {8.6.15 9.0b3} }
 } -result 1
 
 test content-2.1.3 {check Ttk version} -body {
-    expr { [package require Ttk] in {8.6.14 9.0b3} }
+    expr { [package require Ttk] in {8.6.15 9.0b3} }
 } -result 1
 
 test content-2.2.1 {check Thread version} -body {
-    expr { [package require Thread] in {2.8.9 3.0b4} }
+    expr { [package require Thread] in {2.8.10 3.0b4} }
 } -result 1
 
 foreach { pkgName pkgVersion constraints } {
@@ -35,7 +35,7 @@ foreach { pkgName pkgVersion constraints } {
     registry            1.3.5  {win}
     twapi               5.0a1  {win}
     vfs                 1.4.2  {}
-    cookfs              1.6.0  {}
+    cookfs              1.9.0  {}
     tdom                0.9.4  {}
 } {
     test content-3.[incr count] [list package require $pkgName $pkgVersion] \

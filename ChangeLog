@@ -1,5 +1,6 @@
 2024-09-22 Konstantin Kushnir <chpock@gmail.com>
 	* Use macOS 10.13 for build as Tk9 is not compatible with macOS 10.12
+	* Update Tcl8.6 to 8.6.15
 
 2024-09-21 Konstantin Kushnir <chpock@gmail.com>
 	* Add ::cookit::pkgconfig
