@@ -1,3 +1,8 @@
 build
+build8
+build9
+release
+cookit-release-*.tar.gz
+
 configure~
 autom4te.cache
