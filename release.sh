@@ -14,16 +14,15 @@ error() {
     exit 1
 }
 
-#rm -rf "$BUILD_DIR" "$BUILD_8_DIR" "$BUILD_9_DIR" "$RELEASE_DIR"
-rm -rf "$RELEASE_DIR"
+rm -rf "$BUILD_DIR" "$BUILD_8_DIR" "$BUILD_9_DIR" "$RELEASE_DIR"
 
 cd "$SELF_HOME"
 
-#./build.sh --tcl-version 8 --buildtype release
-#mv "$BUILD_DIR" "$BUILD_8_DIR"
+./build.sh --tcl-version 8 --buildtype release
+mv "$BUILD_DIR" "$BUILD_8_DIR"
 
-#./build.sh --tcl-version 9 --buildtype release
-#mv "$BUILD_DIR" "$BUILD_9_DIR"
+./build.sh --tcl-version 9 --buildtype release
+mv "$BUILD_DIR" "$BUILD_9_DIR"
 
 VERSION="$(cat "$BUILD_9_DIR"/x86_64-pc-linux-gnu/kit/x86_64-pc-linux-gnu/version)"
 
@@ -68,10 +67,10 @@ done
 
 rm -f "$RELEASE_DIR"/windows-installer.tcl
 
-#cd "$SELF_HOME"
-#echo "Create release archive ..."
-#tar czf "cookit-release-$VERSION.tar.gz" "build8" "build9" "release"
-#echo "Cleanup ..."
-#rm -rf "build8" "build9"
+cd "$SELF_HOME"
+echo "Create release archive ..."
+tar czf "cookit-release-$VERSION.tar.gz" "build8" "build9" "release"
+echo "Cleanup ..."
+rm -rf "build8" "build9"
 
 echo "Done."
