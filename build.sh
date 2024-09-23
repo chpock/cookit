@@ -468,6 +468,10 @@ while [ "$STATE" != "running" ]; do
         fi
         log "VM is meditating. Let's try to reload it..."
         VM_ACTION="reload"
+    elif [ "$STATE" = "restoring" ]; then
+        log "Retry in 5 seconds."
+        sleep 5
+        unset VM_ACTION
     elif [ -z "$STATE" ]; then
         log "Warning: VM state is empty. Retry."
         unset VM_ACTION
@@ -477,7 +481,9 @@ while [ "$STATE" != "running" ]; do
     else
         break
     fi
-    vagrant "$VM_ACTION" | grep -E '^ui (output|info|error),' | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
+    if [ -n "$VM_ACTION" ]; then
+        vagrant "$VM_ACTION" | grep -E '^ui (output|info|error),' | sed 's/^[^,]\+,//' | sed 's/^/[vagrant] /'
+    fi
 done
 
 log "Get SSH config..."

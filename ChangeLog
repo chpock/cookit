@@ -1,3 +1,6 @@
+2024-09-23 Konstantin Kushnir <chpock@gmail.com>
+	* Add install/upgrade functionality
+
 2024-09-22 Konstantin Kushnir <chpock@gmail.com>
 	* Bumped version to 2.1.0
 	* Fix tkcon compatibility with Tcl9

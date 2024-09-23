@@ -1,6 +1,7 @@
 package ifneeded cookit::stats 1.0.0 [list source [file join $dir cookit-stats.tcl]]
 package ifneeded cookit::console 1.0.0 [list source [file join $dir cookit-console.tcl]]
 package ifneeded cookit::builtin 1.0.0 [list source [file join $dir cookit-builtin.tcl]]
+package ifneeded cookit::install 1.0.0 [list source [file join $dir cookit-install.tcl]]
 package ifneeded vfs::wzip 0.1.0 [list source [file join $dir wzipvfs.tcl]]
 
 package ifneeded cookit @PACKAGE_VERSION@ [list ::apply {{ dir } {

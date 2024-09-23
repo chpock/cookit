@@ -75,9 +75,17 @@ proc ::cookit::builtin::run { } {
                 package require cookit::stats
                 ::cookit::stats {*}[lrange $::argv 1 end]
             }
+            --install {
+                package require cookit::install
+                ::cookit::install::run install {*}[lrange $::argv 1 end]
+            }
+            --upgrade - --update {
+                package require cookit::install
+                ::cookit::install::run upgrade {*}[lrange $::argv 1 end]
+            }
             default {
                 puts stderr "Error: unknown command '$cmd'"
-                puts stderr "Known commands are: --wrap, --stats"
+                puts stderr "Known commands are: --wrap, --stats, --upgrade"
                 exit 1
             }
         }
