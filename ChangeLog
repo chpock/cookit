@@ -3,6 +3,7 @@
 	* Add command --version
 	* Add command --uninstall
 	* Add command --check-upgrade
+	* Set/unset PATH on Windows during --install/--uninstall
 
 2024-09-22 Konstantin Kushnir <chpock@gmail.com>
 	* Bumped version to 2.2.0

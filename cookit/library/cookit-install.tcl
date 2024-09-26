@@ -133,11 +133,11 @@ proc ::cookit::install::success { action version home } {
             set path [registry get {HKEY_CURRENT_USER\Environment} Path]
             set path [split $path ";"]
 
-            if { [set pos [lsearch -nocase $path $home]] == -1 } {
+            if { [set pos [lsearch -exact -nocase $path $home]] != -1 } {
                 set path [lreplace $path $pos $pos]
                 set path [join $path ";"]
                 if { ![catch { registry set {HKEY_CURRENT_USER\Environment} Path $path }] } {
-                    # send broadcast message
+                    catch { registry broadcast "Environment" -timeout 1 }
                 }
             }
 
@@ -158,11 +158,13 @@ proc ::cookit::install::success { action version home } {
             set path [split $path ";"]
             set path_exists 1
 
-            if { [lsearch -nocase $path $home] == -1 } {
+            if { [lsearch -exact -nocase $path $home] == -1 } {
                 lappend path $home
                 set path [join $path ";"]
                 if { [catch { registry set {HKEY_CURRENT_USER\Environment} Path $path }] } {
                     set path_exists 0
+                } else {
+                    catch { registry broadcast "Environment" -timeout 1 }
                 }
             }
 
