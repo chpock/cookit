@@ -89,6 +89,10 @@ proc ::cookit::builtin::run { } {
                 package require cookit::install
                 ::cookit::install::run upgrade {*}[lrange $::argv 1 end]
             }
+            --check-upgrade - --check-update {
+                package require cookit::install
+                ::cookit::install::run check-upgrade {*}[lrange $::argv 1 end]
+            }
             --uninstall {
                 package require cookit::install
                 ::cookit::install::uninstall {*}[lrange $::argv 1 end]
@@ -99,7 +103,7 @@ proc ::cookit::builtin::run { } {
             }
             default {
                 puts stderr "Error: unknown command '$cmd'"
-                puts stderr "Known commands are: --wrap, --stats, --version, --upgrade and --uninstall"
+                puts stderr "Known commands are: --wrap, --stats, --version, --check-upgrade, --upgrade and --uninstall"
                 exit 1
             }
         }

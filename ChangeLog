@@ -2,6 +2,7 @@
 	* Fix a bug where temporary files were not deleted when installing
 	* Add command --version
 	* Add command --uninstall
+	* Add command --check-upgrade
 
 2024-09-22 Konstantin Kushnir <chpock@gmail.com>
 	* Bumped version to 2.2.0

@@ -166,7 +166,7 @@ proc ::cookit::install::success { action version home } {
                 }
             }
 
-            append message "\n"
+            append message "\n\n"
 
             if { $path_exists } {
                 append message "Directory $home was successfully added to PATH for the current user. You can open a new command prompt and start using Cookit."
@@ -175,8 +175,8 @@ proc ::cookit::install::success { action version home } {
             }
 
         } else {
-            append message "\n"
-            append message "\nPlease add this directory to your PATH environment variable."
+            append message "\n\n"
+            append message "Please add this directory to your PATH environment variable."
         }
     }
 
@@ -284,7 +284,7 @@ proc ::cookit::install::run { action args } {
 
     ok $version
 
-    if { $action eq "upgrade" } {
+    if { $action eq "upgrade" || $action eq "check-upgrade" } {
 
         stage "Checking the current version of Cookit"
 
@@ -295,7 +295,7 @@ proc ::cookit::install::run { action args } {
             ok "$version_current - an upgrade is not required."
 
             if { !$console } {
-                tk_messageBox -message "The latest available release of Cookit $version is the same as the current version.\nNo update is required." \
+                tk_messageBox -message "The latest available release of Cookit $version is the same as the current version.\n\nNo update is required." \
                     -title "Cookit installation" \
                     -type ok -icon info
             }
@@ -303,7 +303,21 @@ proc ::cookit::install::run { action args } {
             return
 
         } else {
+
             ok "$version_current - an upgrade is required."
+
+            if { $action eq "check-upgrade" } {
+
+                if { !$console } {
+                    tk_messageBox -message "Cookit $version is available.\n\nAn update is required." \
+                        -title "Cookit installation" \
+                        -type ok -icon info
+                }
+
+                return
+
+            }
+
         }
 
     }
