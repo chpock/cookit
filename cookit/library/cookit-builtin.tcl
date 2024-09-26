@@ -75,14 +75,6 @@ proc ::cookit::builtin::run { } {
                 package require cookit::stats
                 ::cookit::stats {*}[lrange $::argv 1 end]
             }
-            --install {
-                package require cookit::install
-                ::cookit::install::run install {*}[lrange $::argv 1 end]
-            }
-            --upgrade - --update {
-                package require cookit::install
-                ::cookit::install::run upgrade {*}[lrange $::argv 1 end]
-            }
             --version {
                 set message "Cookit version [::cookit::pkgconfig get package-version]"
                 if { [catch { package require Tk }] } {
@@ -93,9 +85,21 @@ proc ::cookit::builtin::run { } {
                     tk_messageBox -message $message -title "Cookit about" -type ok -icon info
                 }
             }
+            --upgrade - --update {
+                package require cookit::install
+                ::cookit::install::run upgrade {*}[lrange $::argv 1 end]
+            }
+            --uninstall {
+                package require cookit::install
+                ::cookit::install::uninstall {*}[lrange $::argv 1 end]
+            }
+            --install {
+                package require cookit::install
+                ::cookit::install::run install {*}[lrange $::argv 1 end]
+            }
             default {
                 puts stderr "Error: unknown command '$cmd'"
-                puts stderr "Known commands are: --wrap, --stats, --upgrade"
+                puts stderr "Known commands are: --wrap, --stats, --version, --upgrade and --uninstall"
                 exit 1
             }
         }

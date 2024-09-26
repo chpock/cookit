@@ -123,7 +123,27 @@ proc ::cookit::install::success { action version home } {
     set home [file nativename $home]
 
 
-    if { $action eq "upgrade" } {
+    if { $action eq "uninstall" } {
+
+        set message "\nCookit $version was successfully uninstalled from $home"
+
+        if { $::tcl_platform(platform) eq "windows" } {
+
+            package require registry
+            set path [registry get {HKEY_CURRENT_USER\Environment} Path]
+            set path [split $path ";"]
+
+            if { [set pos [lsearch -nocase $path $home]] == -1 } {
+                set path [lreplace $path $pos $pos]
+                set path [join $path ";"]
+                if { ![catch { registry set {HKEY_CURRENT_USER\Environment} Path $path }] } {
+                    # send broadcast message
+                }
+            }
+
+        }
+
+    } elseif { $action eq "upgrade" } {
 
         set message "\nCookit in $home was successfully upgraded to version $version"
 
@@ -167,6 +187,41 @@ proc ::cookit::install::success { action version home } {
             -title "Cookit installation" \
             -type ok -icon info
     }
+
+}
+
+proc ::cookit::install::uninstall { args } {
+
+    variable binaries
+    variable console
+
+    set console [catch { package require Tk } err]
+    if { !$console } {
+        # hide toplevel window
+        wm withdraw .
+    }
+
+    ############################################################
+    stage "Uninstalling Cookit files"
+    ############################################################
+
+    set home [file normalize [file dirname [info nameofexecutable]]]
+
+    foreach bin $binaries {
+        set bin [file join $home $bin]
+        if { [file exists $bin] } {
+            catch { file delete -force -- $bin }
+        }
+    }
+
+    # Cleanup empty directory. "file delete" will fail if the directory is not empty.
+    catch { file delete -- $home }
+
+    ok
+
+    success "uninstall" [::cookit::pkgconfig get package-version] $home
+
+    cleanup
 
 }
 
