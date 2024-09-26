@@ -83,6 +83,16 @@ proc ::cookit::builtin::run { } {
                 package require cookit::install
                 ::cookit::install::run upgrade {*}[lrange $::argv 1 end]
             }
+            --version {
+                set message "Cookit version [::cookit::pkgconfig get package-version]"
+                if { [catch { package require Tk }] } {
+                    puts stdout $message
+                } else {
+                    # hide toplevel window
+                    wm withdraw .
+                    tk_messageBox -message $message -title "Cookit about" -type ok -icon info
+                }
+            }
             default {
                 puts stderr "Error: unknown command '$cmd'"
                 puts stderr "Known commands are: --wrap, --stats, --upgrade"

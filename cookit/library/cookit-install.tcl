@@ -380,6 +380,7 @@ proc ::cookit::install::run { action args } {
             }
             error "error while renaming '$bin' to '$backup': $err"
         }
+        lappend backuped $backup
     }
 
     foreach bin $unpacked {
