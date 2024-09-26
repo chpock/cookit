@@ -80,7 +80,7 @@ TEA_ADD_INCLUDES([-I. -I\"`${CYGPATH} ${srcdir}/generic`\" -I\"`${CYGPATH} ${src
 TEA_ADD_LIBS([])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
-TEA_ADD_TCL_SOURCES([library/cookit.tcl library/wzipvfs.tcl library/cookit-stats.tcl library/cookit-console.tcl library/cookit-install.tcl library/cookit-builtin.tcl])
+TEA_ADD_TCL_SOURCES([library/cookit.tcl library/wzipvfs.tcl library/cookit-stats.tcl library/cookit-console.tcl library/cookit-install.tcl library/cookit-builtin.tcl library/cookit-windows-postpone.tcl])
 
 AC_DEFINE_UNQUOTED(COOKIT_PLATFORM, ["$build"])
 

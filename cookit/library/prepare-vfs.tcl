@@ -455,6 +455,7 @@ proc addCookit { { optional 0 } } {
     addFile [file join $::cookitLibDirectory cookit-console.tcl] "" $dst
     addFile [file join $::cookitLibDirectory cookit-builtin.tcl] "" $dst
     addFile [file join $::cookitLibDirectory cookit-install.tcl] "" $dst
+    addFile [file join $::cookitLibDirectory cookit-windows-postpone.tcl] "" $dst
     addFile [file join $::cookitLibDirectory wzipvfs.tcl] "" $dst
 
     load {} Cookfs

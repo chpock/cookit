@@ -1,3 +1,6 @@
+2024-09-27 Konstantin Kushnir <chpock@gmail.com>
+	* Fix issues on Windows related to locked files in install actions
+
 2024-09-26 Konstantin Kushnir <chpock@gmail.com>
 	* Fix a bug where temporary files were not deleted when installing
 	* Add command --version

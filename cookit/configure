@@ -5696,7 +5696,7 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 
 
 
-    vars="library/cookit.tcl library/wzipvfs.tcl library/cookit-stats.tcl library/cookit-console.tcl library/cookit-install.tcl library/cookit-builtin.tcl"
+    vars="library/cookit.tcl library/wzipvfs.tcl library/cookit-stats.tcl library/cookit-console.tcl library/cookit-install.tcl library/cookit-builtin.tcl library/cookit-windows-postpone.tcl"
     for i in $vars; do
 	# check for existence, be strict because it is installed
 	if test ! -f "${srcdir}/$i" ; then

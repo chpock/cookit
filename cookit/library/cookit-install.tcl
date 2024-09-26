@@ -12,7 +12,9 @@ package require vfs::tar
 
 namespace eval ::cookit::install {
 
-    variable binaries [expr { $::tcl_platform(platform) eq "windows" ? {
+    variable is_windows [expr { $::tcl_platform(platform) eq "windows" }]
+
+    variable binaries [expr { $is_windows ? {
         cookit.exe  cookit-gui.exe  cookitA.exe  cookitA-gui.exe
         cookitU.exe cookitU-gui.exe cookitUA.exe cookitUA-gui.exe
         cookit-gui.com  cookitA-gui.com
@@ -119,15 +121,15 @@ proc ::cookit::install::cleanup { } {
 proc ::cookit::install::success { action version home } {
 
     variable console
+    variable is_windows
 
     set home [file nativename $home]
-
 
     if { $action eq "uninstall" } {
 
         set message "\nCookit $version was successfully uninstalled from $home"
 
-        if { $::tcl_platform(platform) eq "windows" } {
+        if { $is_windows } {
 
             package require registry
             set path [registry get {HKEY_CURRENT_USER\Environment} Path]
@@ -151,7 +153,7 @@ proc ::cookit::install::success { action version home } {
 
         set message "\nCookit $version was successfully installed to $home"
 
-        if { $::tcl_platform(platform) eq "windows" } {
+        if { $is_windows } {
 
             package require registry
             set path [registry get {HKEY_CURRENT_USER\Environment} Path]
@@ -196,11 +198,16 @@ proc ::cookit::install::uninstall { args } {
 
     variable binaries
     variable console
+    variable is_windows
 
     set console [catch { package require Tk } err]
     if { !$console } {
         # hide toplevel window
         wm withdraw .
+    }
+
+    if { $is_windows } {
+        package require cookit::windows::postpone
     }
 
     ############################################################
@@ -212,12 +219,18 @@ proc ::cookit::install::uninstall { args } {
     foreach bin $binaries {
         set bin [file join $home $bin]
         if { [file exists $bin] } {
-            catch { file delete -force -- $bin }
+            if { [catch { file delete -force -- $bin }] && $is_windows } {
+                ::cookit::windows::postpone::add delete $bin
+            }
         }
     }
 
     # Cleanup empty directory. "file delete" will fail if the directory is not empty.
-    catch { file delete -- $home }
+    if { $is_windows } {
+        ::cookit::windows::postpone::add delete_empty $home
+    } else {
+        catch { file delete -- $home }
+    }
 
     ok
 
@@ -231,11 +244,16 @@ proc ::cookit::install::run { action args } {
 
     variable binaries
     variable console
+    variable is_windows
 
     set console [catch { package require Tk } err]
     if { !$console } {
         # hide toplevel window
         wm withdraw .
+    }
+
+    if { $is_windows } {
+        package require cookit::windows::postpone
     }
 
     ############################################################
@@ -443,11 +461,15 @@ proc ::cookit::install::run { action args } {
         }
         set backup "${bin}.temp"
         if { [catch { file rename -force $bin $backup } err] } {
-            foreach bin $unpacked {
-                catch { file delete -force $bin }
+            if { $is_windows } {
+                ::cookit::windows::postpone::add delete $bin
+                continue
             }
-            foreach bin $backuped {
-                catch { file rename -force $bin [file rootname $bin] }
+            foreach rollback_bin $unpacked {
+                catch { file delete -force $rollback_bin }
+            }
+            foreach rollback_bin $backuped {
+                catch { file rename -force $rollback_bin [file rootname $rollback_bin] }
             }
             error "error while renaming '$bin' to '$backup': $err"
         }
@@ -456,11 +478,15 @@ proc ::cookit::install::run { action args } {
 
     foreach bin $unpacked {
         if { [catch { file rename -force $bin [file rootname $bin] } err] } {
-            foreach bin $unpacked {
-                catch { file delete -force $bin }
+            if { $is_windows } {
+                ::cookit::windows::postpone::add rename $bin [file rootname $bin]
+                continue
             }
-            foreach bin $backuped {
-                catch { file rename -force $bin [file rootname $bin] }
+            foreach rollback_bin $unpacked {
+                catch { file delete -force $rollback_bin }
+            }
+            foreach rollback_bin $backuped {
+                catch { file rename -force $rollback_bin [file rootname $rollback_bin] }
             }
             error "error while renaming '$bin' to '[file rootname $bin]': $err"
         } else {
