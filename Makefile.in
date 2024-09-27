@@ -142,10 +142,6 @@ ifeq ($(findstring apple-darwin,$(IJ_PLATFORM)),apple-darwin)
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-040-fix-bug-macos-available.patch
 endif
 	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-030-All-do-not-use-install-directory.patch
-ifeq ($(findstring mingw32,$(IJ_PLATFORM)),mingw32)
-# See details about this patch in its file.
-	patch -N -p1 -d work/tk/src < "$(TOP_SRCDIR)"/deps/$(TCL_SOURCE_SUBDIR)/tk-050-fix-windows-config.patch
-endif
 endif
 # Tk doesn't depent on zlib directly. However, whish binary depends on Tcl static
 # library and the Tcl static library needs zlib. We should specify our zlib

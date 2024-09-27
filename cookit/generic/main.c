@@ -91,11 +91,17 @@ Tcl_AppInitProc Twapi_base_Init;
 
 void TclX_IdInit (Tcl_Interp *interp);
 
+#if TCL_MAJOR_VERSION > 8
+#define MIN_VERSION "9.0"
+#else
+#define MIN_VERSION "8.6"
+#endif
+
 static int Cookit_Startup(Tcl_Interp *interp) {
 
     DBG("Cookit_Startup: ENTER to interp: %p", (void *)interp);
 
-    if (Tcl_InitStubs(interp, "8.6", 0) == NULL) {
+    if (Tcl_InitStubs(interp, MIN_VERSION, 0) == NULL) {
         DBG("Cookit_Startup: failed to init stubs");
         return TCL_ERROR;
     }

@@ -21,11 +21,11 @@ test content-1 {check cookit version} -constraints cookitVersionDefined -body {
 } -result 1
 
 test content-2.1.1 {check Tcl version} -body {
-    expr { [package require Tcl] in {8.6.15 9.0b3} }
+    expr { [package require Tcl] in {8.6.15 9.0.0} }
 } -result 1
 
 test content-2.2.1 {check Thread version} -body {
-    expr { [package require Thread] in {2.8.10 3.0b4} }
+    expr { [package require Thread] in {2.8.10 3.0.0} }
 } -result 1
 
 foreach { pkgName pkgVersion constraints } {
