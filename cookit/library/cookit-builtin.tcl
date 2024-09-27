@@ -103,7 +103,7 @@ proc ::cookit::builtin::run { } {
             }
             default {
                 puts stderr "Error: unknown command '$cmd'"
-                puts stderr "Known commands are: --wrap, --stats, --version, --check-upgrade, --upgrade and --uninstall"
+                puts stderr "Known commands are: --wrap, --stats, --version, --install, --check-upgrade, --upgrade and --uninstall"
                 exit 1
             }
         }
