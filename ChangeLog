@@ -1,7 +1,11 @@
+2024-09-23 Konstantin Kushnir <chpock@gmail.com>
+	* RELEASE TAG 2.2.0
+
 2024-09-27 Konstantin Kushnir <chpock@gmail.com>
 	* Fix issues on Windows related to locked files in install actions
 	* Update Tcl9 to 9.0.0
 	* Fix paths in tcl::pkgconfig and tk::pkgconfig
+	* Update README
 
 2024-09-26 Konstantin Kushnir <chpock@gmail.com>
 	* Fix a bug where temporary files were not deleted when installing
