@@ -7,7 +7,7 @@ Cookit is a Tcl/Tk runtime environment similar to tclkit with a focus on a balan
 
 Cookit is a single executable file that contains:
 
-- Tcl/Tk version 8.6.15 (with Threads enabled) or 9.0.0
+- Tcl/Tk version **8.6.15** (with Threads enabled) or **9.0.0**
 - Statically linked packages: **cookfs**, **tclvfs**, **Threads**, **tclmtls**, **tdom**, **twapi** (for Windows platform)
 - Other packages: **tkcon**
 
@@ -38,12 +38,12 @@ To simplify installation, a minimal installer is available that can be run with 
 
 Linux x86_64:
 ```shell
-$ curl -sL https://github.com/chpock/cookit/releases/latest/download/cookit-installer.x86_64-pc-linux-gnu.sh | sh
+curl -sL https://github.com/chpock/cookit/releases/latest/download/cookit-installer.x86_64-pc-linux-gnu.sh | sh
 ```
 
 Linux x86:
 ```shell
-$ curl -sL https://github.com/chpock/cookit/releases/latest/download/cookit-installer.i686-pc-linux-gnu.sh | sh
+curl -sL https://github.com/chpock/cookit/releases/latest/download/cookit-installer.i686-pc-linux-gnu.sh | sh
 ```
 
 For Windows platform it is necessary to download and run the installation file:
@@ -53,11 +53,11 @@ For Windows platform it is necessary to download and run the installation file:
 
 Note: The GUI installation does not show any messages during the installation process, only a dialog box after the installation process is finished. Therefore, you may get the impression that there is no reaction when the file is started. Please wait 20-30 seconds after launching the installation file.
 
-Also, the Windows installer adds the %USERPROFILE%\.cookit directory to the PATH for the current user.
+Also, the Windows installer adds the `%USERPROFILE%\.cookit` directory to the `PATH` for the current user.
 
 This will download the latest available Cookit [releases](https://github.com/chpock/cookit/releases) on GitHub.
 
-After successful installation, the Cookit binary files will be available in the home directory ~/.cookit for unix platforms or %USERPROFILE%\.cookit for Windows.
+After successful installation, the Cookit binary files will be available in the home directory `~/.cookit` for unix platforms or `%USERPROFILE%\.cookit` for Windows.
 
 ### Upgrading
 
@@ -97,7 +97,7 @@ The following engines are available for Unix platforms:
 
 - **cookit** is a build without Tk
 - **cookit-gui** is a build with Tk. By default, it runs in console mode. Tk will become available after package requires Tk. This makes it possible to create universal applications that can run in both console mode and GUI mode.
-- files with the *U  suffix (**cookitU** and **cookitU-gui**) are the same builds, but do not use the UPX executable archiver
+- files with the `*U`  suffix (**cookitU** and **cookitU-gui**) are the same builds, but do not use the [UPX](https://github.com/upx/upx/tree/devel) executable archiver
 
 More engines are available for the Windows platform:
 
@@ -105,14 +105,16 @@ More engines are available for the Windows platform:
 - **cookit-gui.com** is a build with Tk, but runs as a console application by default. Tk becomes available after package requires Tk.
 - **cookit-gui.exe** is an build with Tk, but runs as a GUI application by default.
 - files with the `*A`  suffix (**cookitA.exe**, **cookitA-gui.com**, **cookitA-gui.exe**) are the same builds as above, but with an administrative manifest. These builds will ask for confirmation of privilege elevation at startup. They can be used for applications that require elevated privileges.
-- files with the `*U`  suffix (**cookitU.exe**, **cookitU-gui.com**, **cookitU-gui.exe**) are the same builds, but do not use the [UPX](cookitU.exe, cookitU-gui.com, cookitU-gui.exe) executable archiver.
-- files with the `*UA`  suffix (**cookitUA.exe**, **cookitUA-gui.com**, **cookitUA-gui.exe**) are builds with an administrative manifest that do not use the [UPX](cookitUA.exe, cookitUA-gui.com, cookitUA-gui.exe) executable archiver.
+- files with the `*U`  suffix (**cookitU.exe**, **cookitU-gui.com**, **cookitU-gui.exe**) are the same builds, but do not use the [UPX](https://github.com/upx/upx/tree/devel) executable archiver.
+- files with the `*UA`  suffix (**cookitUA.exe**, **cookitUA-gui.com**, **cookitUA-gui.exe**) are builds with an administrative manifest that do not use the [UPX](https://github.com/upx/upx/tree/devel) executable archiver.
+
+For all these variants, engines with prefix `*8` are also available. These are engines with **Tcl 8.6**. Those engines without this prefix are with **Tcl 9.0**.
 
 ## Usage
 
 ### As a replacement for tclsh / wish
 
-Cookit can be used as a complete replacement for tclsh / wish to run scripts.
+Cookit can be used as a complete replacement for **tclsh** / **wish** to run scripts.
 
 code reading from stdin is supported:
 ```shell
@@ -153,7 +155,7 @@ The full command format is as follows:
 $ cookit --wrap <main script> ?optional_arguments?
 ```
 
-The `<main script>` parameter specifies the name of the script that will be run by default when the executable is started. Inside the executable it will be named main.tcl
+The `<main script>` parameter specifies the name of the script that will be run by default when the executable is started. Inside the executable it will be named `main.tcl`
 
 The minimum format of this command is in the form of:
 ```shell
@@ -176,7 +178,7 @@ For more complex applications, the following optional arguments for the **--wrap
 - **--paths**, **--path**, **--to**, **--as** - allow to flexibly control the set of files that will be in the resulting executable file. These options are described in detail below.
 - **--output <file name>** - specifies the name of the output executable file. By default, Cookit tries to determine the output file name from the <main script>  file name.
 - **--stubfile <cookit file path>** - specifies the Cookit used for the output executable. For example, if you specify a Cookit for the Windows platform, then the output file will be for that platform. Or, for example, you are building in console mode, but the output file should be a GUI application (with Tk), then you need to specify with this parameter the Cookit with Tk enabled.
-- **--compression <compression method>:<compression level>** - allows to specify compression method and compression level. Currently supported compression methods are zlib and lzma , as well as uncompressed format none.
+- **--compression <compression method>:<compression level>** - allows to specify compression method and compression level. Currently supported compression methods are `zlib` and `lzma` , as well as uncompressed format `none`.
 - **--icon <icon file path>** - (Windows only) allows to set an icon for the executable file.
 - **--company <value>**, **--copyright <value>**, **--fileversion <value>**, **--productname <value>**, **--productversion <value>**, **--filedescription <value>**, **--originalfilename <value>** - (Windows only) allows to set version info for the output executable file for Windows platform.
 
@@ -196,7 +198,8 @@ The format for these options is as follows:
 
 Practical example:
 
-It is necessary to
+It is necessary to:
+
 - include packages from the `lib` directory, which is in the current directory, as well as packages from the `/opt/tcl/packages` directory
 - add the data files from `/opt/my_data_ver1` as `data`
 - add data index file from `/opt/index_ver1.idx` as `data/index.idx`
@@ -207,10 +210,10 @@ It is necessary to
 ```shell
 cookit --wrap app.tcl \
     --paths ./lib/* --paths /opt/tcl/packages/* --to ./lib \
-	--path /opt/my_data_ver1 --as ./data \
-	--path /opt/index_ver1.idx --as ./data/index.idx \
-	--paths ./generic/parse.tcl ./generic/help.tcl --to . \
-	--path /opt/support_ver1.tcl --as ./support.tcl
+    --path /opt/my_data_ver1 --as ./data \
+    --path /opt/index_ver1.idx --as ./data/index.idx \
+    --paths ./generic/parse.tcl ./generic/help.tcl --to . \
+    --path /opt/support_ver1.tcl --as ./support.tcl
 ```
 
 ## Copyrights
