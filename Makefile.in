@@ -115,8 +115,8 @@ endif
 # $(COOKIT_ROOT) variable will be used to replace various CFG_INSTALL_* and
 # CFG_RUNTIME_* definitions
 	cd work/tcl && $(MAKE) all \
-	    TCL_LIBRARY="$(COOKIT_ROOT)/lib/tcl\$$(VERSION)" \
-	    TCL_PACKAGE_PATH="$(COOKIT_ROOT)/lib" \
+	    TCL_LIBRARY="$(COOKIT_ROOT)lib/tcl\$$(VERSION)" \
+	    TCL_PACKAGE_PATH="$(COOKIT_ROOT)lib" \
 	    COOKIT_ROOT="$(COOKIT_ROOT)"
 	cd work/tcl && $(MAKE) install-binaries install-libraries
 # Tcl installs headers on Windows in scope of the install-libraries target. But on other
@@ -167,7 +167,7 @@ endif
 # $(COOKIT_ROOT) variable will be used to replace various CFG_INSTALL_* and
 # CFG_RUNTIME_* definitions
 	cd work/tk && $(MAKE) all \
-	    TK_LIBRARY="$(COOKIT_ROOT)/lib/tk\$$(VERSION)" \
+	    TK_LIBRARY="$(COOKIT_ROOT)lib/tk\$$(VERSION)" \
 	    COOKIT_ROOT="$(COOKIT_ROOT)"
 	cd work/tk && $(MAKE) install-binaries install-libraries
 # Tk installs headers on Windows in scope of the install-libraries target. But on other

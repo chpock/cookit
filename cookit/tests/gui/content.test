@@ -12,6 +12,9 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
     namespace import -force ::tcltest::*
 }
 
+package require Tk
+testConstraint pkgconfig [llength [info commands ::tk::pkgconfig]]
+
 test content-2.1.1 {check Tcl version} -body {
     expr { [package require Tcl] in {8.6.15 9.0.0} }
 } -result 1
@@ -44,6 +47,27 @@ foreach { pkgName pkgVersion constraints } {
         -returnCodes ok -match glob -result *
 }
 unset count
+
+# For some unknown reason, tk::pkgconfig in Tk9 on Windows has no paths.
+test content-8 {::tk::pkgconfig values} -constraints { pkgconfig unix } -body {
+    set result [list]
+    foreach { key1 key2 val } [list \
+        libdir,runtime     libdir,install      [file join $::cookit::root lib] \
+        bindir,runtime     bindir,install      [file join $::cookit::root bin] \
+        scriptdir,runtime  scriptdir,install   [file join $::cookit::root lib tk[info tclversion]] \
+        includedir,runtime includedir,install  [file join $::cookit::root include] \
+        docdir,runtime     docdir,install      [file join $::cookit::root share man] \
+        demodir,runtime    demodir,install     [file join $::cookit::root lib tk[info tclversion] demos] \
+    ] {
+        if { [::tk::pkgconfig get $key1] ne $val } {
+            lappend result "::tk::pkgconfig get $key1 != '$val' (actual value: '[::tk::pkgconfig get $key1]')"
+        }
+        if { [::tk::pkgconfig get $key2] ne $val } {
+            lappend result "::tk::pkgconfig get $key2 != '$val' (actual value: '[::tk::pkgconfig get $key2]')"
+        }
+    }
+    join $result \n
+} -result {}
 
 # cleanup
 ::tcltest::cleanupTests

@@ -15,6 +15,7 @@ if { [lsearch [namespace children] ::tcltest] == -1 } {
 testConstraint darwin [expr {[testConstraint unix] && $tcl_platform(os) eq "Darwin"}]
 testConstraint notDarwin [expr {![testConstraint darwin]}]
 testConstraint cookitVersionDefined [info exists ::env(COOKIT_VERSION)]
+testConstraint pkgconfig [llength [info commands ::tcl::pkgconfig]]
 
 test content-1 {check cookit version} -constraints cookitVersionDefined -body {
     string equal [package require cookit $::env(COOKIT_VERSION)] $::env(COOKIT_VERSION)
@@ -48,6 +49,25 @@ unset count
 test content-6 {icon exists} -constraints win -body {
     file exists [file join $::cookit::root cookit.ico]
 } -result 1
+
+test content-7 {::tcl::pkgconfig values} -constraints pkgconfig -body {
+    set result [list]
+    foreach { key1 key2 val } [list \
+        libdir,runtime     libdir,install      [file join $::cookit::root lib] \
+        bindir,runtime     bindir,install      [file join $::cookit::root bin] \
+        scriptdir,runtime  scriptdir,install   [file join $::cookit::root lib tcl[info tclversion]] \
+        includedir,runtime includedir,install  [file join $::cookit::root include] \
+        docdir,runtime     docdir,install      [file join $::cookit::root share man] \
+    ] {
+        if { [::tcl::pkgconfig get $key1] ne $val } {
+            lappend result "::tcl::pkgconfig get $key1 != '$val' (actual value: '[::tcl::pkgconfig get $key1]')"
+        }
+        if { [::tcl::pkgconfig get $key2] ne $val } {
+            lappend result "::tcl::pkgconfig get $key2 != '$val' (actual value: '[::tcl::pkgconfig get $key2]')"
+        }
+    }
+    join $result \n
+} -result {}
 
 # cleanup
 ::tcltest::cleanupTests
