@@ -10,18 +10,10 @@ package require cookit
 proc ::cookit::stats { args } {
 
     if { [llength $args] } {
-        set fname   [lindex $args 0]
-        set fsize   [file size $fname]
-        set root    $fname
-        set pages   [::cookfs::pages -readonly $fname]
-        set fsindex [::cookfs::fsindex [$pages index]]
-        ::cookfs::Mount -pagesobject $pages -fsindexobject $fsindex \
-            -readonly $fname $root
+        set root    [lindex $args 0]
+        ::cookfs::Mount -readonly $root $root
     } {
         set root    $::cookit::root
-        set fsindex [[file attributes $::cookit::root -handle] getindex]
-        set pages   [[file attributes $::cookit::root -handle] getpages]
-        set fsize   [file size [info nameofexecutable]]
     }
 
     set frmsize [list apply { { size } {
@@ -34,45 +26,50 @@ proc ::cookit::stats { args } {
 
     array set pindex [list]
 
-    set striplen [llength [file split $root]]
     foreach fn [recursive_glob $root *] {
-        set fn [file join {*}[lrange [file split $fn] $striplen end]]
-        set index [$fsindex get $fn]
-        set chklist [lindex $index 2]
-        foreach { chkid - - } $chklist {
-            lappend pindex($chkid) $fn
+        foreach block [file attributes $fn -blocks] {
+            lappend pindex([dict get $block page]) [file attributes $fn -relative]
         }
     }
 
-    set length [$pages length]
+    set length [file attribute $root -pages]
 
     puts "Total pages: $length"
     puts ""
 
-    set size [$pages dataoffset 0]
+    set size [dict get [file attributes $root -parts] headsize]
 
     puts "Stub    : packed: [{*}$frmsize $size]"
     puts ""
 
     for { set i 0 } { $i < $length } { incr i } {
-        if { $i == [expr { $length - 1 }] } {
-            set csize [expr { [$pages filesize] - [$pages dataoffset $i] }]
-        } {
-            set csize [expr { [$pages dataoffset [expr { $i + 1 }]] - [$pages dataoffset $i] }]
-        }
-        set usize [string length [$pages get $i]]
+
+        set page [file attributes $root -pages $i]
+        set csize [dict get $page compsize]
+        set usize [dict get $page uncompsize]
+        set comp  [dict get $page compression]
+
         if { [info exists pindex($i)] } {
             set nfiles [llength $pindex($i)]
         } {
             set nfiles "<bootstrap>"
         }
-        puts "Page [format "%2d" $i] : packed: [{*}$frmsize $csize]; unpacked: [{*}$frmsize $usize]; ratio: [{*}$frmratio $usize $csize]; number of files: $nfiles"
+        puts "Page [format "%2d" $i] : packed($comp): [{*}$frmsize $csize]; unpacked: [{*}$frmsize $usize]; ratio: [{*}$frmratio $usize $csize]; number of files: $nfiles"
     }
 
     puts ""
-    set csize [expr { $fsize - [$pages filesize] }]
-    set usize [string length [$pages index]]
-    puts "Index   : packed: [{*}$frmsize $csize]; unpacked: [{*}$frmsize $usize]; ratio: [{*}$frmratio $usize $csize]"
+
+    set page [file attributes $root -pages pgindex]
+    set csize [dict get $page compsize]
+    set usize [dict get $page uncompsize]
+    set comp  [dict get $page compression]
+    puts "PgIndex : packed($comp): [{*}$frmsize $csize]; unpacked: [{*}$frmsize $usize]; ratio: [{*}$frmratio $usize $csize]"
+
+    set page [file attributes $root -pages fsindex]
+    set csize [dict get $page compsize]
+    set usize [dict get $page uncompsize]
+    set comp  [dict get $page compression]
+    puts "FsIndex : packed($comp): [{*}$frmsize $csize]; unpacked: [{*}$frmsize $usize]; ratio: [{*}$frmratio $usize $csize]"
 
     puts ""
     puts "-----------------------------------------------------------------------"

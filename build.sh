@@ -232,10 +232,6 @@ if [ -n "$BUILD_LOCAL" ] || [ "$PLATFORM" = "i686-w64-mingw32" ] || [ "$PLATFORM
             LLVM_LATEST_VERSION="$(/bin/ls -d /opt/local/libexec/llvm* | cut -d- -f2 | sort -g -r | head -n 1)"
             PATH="/opt/local/bin:/opt/local/libexec/llvm-$LLVM_LATEST_VERSION/bin:$PATH"
             export PATH
-            CC="clang"
-            export CC
-            CXX="clang"
-            export CXX
             # This is needed for clang from macports to correctly find sysroot from xcode
             # https://github.com/include-what-you-use/include-what-you-use/issues/1308#issuecomment-1732644079
             SDKROOT="$(xcrun --show-sdk-path)"

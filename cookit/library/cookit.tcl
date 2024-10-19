@@ -483,14 +483,8 @@ proc ::cookit::makestub { exe } {
 
     variable root
 
-    # TODO: optimize and don't read the head into memory
-    set pg [::cookfs::c::pages -readonly [info nameofexecutable]]
-    set head [$pg gethead]
-    $pg delete
-
-    set fh [open $exe w]
-    fconfigure $fh -translation binary
-    puts -nonewline $fh $head
+    set fh [open $exe wb]
+    file attributes $::cookit::root -parts [list head $fh]
     close $fh
 
     copy_tcl_runtime [file join $root manifest.txt] $exe

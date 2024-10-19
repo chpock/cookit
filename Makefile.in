@@ -206,9 +206,11 @@ work/stamp-cookfs: work/stamp-tcl
 	        --build=$(AC_HOST) --host=$(AC_HOST) \
 	        --prefix=$(PREFIX) \
 	        --with-tcl=$(PREFIX)/lib \
-	        --enable-lzma \
+	        --enable-lzma --enable-c-crypto \
 	        --disable-bz2 --disable-zstd --disable-brotli \
-	        --disable-c-crypto \
+	        --disable-tcl-callbacks --disable-tcl-commands \
+	        --with-mbedtls="$(TOP_SRCDIR)"/deps/tclmtls/mbedtls \
+	        --with-zlib="$(PREFIX)" \
 	        --enable-shared=no \
 	        $(SYMBOLS_FLAG) $(THREADS_FLAG)
 	cd work/cookfs && $(MAKE) all install CFLAGS="$(CFLAGS)"
