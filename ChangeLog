@@ -1,4 +1,7 @@
-2024-10-29 Konstantin Kushnir <chpock@gmail.com>
+2024-10-21 Konstantin Kushnir <chpock@gmail.com>
+	* Update cookfs to version 1.9.0
+
+2024-10-19 Konstantin Kushnir <chpock@gmail.com>
 	* Update cookfs, enable crypto functions
 
 2024-10-12 Konstantin Kushnir <chpock@gmail.com>
