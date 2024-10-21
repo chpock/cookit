@@ -34,7 +34,7 @@ package require cookit::install
 exit 0
 EOF
 
-for PLATFORM in i686-w64-mingw32 x86_64-w64-mingw32 x86_64-apple-darwin10.6 i686-pc-linux-gnu x86_64-pc-linux-gnu; do
+for PLATFORM in i686-w64-mingw32 x86_64-w64-mingw32 x86_64-apple-darwin10.10 i686-pc-linux-gnu x86_64-pc-linux-gnu; do
     mkdir -p "$RELEASE_DIR/cookit-$VERSION"
     for BUILD_DIR in "$BUILD_8_DIR" "$BUILD_9_DIR"; do
         echo "Copy platform '$PLATFORM' from: $BUILD_DIR ..."

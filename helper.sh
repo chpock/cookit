@@ -5,7 +5,7 @@ set -e
 if [ -z "$PLATFORM" ]; then
 
     case "$(uname -s)" in
-        Darwin) OS=apple-darwin10.6 ;;
+        Darwin) OS=apple-darwin10.10 ;;
         *Linux) OS=pc-linux-gnu ;;
         CYGWIN_NT*|MINGW*)
             EXE=.exe

@@ -108,7 +108,7 @@ if [ "$1" != "build" ] && [ "$1" != "build-local" ]; then
     done
 
     if [ -z "$BUILD_PLATFORMS" ]; then
-        BUILD_PLATFORMS="i686-w64-mingw32 x86_64-w64-mingw32 x86_64-apple-darwin10.6 i686-pc-linux-gnu x86_64-pc-linux-gnu"
+        BUILD_PLATFORMS="i686-w64-mingw32 x86_64-w64-mingw32 x86_64-apple-darwin10.10 i686-pc-linux-gnu x86_64-pc-linux-gnu"
         BUILD_ALL="$BUILD_HOME/all"
         rm -rf "$BUILD_ALL" "$BUILD_HOME/cookit"-*
     fi
@@ -417,8 +417,8 @@ vagrant_unlocked() {
 # loc-72-mac-101300-64
 
 VAGRANT_VM="$(cat <<EOF
-i386-apple-darwin10.6 /c/DriveD/VM/loc-72-mac-101300-64
-x86_64-apple-darwin10.6 /c/DriveD/VM/loc-72-mac-101300-64
+i386-apple-darwin10.10 /c/DriveD/VM/loc-72-mac-101300-64
+x86_64-apple-darwin10.10 /c/DriveD/VM/loc-72-mac-101300-64
 i686-pc-linux-gnu /c/DriveD/VM/loc-26-lin-cent6-64
 x86_64-pc-linux-gnu /c/DriveD/VM/loc-26-lin-cent6-64
 EOF

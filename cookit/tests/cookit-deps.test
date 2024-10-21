@@ -74,7 +74,7 @@ set expected [dict create {*}{
             cookit8_raw { 2.11 2.7 2.3.2 2.3 2.2.5 }
         }
     }
-    i386-apple-darwin10.6 {
+    i386-apple-darwin10.10 {
         cookit-deps {
             cookit_raw {
                 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
@@ -88,7 +88,7 @@ set expected [dict create {*}{
             }
         }
     }
-    x86_64-apple-darwin10.6 {
+    x86_64-apple-darwin10.10 {
         cookit-deps {
             cookit_raw {
                 /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
